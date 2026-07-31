@@ -124,10 +124,25 @@ ENABLE_ACCOUNT_SIGNUP=false
 EOF
 }
 
+# Cria super admin + platform app e imprime o token que a ponte usa.
+bootstrap_platform() {
+  build chatwoot
+  gcloud run jobs deploy chatwoot-bootstrap \
+    --project=$PROJECT --region=$REGION \
+    --image=$REPO/chatwoot-rt:$SHORT_SHA \
+    --service-account=$RUNTIME_SA \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest,RT_SUPER_ADMIN_PASSWORD=chatwoot-super-admin-password:latest \
+    --set-env-vars="$(chatwoot_env),RT_SUPER_ADMIN_EMAIL=${RT_SUPER_ADMIN_EMAIL:-admin@rangeltech.net},RT_PLATFORM_APP_NAME=rangel-bridge" \
+    --command=bundle --args=exec,rails,runner,scripts/ops/bootstrap_platform.rb \
+    --max-retries=1 --task-timeout=900 \
+    --execute-now --wait
+}
+
 case $target in
   bridge) deploy_bridge ;;
+  bootstrap) bootstrap_platform ;;
   chatwoot) deploy_chatwoot ;;
   migrate) migrate_chatwoot ;;
-  all) migrate_chatwoot; deploy_chatwoot; deploy_bridge ;;
-  *) echo "usage: $0 [bridge|chatwoot|migrate|all]" >&2; exit 1 ;;
+  all) migrate_chatwoot; deploy_chatwoot; bootstrap_platform; deploy_bridge ;;
+  *) echo "usage: $0 [bridge|chatwoot|migrate|bootstrap|all]" >&2; exit 1 ;;
 esac

@@ -17,6 +17,9 @@ COPY chatwoot/entrypoints/web.sh ./rt-web.sh
 COPY chatwoot/entrypoints/worker.sh ./rt-worker.sh
 RUN chmod +x ./rt-web.sh ./rt-worker.sh
 
+# Scripts operacionais (bootstrap do platform app) rodam via rails runner.
+COPY scripts/ops/ ./scripts/ops/
+
 # Cloud Run injeta PORT; o Chatwoot escuta em 3000 por padrão.
 ENV PORT=3000
 EXPOSE 3000
