@@ -66,7 +66,7 @@ deploy_chatwoot() {
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
+    --set-secrets="$(chatwoot_secrets)" \
     --set-env-vars="$(chatwoot_env)" \
     --command=./rt-web.sh \
     --allow-unauthenticated \
@@ -78,7 +78,7 @@ deploy_chatwoot() {
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
+    --set-secrets="$(chatwoot_secrets)" \
     --set-env-vars="$(chatwoot_env)" \
     --command=./rt-worker.sh \
     --no-allow-unauthenticated \
@@ -95,6 +95,13 @@ chatwoot_url() {
 agent_platform_url() {
   gcloud run services describe teste-ia-backend --project=$PROJECT --region=$REGION \
     --format='value(status.url)' 2>/dev/null || echo ""
+}
+
+chatwoot_secrets() {
+  local base="POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest"
+  local meta
+  meta=$(meta_secrets)
+  echo "${base}${meta:+,$meta}"
 }
 
 # O TLS da VPS usa certificado próprio: o tráfego é cifrado, mas a cadeia não
@@ -122,6 +129,21 @@ STORAGE_ENDPOINT=https://storage.rangeltech.net
 STORAGE_FORCE_PATH_STYLE=true
 ENABLE_ACCOUNT_SIGNUP=false
 EOF
+}
+
+# Instagram e Facebook usam um único Meta App por instalação (decisão da Fase
+# 2): cada tenant conecta a própria página dentro dele. Sem os segredos
+# cadastrados, o deploy segue sem os canais Meta em vez de falhar.
+meta_secrets() {
+  local parts=""
+  for pair in "FB_APP_ID=chatwoot-meta-app-id"               "FB_APP_SECRET=chatwoot-meta-app-secret"               "FB_VERIFY_TOKEN=chatwoot-meta-verify-token"               "IG_VERIFY_TOKEN=chatwoot-meta-verify-token"; do
+    local env_name=${pair%%=*}
+    local secret_name=${pair#*=}
+    if gcloud secrets describe "$secret_name" --project=$PROJECT >/dev/null 2>&1; then
+      parts="${parts:+$parts,}${env_name}=${secret_name}:latest"
+    fi
+  done
+  echo "$parts"
 }
 
 # Cria super admin + platform app e imprime o token que a ponte usa.

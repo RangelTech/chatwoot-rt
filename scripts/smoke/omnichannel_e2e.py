@@ -182,9 +182,12 @@ def main() -> None:
     conversation_id, replied = None, False
     deadline = time.time() + 120
     while time.time() < deadline:
+        # assignee_type=all: por padrão o Chatwoot lista só o que está
+        # atribuído ao usuário do token, e a conversa da IA não está.
         conversations = client.get(
             f"{CHATWOOT}/api/v1/accounts/{account_id}/conversations",
             headers={"api_access_token": account_user_token},
+            params={"status": "all", "assignee_type": "all"},
         ).json()
         payload = (conversations.get("data") or {}).get("payload") or []
         if payload:
