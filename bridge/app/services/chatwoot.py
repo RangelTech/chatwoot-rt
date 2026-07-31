@@ -125,11 +125,16 @@ async def create_api_inbox(account_id: int, token: str, name: str, webhook_url: 
 
 
 async def create_contact(account_id: int, token: str, identifier: str, name: str) -> dict:
+    body: dict = {"identifier": identifier, "name": name}
+    # Só WhatsApp tem telefone. Instagram e Facebook usam id de perfil, e o
+    # Chatwoot rejeita qualquer coisa que não seja E.164 nesse campo.
+    if identifier.isdigit():
+        body["phone_number"] = f"+{identifier}"
     return await _request(
         "POST",
         f"/api/v1/accounts/{account_id}/contacts",
         token=token,
-        json_body={"identifier": identifier, "name": name, "phone_number": f"+{identifier}"},
+        json_body=body,
     )
 
 
