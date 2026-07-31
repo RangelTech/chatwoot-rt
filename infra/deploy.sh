@@ -30,7 +30,7 @@ deploy_bridge() {
     --image=$REPO/chatwoot-rt-bridge:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
     --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest \
-    --set-env-vars="PORT=8100,CHATWOOT_BASE_URL=$(chatwoot_url),AGENT_PLATFORM_URL=$(agent_platform_url)" \
+    --set-env-vars="CHATWOOT_BASE_URL=$(chatwoot_url),AGENT_PLATFORM_URL=$(agent_platform_url)" \
     --allow-unauthenticated \
     --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
     --timeout=600 --port=8100
@@ -68,7 +68,7 @@ deploy_chatwoot() {
     --service-account=$RUNTIME_SA \
     --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest \
     --set-env-vars="$(chatwoot_env)" \
-    --command=/usr/local/bin/rt-web.sh \
+    --command=./rt-web.sh \
     --allow-unauthenticated \
     --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
     --timeout=600 --port=3000
@@ -80,7 +80,7 @@ deploy_chatwoot() {
     --service-account=$RUNTIME_SA \
     --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest \
     --set-env-vars="$(chatwoot_env)" \
-    --command=/usr/local/bin/rt-worker.sh \
+    --command=./rt-worker.sh \
     --no-allow-unauthenticated \
     --no-cpu-throttling \
     --memory=2Gi --cpu=1 --min-instances=1 --max-instances=2 \
@@ -97,6 +97,9 @@ agent_platform_url() {
     --format='value(status.url)' 2>/dev/null || echo ""
 }
 
+# O TLS da VPS usa certificado próprio: o tráfego é cifrado, mas a cadeia não
+# é verificável publicamente. REDIS_OPENSSL_VERIFY_MODE=none é o botão que o
+# próprio Chatwoot expõe para esse caso.
 chatwoot_env() {
   local frontend
   frontend=$(chatwoot_url)
@@ -110,6 +113,7 @@ POSTGRES_PORT=5433
 POSTGRES_DATABASE=chatwoot_prod
 POSTGRES_USERNAME=chatwoot_app
 POSTGRES_SSL_MODE=require
+REDIS_OPENSSL_VERIFY_MODE=none
 FRONTEND_URL=${frontend}
 ACTIVE_STORAGE_SERVICE=s3_compatible
 S3_BUCKET_NAME=chatwoot
