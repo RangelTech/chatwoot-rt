@@ -53,7 +53,7 @@ migrate_chatwoot() {
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
     --set-env-vars="$(chatwoot_env)" \
     --command=bundle --args=exec,rails,db:chatwoot_prepare \
     --max-retries=1 --task-timeout=1800 \
@@ -66,7 +66,7 @@ deploy_chatwoot() {
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
     --set-env-vars="$(chatwoot_env)" \
     --command=./rt-web.sh \
     --allow-unauthenticated \
@@ -78,7 +78,7 @@ deploy_chatwoot() {
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
     --service-account=$RUNTIME_SA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
     --set-env-vars="$(chatwoot_env)" \
     --command=./rt-worker.sh \
     --no-allow-unauthenticated \
@@ -116,7 +116,7 @@ POSTGRES_SSL_MODE=require
 REDIS_OPENSSL_VERIFY_MODE=none
 FRONTEND_URL=${frontend}
 ACTIVE_STORAGE_SERVICE=s3_compatible
-S3_BUCKET_NAME=chatwoot
+STORAGE_BUCKET_NAME=chatwoot
 STORAGE_REGION=us-east-1
 STORAGE_ENDPOINT=https://storage.rangeltech.net
 STORAGE_FORCE_PATH_STYLE=true
