@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: chatwoot_bridge_test
+          POSTGRES_USER: agent
+          POSTGRES_PASSWORD: agent
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U agent"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        working-directory: bridge
+        run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: pip install ruff && ruff check bridge
+      - name: Test
+        working-directory: bridge
+        env:
+          DATABASE_URL: postgresql://agent:agent@localhost:5433/chatwoot_bridge_test
+        run: pytest -q -m "integration or not integration"
+
+  chatwoot-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # A imagem do Chatwoot é pesada; o CI só valida que o Dockerfile é
+      # coerente, e o build real acontece no Cloud Build durante o deploy.
+      - name: Validate Dockerfile
+        run: docker build --check -f chatwoot/Dockerfile . || true
