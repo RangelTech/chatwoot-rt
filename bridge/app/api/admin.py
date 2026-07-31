@@ -102,8 +102,10 @@ async def provision_user(payload: UserIn):
     if user_link["chatwoot_user_id"]:
         return {"status": "ok", "chatwoot_user_id": user_link["chatwoot_user_id"], "created": False}
 
-    # Senha aleatória: o acesso é sempre por login-link, nunca digitada.
-    user = await chatwoot.create_user(payload.name, payload.email, secrets.token_urlsafe(24))
+    # Senha aleatória: o acesso é sempre por login-link, nunca digitada. O
+    # sufixo cobre a política do Chatwoot, que exige caractere especial.
+    password = f"{secrets.token_urlsafe(24)}#Aa1!"
+    user = await chatwoot.create_user(payload.name, payload.email, password)
     user_id = user.get("id")
     if not user_id:
         raise HTTPException(status_code=502, detail="Chatwoot não devolveu id do usuário")
