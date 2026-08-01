@@ -6,6 +6,7 @@ datasources, tools e memória. Assim a IA continua sendo domínio da plataforma
 mestre, e a ponte só transporta contexto.
 """
 
+import asyncio
 import logging
 
 import httpx
@@ -43,15 +44,26 @@ async def ask(
     if template_id:
         body["template_id"] = template_id
 
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.post(
-                f"{settings.agent_platform_url.rstrip('/')}/v1/messages",
-                headers={"Authorization": f"Bearer {integration_key}"},
-                json=body,
-            )
-    except httpx.HTTPError as exc:
-        raise KernelError(f"kernel inacessível: {exc}") from exc
+    # Erro de transporte não é indisponibilidade: o Cloud Run recicla instância
+    # o tempo todo e corta conexões em voo. Uma tentativa a mais evita mandar
+    # a conversa para a fila humana por causa de um reset de conexão.
+    ultimo: Exception | None = None
+    response = None
+    for tentativa in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                response = await client.post(
+                    f"{settings.agent_platform_url.rstrip('/')}/v1/messages",
+                    headers={"Authorization": f"Bearer {integration_key}"},
+                    json=body,
+                )
+            break
+        except httpx.HTTPError as exc:
+            ultimo = exc
+            if tentativa == 0:
+                await asyncio.sleep(2)
+    if response is None:
+        raise KernelError(f"kernel inacessível: {ultimo}") from ultimo
     if response.status_code >= 400:
         raise KernelError(f"kernel respondeu {response.status_code}: {response.text[:400]}")
 

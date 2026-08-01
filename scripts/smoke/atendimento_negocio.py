@@ -196,7 +196,17 @@ def main() -> None:
                 params={"status": "all", "assignee_type": "all"},
             ).json()
             payload = (conversas.get("data") or {}).get("payload") or []
-            atual = next((c for c in payload if str(c.get("id"))), None)
+            # A conversa desta rodada é a do contato desta rodada: o tenant já
+            # tem histórico e pegar "a primeira" leria a conversa errada.
+            atual = next(
+                (
+                    c
+                    for c in payload
+                    if telefone
+                    in str(((c.get("meta") or {}).get("sender") or {}).get("identifier") or "")
+                ),
+                None,
+            )
             if atual:
                 conversa = atual["id"]
                 mensagens = client.get(

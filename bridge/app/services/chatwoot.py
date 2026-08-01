@@ -6,6 +6,7 @@ As duas ficam aqui para que nenhum outro módulo precise conhecer os detalhes
 de rota ou de cabeçalho do Chatwoot.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -31,13 +32,23 @@ async def _request(
     params: dict | None = None,
 ) -> Any:
     url = f"{settings.chatwoot_base_url.rstrip('/')}{path}"
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.request(
-                method, url, headers={"api_access_token": token}, json=json_body, params=params
-            )
-    except httpx.HTTPError as exc:
-        raise ChatwootError(f"Chatwoot inacessível: {exc}") from exc
+    # Uma segunda tentativa cobre o reset de conexão de quando o Cloud Run
+    # troca de instância; erro de aplicação (4xx/5xx) não é repetido.
+    ultimo: Exception | None = None
+    response = None
+    for tentativa in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                response = await client.request(
+                    method, url, headers={"api_access_token": token}, json=json_body, params=params
+                )
+            break
+        except httpx.HTTPError as exc:
+            ultimo = exc
+            if tentativa == 0:
+                await asyncio.sleep(2)
+    if response is None:
+        raise ChatwootError(f"Chatwoot inacessível: {ultimo}") from ultimo
     if response.status_code >= 400:
         raise ChatwootError(f"Chatwoot respondeu {response.status_code}: {response.text[:400]}")
     if not response.content:
