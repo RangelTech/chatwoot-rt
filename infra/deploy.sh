@@ -4,7 +4,7 @@
 # Espelha o padrão do agent-platform: build por workload no Cloud Build,
 # imagem no Artifact Registry, segredos no Secret Manager, persistência na VPS.
 #
-# Uso: ./infra/deploy.sh [bridge|chatwoot|migrate|all]
+# Uso: ./infra/deploy.sh [bridge|chatwoot|migrate|locale|bootstrap|all]
 set -euo pipefail
 
 PROJECT=eduk-prd-lake
@@ -128,7 +128,18 @@ STORAGE_REGION=us-east-1
 STORAGE_ENDPOINT=https://storage.rangeltech.net
 STORAGE_FORCE_PATH_STYLE=true
 ENABLE_ACCOUNT_SIGNUP=false
+DEFAULT_LOCALE=pt_BR
 EOF
+}
+
+# `DEFAULT_LOCALE` só decide o idioma de conta NOVA — conta que já existe fica
+# com o que foi gravado no cadastro (inglês). Por isso o idioma é acertado nas
+# duas pontas: variável para as próximas, UPDATE para as que já estão lá.
+# Roda junto do deploy porque esquecer disto significa um cliente entrando num
+# painel em inglês no primeiro login, que é justamente o que se quer evitar.
+locale_das_contas() {
+  gcloud run jobs execute chatwoot-migrate --project=$PROJECT --region=$REGION --wait \
+    --args=exec,rails,runner,scripts/ops/locale_pt_br.rb
 }
 
 # Instagram e Facebook usam um único Meta App por instalação (decisão da Fase
@@ -163,8 +174,9 @@ bootstrap_platform() {
 case $target in
   bridge) deploy_bridge ;;
   bootstrap) bootstrap_platform ;;
-  chatwoot) deploy_chatwoot ;;
+  chatwoot) deploy_chatwoot; locale_das_contas ;;
+  locale) locale_das_contas ;;
   migrate) migrate_chatwoot ;;
-  all) migrate_chatwoot; deploy_chatwoot; bootstrap_platform; deploy_bridge ;;
-  *) echo "usage: $0 [bridge|chatwoot|migrate|bootstrap|all]" >&2; exit 1 ;;
+  all) migrate_chatwoot; deploy_chatwoot; locale_das_contas; bootstrap_platform; deploy_bridge ;;
+  *) echo "usage: $0 [bridge|chatwoot|migrate|locale|bootstrap|all]" >&2; exit 1 ;;
 esac
