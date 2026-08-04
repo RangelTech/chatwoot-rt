@@ -217,3 +217,28 @@ async def list_inboxes(account_id: int, token: str) -> list[dict]:
     body = await _request("GET", f"/api/v1/accounts/{account_id}/inboxes", token=token)
     caixas = body.get("payload", body) if isinstance(body, dict) else body
     return caixas or []
+
+
+async def create_agent_bot(account_id: int, name: str, outgoing_url: str) -> dict:
+    """Cria o Agent Bot da conta (Platform API)."""
+    return await _request(
+        "POST",
+        "/platform/api/v1/agent_bots",
+        token=_platform_token(),
+        json_body={"name": name, "outgoing_url": outgoing_url, "account_id": account_id},
+    )
+
+
+async def set_agent_bot(account_id: int, token: str, inbox_id: int, bot_id: int | None) -> dict:
+    """Liga (ou desliga, com None) o bot numa caixa.
+
+    Sem isto o Chatwoot não avisa a ponte quando chega mensagem naquela caixa —
+    e o sintoma é o pior tipo: template escolhido na tela, cliente escrevendo, e
+    silêncio absoluto, sem erro em lugar nenhum.
+    """
+    return await _request(
+        "POST",
+        f"/api/v1/accounts/{account_id}/inboxes/{inbox_id}/set_agent_bot",
+        token=token,
+        json_body={"agent_bot": bot_id},
+    )

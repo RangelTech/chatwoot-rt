@@ -208,11 +208,67 @@ async def set_ai_config(payload: AiConfigIn):
         autopilot=payload.autopilot,
         handoff_team_id=payload.handoff_team_id,
     )
+    bot = await _garante_bot_na_caixa(
+        payload.tenant_id,
+        payload.chatwoot_inbox_id,
+        ligado=bool(payload.template_id and payload.autopilot),
+    )
     return {
         "status": "ok",
         "autopilot": config["autopilot"],
         "has_integration_key": bool(config["integration_key_encrypted"]),
+        "agent_bot": bot,
     }
+
+
+async def _garante_bot_na_caixa(tenant_id: str, inbox_id: int | None, *, ligado: bool) -> str:
+    """Associa (ou desassocia) o Agent Bot da conta nesta caixa.
+
+    Escolher o agente na tela não basta: o Chatwoot só avisa a ponte de uma
+    mensagem se houver um Agent Bot associado ÀQUELA caixa. A ponte fazia isso
+    apenas nas caixas que ela mesma criava (W-API) — e o desenho da instalação é
+    o oposto: o cliente conecta Instagram, Messenger ou WhatsApp oficial dentro
+    do Chatwoot, e essas caixas nasciam sem bot. O sintoma é o pior possível:
+    agente configurado, cliente escrevendo, silêncio, e nenhum erro em lugar
+    nenhum.
+
+    Falhar aqui não desfaz a configuração — ela é válida e o vínculo pode ser
+    refeito. Por isso o erro vira estado devolvido, não exceção.
+    """
+    if inbox_id is None:
+        return "sem caixa (config padrão do tenant)"
+
+    link = tenants.get_tenant_link(tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        return "tenant sem conta no Chatwoot"
+    admin_link = _first_admin(tenant_id)
+    if admin_link is None:
+        return "tenant sem usuário provisionado"
+
+    account_id = int(link["chatwoot_account_id"])
+    try:
+        token = await chatwoot.user_access_token(int(admin_link["chatwoot_user_id"]))
+        bot_id = link["chatwoot_agent_bot_id"]
+        if ligado and not bot_id:
+            # Um bot por conta: o Chatwoot não deduplica por nome, e criar um a
+            # cada vinculação encheria a conta de bots órfãos.
+            bot = await chatwoot.create_agent_bot(
+                account_id,
+                name=f"IA {link['tenant_name'] or link['tenant_key']}".strip()[:60],
+                outgoing_url=f"{settings.bridge_public_url.rstrip('/')}/agent-bot",
+            )
+            bot_id = int(bot["id"])
+            tenants.set_agent_bot_id(tenant_id, bot_id)
+        if ligado and bot_id:
+            await chatwoot.set_agent_bot(account_id, token, inbox_id, int(bot_id))
+            return "ligado"
+        if not ligado and bot_id:
+            await chatwoot.set_agent_bot(account_id, token, inbox_id, None)
+            return "desligado"
+        return "sem bot"
+    except chatwoot.ChatwootError as exc:
+        logger.warning("falha ao associar o Agent Bot na inbox %s: %s", inbox_id, exc)
+        return f"erro: {exc}"
 
 
 def _first_admin(tenant_id: str) -> dict | None:

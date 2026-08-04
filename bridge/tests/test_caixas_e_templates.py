@@ -143,3 +143,130 @@ def test_caixa_sem_config_cai_no_padrao_do_tenant(client, admin_auth, tenant_id,
     corpo = client.get(f"/admin/ai-config/{tenant_id}", headers=admin_auth).json()
     assert corpo["default"]["template_id"] == "33333333-3333-3333-3333-333333333333"
     assert all(c["inherits_default"] for c in corpo["inboxes"])
+
+
+def test_vincular_agente_associa_o_bot_na_caixa(client, admin_auth, tenant_id, monkeypatch):
+    """Escolher o template na tela não basta: sem Agent Bot associado ÀQUELA
+    caixa, o Chatwoot nunca avisa a ponte. Era o caso de toda caixa criada
+    dentro do Chatwoot — Instagram, Messenger, WhatsApp oficial — e o sintoma
+    era silêncio absoluto, sem erro em lugar nenhum."""
+    from app.services import chatwoot
+
+    criados, associados = [], []
+
+    async def falso_token(_user_id):
+        return "token-de-conta"
+
+    async def falso_create_bot(account_id, name, outgoing_url):
+        criados.append((account_id, name))
+        return {"id": 77}
+
+    async def falso_set_bot(account_id, token, inbox_id, bot_id):
+        associados.append((inbox_id, bot_id))
+        return {}
+
+    monkeypatch.setattr(chatwoot, "user_access_token", falso_token)
+    monkeypatch.setattr(chatwoot, "create_agent_bot", falso_create_bot)
+    monkeypatch.setattr(chatwoot, "set_agent_bot", falso_set_bot)
+
+    _tenant_com_usuario(tenant_id)
+    corpo = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={
+            "tenant_id": tenant_id,
+            "chatwoot_inbox_id": 22,
+            "template_id": "11111111-1111-1111-1111-111111111111",
+            "integration_key": "chave",
+        },
+    ).json()
+
+    assert corpo["agent_bot"] == "ligado"
+    assert associados == [(22, 77)]
+
+    # Segunda caixa reaproveita o bot da conta: criar um por vinculação encheria
+    # a conta do cliente de bots órfãos.
+    client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={
+            "tenant_id": tenant_id,
+            "chatwoot_inbox_id": 33,
+            "template_id": "22222222-2222-2222-2222-222222222222",
+        },
+    )
+    assert len(criados) == 1
+    assert associados[-1] == (33, 77)
+
+
+def test_tirar_o_agente_desassocia_o_bot(client, admin_auth, tenant_id, monkeypatch):
+    """"Somente atendimento humano" precisa realmente calar a IA na caixa."""
+    from app.services import chatwoot
+
+    associados = []
+
+    async def falso_token(_user_id):
+        return "token-de-conta"
+
+    async def falso_create_bot(account_id, name, outgoing_url):
+        return {"id": 77}
+
+    async def falso_set_bot(account_id, token, inbox_id, bot_id):
+        associados.append((inbox_id, bot_id))
+        return {}
+
+    monkeypatch.setattr(chatwoot, "user_access_token", falso_token)
+    monkeypatch.setattr(chatwoot, "create_agent_bot", falso_create_bot)
+    monkeypatch.setattr(chatwoot, "set_agent_bot", falso_set_bot)
+
+    _tenant_com_usuario(tenant_id)
+    client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={
+            "tenant_id": tenant_id,
+            "chatwoot_inbox_id": 44,
+            "template_id": "11111111-1111-1111-1111-111111111111",
+            "integration_key": "chave",
+        },
+    )
+    corpo = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={"tenant_id": tenant_id, "chatwoot_inbox_id": 44, "template_id": None},
+    ).json()
+
+    assert corpo["agent_bot"] == "desligado"
+    assert associados[-1] == (44, None)
+
+
+def test_falha_ao_associar_o_bot_nao_perde_a_config(
+    client, admin_auth, tenant_id, monkeypatch
+):
+    """O vínculo é válido mesmo se o Chatwoot estiver fora do ar na hora; o que
+    não pode é a tela dizer "salvo" sem contar que o bot não entrou."""
+    from app.services import chatwoot
+
+    async def falso_token(_user_id):
+        raise chatwoot.ChatwootError("Chatwoot fora do ar")
+
+    monkeypatch.setattr(chatwoot, "user_access_token", falso_token)
+
+    _tenant_com_usuario(tenant_id)
+    corpo = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={
+            "tenant_id": tenant_id,
+            "chatwoot_inbox_id": 55,
+            "template_id": "11111111-1111-1111-1111-111111111111",
+            "integration_key": "chave",
+        },
+    ).json()
+
+    assert corpo["status"] == "ok"
+    assert corpo["agent_bot"].startswith("erro")
+
+    from app.services import tenants
+
+    assert tenants.ai_config_for(tenant_id, 55)["template_id"]

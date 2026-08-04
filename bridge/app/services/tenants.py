@@ -240,3 +240,11 @@ def set_conversation_state(
 
 def new_session_id() -> str:
     return secrets.token_urlsafe(12)
+
+
+def set_agent_bot_id(tenant_id: str, bot_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE tenant_links SET chatwoot_agent_bot_id = %s WHERE tenant_id = %s",
+            (bot_id, tenant_id),
+        )

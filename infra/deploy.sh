@@ -137,8 +137,48 @@ EOF
 # Roda junto do deploy porque esquecer disto significa um cliente entrando num
 # painel em inglês no primeiro login, que é justamente o que se quer evitar.
 locale_das_contas() {
-  gcloud run jobs execute chatwoot-migrate --project=$PROJECT --region=$REGION --wait \
-    --args=exec,rails,runner,scripts/ops/locale_pt_br.rb
+  roda_tarefa scripts/ops/locale_pt_br.rb
+}
+
+# Roda um script Ruby dentro do Chatwoot, com a imagem e o ambiente DESTE deploy.
+#
+# Antes isto reaproveitava o job `chatwoot-migrate` com um `jobs execute` seco, e
+# esse job carregava o ambiente do dia em que foi criado: ele ainda trazia
+# `S3_BUCKET_NAME`, nome que o Chatwoot deixou de usar, então todo script morria
+# no boot com "missing required option :name" — antes de executar uma linha.
+# Um `jobs deploy` idempotente custa alguns segundos e elimina a classe inteira
+# de "o job está velho".
+roda_tarefa() {
+  local script=$1
+  # A imagem é a que o serviço está servindo, não a do commit local: uma tarefa
+  # avulsa (`deploy.sh locale`, `deploy.sh sync-secrets`) roda sem build, e
+  # apontar para o SHA local pediria uma imagem que pode nunca ter sido
+  # construída. Rodar contra o que está no ar também é o que se quer: é esse o
+  # código que vai ler a configuração escrita agora.
+  local imagem
+  imagem=$(gcloud run services describe chatwoot-web --project=$PROJECT --region=$REGION \
+    --format='value(spec.template.spec.containers[0].image)' 2>/dev/null)
+  imagem=${imagem:-$REPO/chatwoot-rt:$SHORT_SHA}
+  gcloud run jobs deploy chatwoot-tarefas \
+    --project=$PROJECT --region=$REGION \
+    --image="$imagem" \
+    --service-account=$RUNTIME_SA \
+    --set-secrets="$(chatwoot_secrets),PLATFORM_SYNC_TOKEN=chatwoot-bridge-admin-token:latest" \
+    --set-env-vars="$(chatwoot_env),PLATFORM_URL=$(agent_platform_url)" \
+    --command=bundle --args="exec,rails,runner,${script}" \
+    --max-retries=1 --task-timeout=900 \
+    --execute-now --wait
+}
+
+# Puxa do cofre da plataforma as chaves destinadas ao Chatwoot (app da Meta) e
+# grava no InstallationConfig. Roda no deploy e pode rodar sozinho depois que
+# alguém cadastra uma chave nova na tela — sem redeploy.
+sync_secrets() {
+  if [ -z "$(agent_platform_url)" ]; then
+    echo "AVISO: agent-platform não encontrado; pulei a sincronia de chaves" >&2
+    return 0
+  fi
+  roda_tarefa scripts/ops/sync_installation_config.rb
 }
 
 # Instagram e Facebook usam um único Meta App por instalação (decisão da Fase
