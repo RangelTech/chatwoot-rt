@@ -144,6 +144,20 @@ def upsert_ai_config(
     handoff_team_id: int | None = None,
 ) -> dict:
     with get_connection() as conn:
+        # Caixa nova configurada pela tela não traz chave de integração: quem
+        # escolhe o template na UI não deveria precisar saber que existe uma.
+        # Herdar a chave que o tenant já usa é o que faz a IA responder ali;
+        # sem isso a caixa fica configurada e muda.
+        if not integration_key:
+            herdada = conn.execute(
+                """SELECT integration_key_encrypted FROM tenant_ai_config
+                    WHERE tenant_id = %s AND integration_key_encrypted IS NOT NULL
+                    ORDER BY (chatwoot_inbox_id IS NULL) DESC, updated_at DESC
+                    LIMIT 1""",
+                (tenant_id,),
+            ).fetchone()
+            if herdada:
+                integration_key = decrypt(herdada["integration_key_encrypted"])
         return conn.execute(
             """INSERT INTO tenant_ai_config (tenant_id, chatwoot_inbox_id, template_id,
                                              integration_key_encrypted, autopilot, handoff_team_id)

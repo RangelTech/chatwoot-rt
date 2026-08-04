@@ -204,3 +204,16 @@ async def toggle_status(account_id: int, token: str, conversation_id: int, statu
         token=token,
         json_body={"status": status},
     )
+
+
+async def list_inboxes(account_id: int, token: str) -> list[dict]:
+    """Caixas de atendimento da conta, como o Chatwoot as conhece.
+
+    A ponte guarda só as caixas que ela mesma criou (`tenant_channels`). Quem
+    conecta um Instagram ou um site pelo próprio Chatwoot cria caixa que a ponte
+    nunca viu — e é justamente nessas que alguém vai querer ligar a IA. Listar
+    do Chatwoot é a única leitura que enxerga as duas origens.
+    """
+    body = await _request("GET", f"/api/v1/accounts/{account_id}/inboxes", token=token)
+    caixas = body.get("payload", body) if isinstance(body, dict) else body
+    return caixas or []

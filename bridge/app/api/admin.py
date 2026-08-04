@@ -226,3 +226,65 @@ def _first_admin(tenant_id: str) -> dict | None:
                 LIMIT 1""",
             (tenant_id,),
         ).fetchone()
+
+
+@router.get("/ai-config/{tenant_id}", dependencies=[Depends(require_admin)])
+async def list_ai_config(tenant_id: str):
+    """Caixas do tenant e qual template atende cada uma.
+
+    Um tenant tem várias caixas — WhatsApp, Instagram, site — e cada uma pode
+    ser atendida por um agente diferente. A configuração por caixa já existia no
+    banco; faltava alguém conseguir ver e escolher sem chamar a API na unha.
+
+    A lista vem do Chatwoot, não da ponte: caixa criada dentro do próprio
+    Chatwoot (um Instagram conectado pela tela) não passa por aqui, e é
+    exatamente onde alguém vai querer ligar a IA.
+    """
+    link = tenants.get_tenant_link(tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        raise HTTPException(status_code=404, detail="tenant sem conta no Chatwoot")
+
+    admin_link = _first_admin(tenant_id)
+    if admin_link is None:
+        raise HTTPException(status_code=409, detail="tenant sem usuário provisionado")
+
+    token = await chatwoot.user_access_token(int(admin_link["chatwoot_user_id"]))
+    caixas = await chatwoot.list_inboxes(int(link["chatwoot_account_id"]), token)
+
+    from app.db import get_connection
+
+    with get_connection() as conn:
+        configs = conn.execute(
+            "SELECT * FROM tenant_ai_config WHERE tenant_id = %s", (tenant_id,)
+        ).fetchall()
+    por_inbox = {c["chatwoot_inbox_id"]: c for c in configs}
+    # Config com inbox NULL é o padrão do tenant: vale para caixa que ninguém
+    # configurou. Mostrá-la como "herdado" evita a leitura errada de que a caixa
+    # está sem IA quando ela na verdade cai no padrão.
+    padrao = por_inbox.get(None)
+
+    return {
+        "default": _ai_config_out(padrao) if padrao else None,
+        "inboxes": [
+            {
+                "chatwoot_inbox_id": int(caixa["id"]),
+                "name": caixa.get("name", ""),
+                "channel_type": caixa.get("channel_type", ""),
+                "ai": _ai_config_out(por_inbox.get(int(caixa["id"]))),
+                "inherits_default": int(caixa["id"]) not in por_inbox and padrao is not None,
+            }
+            for caixa in caixas
+        ],
+    }
+
+
+def _ai_config_out(config: dict | None) -> dict | None:
+    if config is None:
+        return None
+    return {
+        "template_id": str(config["template_id"]) if config["template_id"] else None,
+        "autopilot": config["autopilot"],
+        "handoff_team_id": config["handoff_team_id"],
+        # A chave nunca volta: o que interessa a quem lê é se existe.
+        "has_integration_key": bool(config["integration_key_encrypted"]),
+    }
