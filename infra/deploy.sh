@@ -4,7 +4,7 @@
 # Espelha o padrão do agent-platform: build por workload no Cloud Build,
 # imagem no Artifact Registry, segredos no Secret Manager, persistência na VPS.
 #
-# Uso: ./infra/deploy.sh [bridge|chatwoot|migrate|locale|bootstrap|all]
+# Uso: ./infra/deploy.sh [bridge|chatwoot|migrate|locale|sync-secrets|bootstrap|all]
 set -euo pipefail
 
 PROJECT=eduk-prd-lake
@@ -98,10 +98,9 @@ agent_platform_url() {
 }
 
 chatwoot_secrets() {
-  local base="POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest"
-  local meta
-  meta=$(meta_secrets)
-  echo "${base}${meta:+,$meta}"
+  # Só bootstrap: banco, sessão, fila e storage. Chave de canal vem do cofre da
+  # plataforma pelo passo `sync-secrets`.
+  echo "POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest"
 }
 
 # O TLS da VPS usa certificado próprio: o tráfego é cifrado, mas a cadeia não
@@ -143,8 +142,16 @@ locale_das_contas() {
 }
 
 # Instagram e Facebook usam um único Meta App por instalação (decisão da Fase
-# 2): cada tenant conecta a própria página dentro dele. Sem os segredos
-# cadastrados, o deploy segue sem os canais Meta em vez de falhar.
+# 2): cada tenant conecta a própria página dentro dele.
+#
+# As chaves NÃO entram mais como variável de ambiente. O `GlobalConfigService`
+# do Chatwoot faz `ENV.fetch(chave) { banco }` — o ambiente vence — e enquanto
+# a env existisse, a chave cadastrada na tela da plataforma não teria efeito
+# nenhum. Elas vão para o `InstallationConfig` pelo passo `sync-secrets`, e é
+# por isso que trocar uma chave deixou de exigir redeploy.
+#
+# A função continua aqui só para o caso de alguém ter criado os segredos no
+# cofre da nuvem antes desta mudança: ela não é mais chamada.
 meta_secrets() {
   local parts=""
   for pair in "FB_APP_ID=chatwoot-meta-app-id"               "FB_APP_SECRET=chatwoot-meta-app-secret"               "FB_VERIFY_TOKEN=chatwoot-meta-verify-token"               "IG_VERIFY_TOKEN=chatwoot-meta-verify-token"; do
@@ -174,9 +181,10 @@ bootstrap_platform() {
 case $target in
   bridge) deploy_bridge ;;
   bootstrap) bootstrap_platform ;;
-  chatwoot) deploy_chatwoot; locale_das_contas ;;
+  chatwoot) deploy_chatwoot; locale_das_contas; sync_secrets ;;
   locale) locale_das_contas ;;
+  sync-secrets) sync_secrets ;;
   migrate) migrate_chatwoot ;;
-  all) migrate_chatwoot; deploy_chatwoot; locale_das_contas; bootstrap_platform; deploy_bridge ;;
-  *) echo "usage: $0 [bridge|chatwoot|migrate|locale|bootstrap|all]" >&2; exit 1 ;;
+  all) migrate_chatwoot; deploy_chatwoot; locale_das_contas; sync_secrets; bootstrap_platform; deploy_bridge ;;
+  *) echo "usage: $0 [bridge|chatwoot|migrate|locale|sync-secrets|bootstrap|all]" >&2; exit 1 ;;
 esac
