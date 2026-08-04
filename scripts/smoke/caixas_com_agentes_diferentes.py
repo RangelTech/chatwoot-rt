@@ -239,22 +239,24 @@ def main() -> int:
     if not check("usuário espelhado no Chatwoot", bool(agente_token)):
         return 1
 
-    bot = client.post(
-        f"{CHATWOOT}/platform/api/v1/agent_bots",
-        headers=platform_headers,
-        json={
-            "name": f"IA QA {sufixo}",
-            "outgoing_url": f"{BRIDGE}/agent-bot",
-            "account_id": account_id,
-        },
+    # Nenhum agent bot é criado ou associado aqui de propósito: quem faz isso é
+    # a própria vinculação do template. Um cliente que conecta o Instagram
+    # dentro do Chatwoot e escolhe o agente na nossa tela não vai chamar a
+    # Platform API na mão — e enquanto a ponte só associava o bot às caixas que
+    # ela mesma criava, essa caixa ficava em silêncio absoluto.
+    caixas_no_chatwoot = client.get(
+        f"{CHATWOOT}/api/v1/accounts/{account_id}/inboxes",
+        headers={"api_access_token": agente_token},
     ).json()
-    for caixa in (caixa_a, caixa_b):
-        client.post(
-            f"{CHATWOOT}/api/v1/accounts/{account_id}/inboxes/"
-            f"{caixa['chatwoot_inbox_id']}/set_agent_bot",
-            headers={"api_access_token": agente_token},
-            json={"agent_bot": bot.get("id")},
-        )
+    por_id = {int(c["id"]): c for c in (caixas_no_chatwoot.get("payload") or caixas_no_chatwoot)}
+    check(
+        "as duas caixas existem no Chatwoot",
+        all(caixa["chatwoot_inbox_id"] in por_id for caixa in (caixa_a, caixa_b)),
+    )
+    # A prova de que o bot foi associado é a resposta chegar: o Chatwoot só
+    # avisa a ponte quando existe Agent Bot naquela caixa. Se a associação
+    # automática não tivesse acontecido, as duas checagens de resposta abaixo
+    # falhariam por timeout — que é exatamente o sintoma que este teste protege.
 
     respostas = {}
     for rotulo, caixa, pergunta in (
