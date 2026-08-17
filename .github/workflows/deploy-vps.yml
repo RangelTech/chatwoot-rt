@@ -1,0 +1,64 @@
+name: Deploy Chatwoot+bridge to VPS
+
+# agent-llm mega spec (infra-04): chatwoot-web/worker/bridge saem do Cloud Run
+# e passam a rodar na VPS rangeltech.net, junto do resto do stack RT.
+#
+# Pré-requisito único de bootstrap (não coberto aqui): infra/.env.prod já
+# existir na VPS em /opt/platform/chatwoot/infra/.env.prod, preenchido a
+# partir de infra/.env.prod.example.
+#
+# Migração de schema (db:chatwoot_prepare) é passo manual explícito — ver
+# comentário no docker-compose.prod.yml — não roda automaticamente aqui de
+# propósito (docs/decisions/0001-boundaries.md, item 6: nunca migrar no boot,
+# nunca automático demais pra rodar concorrente sem querer).
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [master, main]
+    paths:
+      - "chatwoot/**"
+      - "bridge/**"
+      - "infra/docker-compose.prod.yml"
+      - ".github/workflows/deploy-vps.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/vps_rt_infra_ed25519
+          chmod 600 ~/.ssh/vps_rt_infra_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Ensure remote directory exists
+        run: |
+          ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
+            "mkdir -p /opt/platform/chatwoot"
+
+      - name: Rsync source to VPS
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/vps_rt_infra_ed25519" \
+            --exclude ".env.prod" \
+            chatwoot bridge scripts infra \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/platform/chatwoot/"
+
+      - name: Build and restart
+        run: |
+          ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod build && docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --remove-orphans"
+
+      - name: Smoke check
+        run: |
+          ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
+            "curl -fsS -o /dev/null -w 'web=%{http_code}\n' http://localhost:3000/ || true; curl -fsS -o /dev/null -w 'bridge=%{http_code}\n' http://localhost:8100/ || true"

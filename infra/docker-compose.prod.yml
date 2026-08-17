@@ -1,0 +1,91 @@
+# Produção na VPS rangeltech.net (agent-llm mega spec, infra-04).
+# web + worker (Sidekiq) + bridge, entrando na rede Docker externa do
+# vps_rt_infra (precisa desse stack já de pé).
+#
+# Simplificação feita nesta migração (registrada em infra-04): Postgres e
+# Redis eram acessados por IP público + TLS de certificado próprio
+# (66.94.101.153:5433, rediss://...) porque o Chatwoot rodava fora da VPS
+# (Cloud Run). Rodando na mesma VPS agora, o tráfego vira rede interna do
+# Docker (nomes de serviço `postgres`/`redis`, sem TLS necessário) — mais
+# simples e sem exposição pública desnecessária desses dois bancos.
+#
+# Migração de schema é passo EXPLÍCITO (docs/decisions/0001-boundaries.md,
+# item 6) — nunca no boot do container. Rodar manualmente após o primeiro
+# `up`, e depois de qualquer upgrade de versão do Chatwoot:
+#   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
+#     run --rm chatwoot-web bundle exec rails db:chatwoot_prepare
+#
+# Deploy real via pipeline do vps_rt_infra/CI, não SSH manual.
+services:
+  chatwoot-web:
+    build:
+      context: ..
+      dockerfile: chatwoot/Dockerfile
+    container_name: chatwoot-web
+    restart: unless-stopped
+    command: ./rt-web.sh
+    env_file:
+      - .env.prod
+    networks:
+      - internal
+      - public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=public
+      - traefik.http.routers.chatwoot-web.rule=Host(`${CHATWOOT_DOMAIN:-chat.rangeltech.net}`)
+      - traefik.http.routers.chatwoot-web.entrypoints=websecure
+      - traefik.http.routers.chatwoot-web.tls.certresolver=letsencrypt
+      - traefik.http.routers.chatwoot-web.middlewares=security-headers@file
+      - traefik.http.services.chatwoot-web.loadbalancer.server.port=3000
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  chatwoot-worker:
+    build:
+      context: ..
+      dockerfile: chatwoot/Dockerfile
+    container_name: chatwoot-worker
+    restart: unless-stopped
+    command: ./rt-worker.sh
+    env_file:
+      - .env.prod
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  chatwoot-bridge:
+    build:
+      context: ..
+      dockerfile: bridge/Dockerfile
+    container_name: chatwoot-bridge
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    networks:
+      - internal
+      - public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=public
+      - traefik.http.routers.chatwoot-bridge.rule=Host(`${BRIDGE_DOMAIN:-bridge.rangeltech.net}`)
+      - traefik.http.routers.chatwoot-bridge.entrypoints=websecure
+      - traefik.http.routers.chatwoot-bridge.tls.certresolver=letsencrypt
+      - traefik.http.routers.chatwoot-bridge.middlewares=security-headers@file
+      - traefik.http.services.chatwoot-bridge.loadbalancer.server.port=8100
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  internal:
+    name: internal
+    external: true
+  public:
+    name: public
+    external: true
