@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from app.api import admin, agent_bot, outbound, webhooks
+from app.config import settings
 from app.db import get_connection
 
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +42,14 @@ def run_migrations() -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Sem isso, credencial de canal (token W-API etc.) seria cifrada com a
+    # chave derivada pública do código-fonte — parece protegido, não está.
+    if settings.environment == "production" and not settings.encryption_key.strip():
+        raise RuntimeError(
+            "ENCRYPTION_KEY é obrigatória com ENVIRONMENT=production — "
+            "sem ela, credenciais de canal seriam cifradas com a chave de "
+            "desenvolvimento conhecida no código-fonte."
+        )
     applied = run_migrations()
     if applied:
         logger.info("migrações aplicadas: %s", applied)

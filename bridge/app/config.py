@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://bridge:bridge@localhost:5432/chatwoot_bridge"
     port: int = 8100
     db_connect_timeout: int = 5
+    # "production" trava o boot sem ENCRYPTION_KEY (ver main.py); qualquer
+    # outro valor (default de dev/teste) mantém a chave derivada com aviso.
+    environment: str = "development"
 
     # Chatwoot
     chatwoot_base_url: str = "http://localhost:3000"
@@ -20,8 +23,6 @@ class Settings(BaseSettings):
 
     # agent-platform (sistema mestre): identidade, tenants e kernel de IA.
     agent_platform_url: str = ""
-    # Chave de serviço usada nas chamadas máquina-a-máquina para a plataforma.
-    agent_platform_api_key: str = ""
 
     # Chave mestra Fernet para credenciais de canal em repouso.
     encryption_key: str = ""
