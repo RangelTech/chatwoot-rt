@@ -3,9 +3,10 @@ name: Deploy Chatwoot+bridge to VPS
 # agent-llm mega spec (infra-04): chatwoot-web/worker/bridge saem do Cloud Run
 # e passam a rodar na VPS rangeltech.net, junto do resto do stack RT.
 #
-# Pré-requisito único de bootstrap (não coberto aqui): infra/.env.prod já
-# existir na VPS em /opt/platform/chatwoot/infra/.env.prod, preenchido a
-# partir de infra/.env.prod.example.
+# Pré-requisito único de bootstrap (não coberto aqui): infra/.env.prod.chatwoot
+# e infra/.env.prod.bridge já existirem na VPS em
+# /opt/platform/chatwoot/infra/, preenchidos a partir dos .example
+# correspondentes. São arquivos SEPARADOS de propósito (ver docker-compose.prod.yml).
 #
 # Migração de schema (db:chatwoot_prepare) é passo manual explícito — ver
 # comentário no docker-compose.prod.yml — não roda automaticamente aqui de
@@ -47,7 +48,7 @@ jobs:
         run: |
           rsync -az --delete \
             -e "ssh -i ~/.ssh/vps_rt_infra_ed25519" \
-            --exclude ".env.prod" \
+            --exclude ".env.prod.chatwoot" --exclude ".env.prod.bridge" \
             chatwoot bridge scripts infra \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/platform/chatwoot/"
 
@@ -55,7 +56,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/vps_rt_infra_ed25519 \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod build && docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --remove-orphans"
+            "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml build && docker compose -f infra/docker-compose.prod.yml up -d --remove-orphans"
 
       - name: Smoke check
         run: |
