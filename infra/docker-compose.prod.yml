@@ -26,6 +26,11 @@ services:
     command: ./rt-web.sh
     env_file:
       - .env.prod
+    environment:
+      # PORT é da bridge no .env.prod compartilhado (8100) — web/worker usam
+      # o default do Chatwoot (3000). Sem isso, PORT=8100 vaza pra cá via
+      # env_file e o Puma sobe na porta errada (Traefik espera 3000).
+      PORT: "3000"
     networks:
       - internal
       - public
