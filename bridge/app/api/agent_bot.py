@@ -100,6 +100,25 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
             state="ai_active",
             session_id=session_id,
         )
+        # Atribui a conversa à "Fila IA" só na primeira mensagem (state_row
+        # ainda não existia): a partir daí ela já fica no Team enquanto
+        # continuar em ai_active, e chamar de novo a cada resposta seria 1
+        # request HTTP a mais por mensagem sem necessidade nenhuma — o
+        # Chatwoot não muda nada se o Team já é o mesmo, mas o custo é
+        # nosso. Quando a Seção 2 desta spec (macro "Devolver para IA")
+        # entrar, o retorno human_active -> ai_active precisa reatribuir de
+        # novo; este `if` deixa de bastar sozinho e passa a precisar também
+        # cobrir esse caminho (ex.: um "veio_de_handoff" explícito).
+        ai_team_id = (config or {}).get("ai_team_id")
+        if ai_team_id and state_row is None:
+            try:
+                await chatwoot.assign_team(
+                    account_id, token, conversation_id, int(ai_team_id)
+                )
+            except chatwoot.ChatwootError as exc:
+                logger.warning(
+                    "falha ao atribuir a Fila IA na conversa %s: %s", conversation_id, exc
+                )
 
 
 async def _escalate(

@@ -201,6 +201,41 @@ def ai_config_for(tenant_id: str, inbox_id: int | None) -> dict | None:
     return row
 
 
+def set_default_teams(tenant_id: str, *, ai_team_id: int, handoff_team_id: int) -> dict:
+    """Preenche a config padrão do tenant (chatwoot_inbox_id IS NULL) com os
+    dois Teams criados no provisionamento — "Fila IA" e "Fila Humano".
+
+    UPDATE explícito, não `INSERT ... ON CONFLICT (tenant_id, chatwoot_inbox_id)`:
+    a UNIQUE constraint dessa tabela não trata dois NULLs como duplicata (regra
+    do SQL), então um ON CONFLICT aqui criaria uma linha nova de config padrão
+    a cada chamada em vez de atualizar a existente — bug fácil de não notar
+    porque `ai_config_for` some sem erro nenhum, só passa a devolver a
+    linha errada.
+
+    COALESCE preserva um valor manual já configurado (ex.: alguém trocou o
+    `handoff_team_id` pela tela antes deste provisionamento retroativo rodar).
+    """
+    with get_connection() as conn:
+        updated = conn.execute(
+            """UPDATE tenant_ai_config
+                  SET ai_team_id = COALESCE(ai_team_id, %s),
+                      handoff_team_id = COALESCE(handoff_team_id, %s),
+                      updated_at = now()
+                WHERE tenant_id = %s AND chatwoot_inbox_id IS NULL
+                RETURNING *""",
+            (ai_team_id, handoff_team_id, tenant_id),
+        ).fetchone()
+        if updated:
+            return updated
+        return conn.execute(
+            """INSERT INTO tenant_ai_config (tenant_id, chatwoot_inbox_id,
+                                             ai_team_id, handoff_team_id)
+               VALUES (%s, NULL, %s, %s)
+               RETURNING *""",
+            (tenant_id, ai_team_id, handoff_team_id),
+        ).fetchone()
+
+
 def conversation_state(tenant_id: str, conversation_id: int) -> dict | None:
     with get_connection() as conn:
         return conn.execute(

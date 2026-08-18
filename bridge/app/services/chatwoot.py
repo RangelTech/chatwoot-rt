@@ -188,6 +188,17 @@ async def create_message(
     )
 
 
+async def create_team(account_id: int, token: str, name: str) -> dict:
+    """Team da conta (Application API — precisa de token de usuário da conta,
+    não do token de plataforma: Teams não existem na Platform API)."""
+    return await _request(
+        "POST",
+        f"/api/v1/accounts/{account_id}/teams",
+        token=token,
+        json_body={"name": name},
+    )
+
+
 async def assign_team(account_id: int, token: str, conversation_id: int, team_id: int) -> dict:
     return await _request(
         "POST",

@@ -3,10 +3,11 @@ name: Deploy Chatwoot+bridge to VPS
 # agent-llm mega spec (infra-04): chatwoot-web/worker/bridge saem do Cloud Run
 # e passam a rodar na VPS rangeltech.net, junto do resto do stack RT.
 #
-# Pré-requisito único de bootstrap (não coberto aqui): infra/.env.prod.chatwoot
-# e infra/.env.prod.bridge já existirem na VPS em
-# /opt/platform/chatwoot/infra/, preenchidos a partir dos .example
-# correspondentes. São arquivos SEPARADOS de propósito (ver docker-compose.prod.yml).
+# infra/.env.prod.chatwoot é renderizado automaticamente a cada deploy (step
+# "Render .env.prod.chatwoot on VPS", infra-07) — sobrescrita completa, não
+# incremental. infra/.env.prod.bridge continua sendo pré-requisito manual de
+# bootstrap na VPS, preenchido a partir do .example correspondente. São
+# arquivos SEPARADOS de propósito (ver docker-compose.prod.yml).
 #
 # Migração de schema (db:chatwoot_prepare) é passo manual explícito — ver
 # comentário no docker-compose.prod.yml — não roda automaticamente aqui de
@@ -51,6 +52,48 @@ jobs:
             --exclude ".env.prod.chatwoot" --exclude ".env.prod.bridge" \
             chatwoot bridge scripts infra \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/platform/chatwoot/"
+
+      - name: Render .env.prod.chatwoot on VPS
+        # infra-07 (personal-skills/mega-spec-agent-llm): sobrescrita completa
+        # do arquivo a cada deploy — não é mais bootstrap manual único.
+        # FB_*/IG_* vêm de GitHub Actions Variables (vars.*), não Secrets,
+        # por decisão explícita do dono (vars dão pra ver/editar em texto).
+        # Os demais valores replicam o que já roda em produção hoje.
+        run: |
+          ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
+            "mkdir -p /opt/platform/chatwoot/infra && cat > /opt/platform/chatwoot/infra/.env.prod.chatwoot" <<'ENVEOF'
+          RAILS_ENV=production
+          NODE_ENV=production
+          INSTALLATION_ENV=docker
+          RAILS_LOG_TO_STDOUT=true
+
+          POSTGRES_HOST=postgres
+          POSTGRES_PORT=5432
+          POSTGRES_DATABASE=chatwoot_prod
+          POSTGRES_USERNAME=chatwoot_app
+          POSTGRES_PASSWORD=de8096afab4afb53fee29f843ed7f8503517a5e1a0648e40
+
+          SECRET_KEY_BASE=174463f81aadf50c247a8e3f4823245d9481a598836c7cac302cb7fef2a9c1973ee3c28b9c8e9d9450b637d6ec1ac21ec390741381c01a0c07181ea7975890d4
+          REDIS_URL=redis://:niiiiFlicXG7L2QM!%24jz46F%5EkMqr@redis:6379/1
+
+          FRONTEND_URL=https://chat.rangeltech.net
+          ACTIVE_STORAGE_SERVICE=s3_compatible
+          STORAGE_BUCKET_NAME=chatwoot
+          STORAGE_REGION=us-east-1
+          STORAGE_ENDPOINT=https://storage.rangeltech.net
+          STORAGE_FORCE_PATH_STYLE=true
+          STORAGE_ACCESS_KEY_ID=minioadmin
+          STORAGE_SECRET_ACCESS_KEY=WW9i=C$Nui21hw@p$_6vok4Uc)vw
+
+          ENABLE_ACCOUNT_SIGNUP=false
+          DEFAULT_LOCALE=pt_BR
+
+          FB_APP_ID=${{ vars.FB_APP_ID }}
+          FB_APP_SECRET=${{ vars.FB_APP_SECRET }}
+          FB_VERIFY_TOKEN=${{ vars.FB_VERIFY_TOKEN }}
+          IG_VERIFY_TOKEN=${{ vars.IG_VERIFY_TOKEN }}
+          ENVEOF
 
       - name: Build and restart
         run: |

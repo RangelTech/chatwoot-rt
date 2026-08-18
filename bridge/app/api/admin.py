@@ -72,6 +72,11 @@ async def provision_tenant(payload: TenantIn):
         tenant_name=payload.tenant_name,
     )
     if link["chatwoot_account_id"]:
+        # Idempotente também para os Teams: cobre o provisionamento
+        # retroativo (rodar de novo pra tenant que já existia antes desta
+        # feature) e o caso comum de a Account já existir mas o admin ainda
+        # não (ver _ensure_default_teams).
+        await _ensure_default_teams(payload.tenant_id)
         return {
             "status": "ok",
             "chatwoot_account_id": link["chatwoot_account_id"],
@@ -83,7 +88,64 @@ async def provision_tenant(payload: TenantIn):
     if not account_id:
         raise HTTPException(status_code=502, detail="Chatwoot não devolveu id da conta")
     link = tenants.set_chatwoot_account(payload.tenant_id, int(account_id))
+    await _ensure_default_teams(payload.tenant_id)
     return {"status": "ok", "chatwoot_account_id": link["chatwoot_account_id"], "created": True}
+
+
+async def _ensure_default_teams(tenant_id: str) -> None:
+    """Cria os Teams padrão "Fila IA" e "Fila Humano" da conta, e guarda os
+    dois ids na config padrão do tenant (`tenant_ai_config`, chatwoot_inbox_id
+    NULL): "Fila IA" no campo novo `ai_team_id`, "Fila Humano" em
+    `handoff_team_id` (já existia, usado em `_escalate`).
+
+    Não dá pra fazer isso na criação da Account: Teams são Application API, que
+    exige token de um usuário DA CONTA — e na hora que a Account nasce ainda
+    não existe usuário nenhum nela (a Platform API, usada para criar a
+    Account, não serve pra isso; é o mesmo motivo pelo qual o Agent Bot só é
+    associado à caixa em `_garante_bot_na_caixa`, não na criação do tenant).
+
+    Por isso este passo é best-effort e idempotente, chamado de dois lugares:
+    aqui em `provision_tenant` (cobre o tenant que já tem admin quando é
+    chamado de novo — inclui o provisionamento retroativo dos tenants de
+    teste) e em `provision_user`, logo que o primeiro administrador ganha
+    `chatwoot_user_id` (é o primeiro momento em que existe um token válido).
+    Se nenhum admin existir ainda, a função não faz nada e tenta de novo na
+    próxima chamada — silencioso de propósito, como o restante do
+    provisionamento não-crítico desta rota.
+    """
+    link = tenants.get_tenant_link(tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        return
+
+    from app.db import get_connection
+
+    with get_connection() as conn:
+        config = conn.execute(
+            """SELECT ai_team_id, handoff_team_id FROM tenant_ai_config
+                WHERE tenant_id = %s AND chatwoot_inbox_id IS NULL""",
+            (tenant_id,),
+        ).fetchone()
+    ai_team_id = (config or {}).get("ai_team_id")
+    humano_team_id = (config or {}).get("handoff_team_id")
+    if ai_team_id and humano_team_id:
+        return  # já provisionado
+
+    admin_link = _first_admin(tenant_id)
+    if admin_link is None:
+        return  # sem admin ainda; a próxima chamada tenta de novo
+
+    account_id = int(link["chatwoot_account_id"])
+    try:
+        token = await chatwoot.user_access_token(int(admin_link["chatwoot_user_id"]))
+        if not ai_team_id:
+            time_ia = await chatwoot.create_team(account_id, token, "Fila IA")
+            ai_team_id = int(time_ia["id"])
+        if not humano_team_id:
+            time_humano = await chatwoot.create_team(account_id, token, "Fila Humano")
+            humano_team_id = int(time_humano["id"])
+        tenants.set_default_teams(tenant_id, ai_team_id=ai_team_id, handoff_team_id=humano_team_id)
+    except chatwoot.ChatwootError as exc:
+        logger.warning("falha ao criar os Teams padrão do tenant %s: %s", tenant_id, exc)
 
 
 @router.post("/users", dependencies=[Depends(require_admin)])
@@ -111,6 +173,12 @@ async def provision_user(payload: UserIn):
         raise HTTPException(status_code=502, detail="Chatwoot não devolveu id do usuário")
     await chatwoot.add_account_user(int(link["chatwoot_account_id"]), int(user_id), payload.role)
     user_link = tenants.set_chatwoot_user(str(user_link["id"]), int(user_id))
+    if payload.role == "administrator":
+        # Primeiro admin com token: é o primeiro momento em que dá pra criar
+        # os Teams padrão (ver _ensure_default_teams). Tenant sem admin
+        # nenhum ainda fica só com a Account, sem fila — normal, é retomado
+        # quando o admin for provisionado.
+        await _ensure_default_teams(payload.tenant_id)
     return {"status": "ok", "chatwoot_user_id": user_link["chatwoot_user_id"], "created": True}
 
 
@@ -341,6 +409,7 @@ def _ai_config_out(config: dict | None) -> dict | None:
         "template_id": str(config["template_id"]) if config["template_id"] else None,
         "autopilot": config["autopilot"],
         "handoff_team_id": config["handoff_team_id"],
+        "ai_team_id": config["ai_team_id"],
         # A chave nunca volta: o que interessa a quem lê é se existe.
         "has_integration_key": bool(config["integration_key_encrypted"]),
     }
