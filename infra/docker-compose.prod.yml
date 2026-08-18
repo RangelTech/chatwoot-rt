@@ -24,6 +24,12 @@
 # valores de container vêm do `env_file:` de cada bloco abaixo.
 #
 # Deploy real via pipeline do vps_rt_infra/CI, não SSH manual.
+#
+# `name:` explícito — achado real em produção (17/08/2026): sem isso, os
+# projetos Compose deste repo e do agent-platform colidiam (mesmo nome de
+# projeto inferido), e um `up -d --remove-orphans` de um apagava os
+# containers do outro.
+name: chatwoot
 services:
   chatwoot-web:
     build:
