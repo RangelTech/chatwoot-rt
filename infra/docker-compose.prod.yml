@@ -61,6 +61,13 @@ services:
       - .env.prod.chatwoot
     networks:
       - internal
+      # Sidekiq chama URLs públicas (bridge.rangeltech.net) pros webhooks de
+      # Agent Bot -- sem a rede `public`, o worker fica sem rota de saída pra
+      # internet (`internal` tem internal:true no vps_rt_infra, sem gateway).
+      # Achado real em producao (17/08/2026): parecia erro de DNS (falhava
+      # pra QUALQUER host, nao só bridge.rangeltech.net), mas era falta de
+      # rota mesmo — sem network pública, nem DNS externo resolve.
+      - public
     deploy:
       resources:
         limits:
