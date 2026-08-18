@@ -77,6 +77,7 @@ async def provision_tenant(payload: TenantIn):
         # feature) e o caso comum de a Account já existir mas o admin ainda
         # não (ver _ensure_default_teams).
         await _ensure_default_teams(payload.tenant_id)
+        await _ensure_devolver_para_ia(payload.tenant_id)
         return {
             "status": "ok",
             "chatwoot_account_id": link["chatwoot_account_id"],
@@ -89,6 +90,7 @@ async def provision_tenant(payload: TenantIn):
         raise HTTPException(status_code=502, detail="Chatwoot não devolveu id da conta")
     link = tenants.set_chatwoot_account(payload.tenant_id, int(account_id))
     await _ensure_default_teams(payload.tenant_id)
+    await _ensure_devolver_para_ia(payload.tenant_id)
     return {"status": "ok", "chatwoot_account_id": link["chatwoot_account_id"], "created": True}
 
 
@@ -148,6 +150,82 @@ async def _ensure_default_teams(tenant_id: str) -> None:
         logger.warning("falha ao criar os Teams padrão do tenant %s: %s", tenant_id, exc)
 
 
+LABEL_DEVOLVER_IA = "ia-retomar"
+MACRO_DEVOLVER_IA = "Devolver para IA"
+
+
+async def _ensure_devolver_para_ia(tenant_id: str) -> None:
+    """Registra o Webhook de CONTA (evento `conversation_updated`) e a Macro
+    "Devolver para IA" — a implementação da Seção 2 do produto de filas
+    IA/Humano (botão pra tirar a conversa de `human_active` e voltar pra
+    `ai_active`).
+
+    O Webhook de CONTA é mecanismo separado do Agent Bot webhook: precisa ser
+    registrado à parte (`Api::V1::Accounts::WebhooksController`), com uma URL
+    que já carrega um token opaco por tenant — o payload de
+    `conversation_updated` não traz account_id nem o id global da conversa,
+    então não dá pra identificar o tenant só pelo corpo (mesmo problema, mesma
+    solução do webhook do WhatsApp não-oficial em `tenant_channels`).
+
+    A Macro aplica a label reservada `ia-retomar` e reatribui a conversa para
+    a "Fila IA" — é o botão que o atendente aperta; ver `label_webhook.py`
+    para o outro lado (o bridge reagindo à label).
+
+    Best-effort e idempotente, como `_ensure_default_teams`: sem admin
+    provisionado ainda ou sem BRIDGE_PUBLIC_URL configurada, não faz nada e
+    tenta de novo na próxima chamada.
+    """
+    if not settings.bridge_public_url:
+        logger.warning(
+            "BRIDGE_PUBLIC_URL não configurada — webhook/macro de 'Devolver para IA' "
+            "não registrados para o tenant %s",
+            tenant_id,
+        )
+        return
+
+    link = tenants.get_tenant_link(tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        return
+    admin_link = _first_admin(tenant_id)
+    if admin_link is None:
+        return  # sem admin ainda; a próxima chamada tenta de novo
+
+    account_id = int(link["chatwoot_account_id"])
+    token_url = tenants.ensure_conversation_webhook_token(tenant_id)
+    webhook_url = f"{settings.bridge_public_url.rstrip('/')}/agent-bot/label/{token_url}"
+
+    try:
+        user_token = await chatwoot.user_access_token(int(admin_link["chatwoot_user_id"]))
+
+        existentes = await chatwoot.list_account_webhooks(account_id, user_token)
+        if not any(w.get("url") == webhook_url for w in existentes):
+            await chatwoot.create_account_webhook(
+                account_id, user_token, webhook_url, ["conversation_updated"]
+            )
+
+        macros = await chatwoot.list_macros(account_id, user_token)
+        if not any(m.get("name") == MACRO_DEVOLVER_IA for m in macros):
+            from app.db import get_connection
+
+            with get_connection() as conn:
+                config = conn.execute(
+                    """SELECT ai_team_id FROM tenant_ai_config
+                        WHERE tenant_id = %s AND chatwoot_inbox_id IS NULL""",
+                    (tenant_id,),
+                ).fetchone()
+            actions = [{"action_name": "add_label", "action_params": [LABEL_DEVOLVER_IA]}]
+            ai_team_id = (config or {}).get("ai_team_id")
+            if ai_team_id:
+                actions.append({"action_name": "assign_team", "action_params": [int(ai_team_id)]})
+            await chatwoot.create_macro(account_id, user_token, MACRO_DEVOLVER_IA, actions)
+    except chatwoot.ChatwootError as exc:
+        logger.warning(
+            "falha ao registrar webhook/macro de 'Devolver para IA' do tenant %s: %s",
+            tenant_id,
+            exc,
+        )
+
+
 @router.post("/users", dependencies=[Depends(require_admin)])
 async def provision_user(payload: UserIn):
     """Espelha um usuário da plataforma no Chatwoot, sem pedir cadastro novo."""
@@ -179,6 +257,7 @@ async def provision_user(payload: UserIn):
         # nenhum ainda fica só com a Account, sem fila — normal, é retomado
         # quando o admin for provisionado.
         await _ensure_default_teams(payload.tenant_id)
+        await _ensure_devolver_para_ia(payload.tenant_id)
     return {"status": "ok", "chatwoot_user_id": user_link["chatwoot_user_id"], "created": True}
 
 

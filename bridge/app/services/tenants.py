@@ -283,3 +283,33 @@ def set_agent_bot_id(tenant_id: str, bot_id: int) -> None:
             "UPDATE tenant_links SET chatwoot_agent_bot_id = %s WHERE tenant_id = %s",
             (bot_id, tenant_id),
         )
+
+
+def ensure_conversation_webhook_token(tenant_id: str) -> str:
+    """Token opaco da URL do Webhook de CONTA (label `ia-retomar`, macro
+    "Devolver para IA"). Gerado uma vez e reaproveitado — o mesmo padrão de
+    `tenant_channels.webhook_token`, aqui em `tenant_links` porque é por
+    tenant, não por canal."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT conversation_webhook_token FROM tenant_links WHERE tenant_id = %s",
+            (tenant_id,),
+        ).fetchone()
+        if row and row["conversation_webhook_token"]:
+            return row["conversation_webhook_token"]
+        token = secrets.token_hex(18)
+        conn.execute(
+            """UPDATE tenant_links SET conversation_webhook_token = %s, updated_at = now()
+                WHERE tenant_id = %s""",
+            (token, tenant_id),
+        )
+        return token
+
+
+def tenant_by_conversation_webhook_token(token: str) -> dict | None:
+    """Resolve o tenant pela URL do webhook de conta — o corpo do evento
+    `conversation_updated` não traz account_id nem id global da conversa."""
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT * FROM tenant_links WHERE conversation_webhook_token = %s", (token,)
+        ).fetchone()

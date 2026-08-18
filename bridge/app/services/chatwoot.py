@@ -217,6 +217,79 @@ async def toggle_status(account_id: int, token: str, conversation_id: int, statu
     )
 
 
+async def create_account_webhook(
+    account_id: int, token: str, url: str, subscriptions: list[str]
+) -> dict:
+    """Webhook de CONTA (Settings > Integrations > Webhooks) — mecanismo
+    SEPARADO do Agent Bot webhook. É por aqui que a ponte escuta eventos que
+    o Agent Bot não carrega, como `conversation_updated` (mudança de label ou
+    de Team)."""
+    return await _request(
+        "POST",
+        f"/api/v1/accounts/{account_id}/webhooks",
+        token=token,
+        json_body={"webhook": {"url": url, "subscriptions": subscriptions}},
+    )
+
+
+async def list_account_webhooks(account_id: int, token: str) -> list[dict]:
+    body = await _request("GET", f"/api/v1/accounts/{account_id}/webhooks", token=token)
+    payload = body.get("payload", body) if isinstance(body, dict) else body
+    return payload or []
+
+
+async def get_conversation(account_id: int, token: str, conversation_id: int) -> dict:
+    """Busca a conversa pelo id usado nas rotas da Application API
+    (o mesmo `display_id` que aparece na URL do Chatwoot). O corpo devolvido
+    traz o `id` global da conversa — é a ponte entre os dois espaços de id
+    quando só se tem o display_id (caso do webhook de conta, ver
+    `label_webhook.py`)."""
+    return await _request(
+        "GET", f"/api/v1/accounts/{account_id}/conversations/{conversation_id}", token=token
+    )
+
+
+async def set_conversation_labels(
+    account_id: int, token: str, conversation_id: int, labels: list[str]
+) -> dict:
+    """Substitui a lista inteira de labels — o Chatwoot não tem endpoint de
+    remover UMA label, só de definir o conjunto todo."""
+    return await _request(
+        "POST",
+        f"/api/v1/accounts/{account_id}/conversations/{conversation_id}/labels",
+        token=token,
+        json_body={"labels": labels},
+    )
+
+
+async def get_conversation_labels(account_id: int, token: str, conversation_id: int) -> list[str]:
+    body = await _request(
+        "GET", f"/api/v1/accounts/{account_id}/conversations/{conversation_id}/labels", token=token
+    )
+    payload = body.get("payload", body) if isinstance(body, dict) else body
+    return payload or []
+
+
+async def list_macros(account_id: int, token: str) -> list[dict]:
+    body = await _request("GET", f"/api/v1/accounts/{account_id}/macros", token=token)
+    payload = body.get("payload", body) if isinstance(body, dict) else body
+    return payload or []
+
+
+async def create_macro(
+    account_id: int, token: str, name: str, actions: list[dict], visibility: str = "global"
+) -> dict:
+    """Macro nativa do Chatwoot (`Api::V1::Accounts::MacrosController`) — o
+    "botão" que o atendente aperta. `actions` segue o formato interno do
+    Chatwoot: [{"action_name": "add_label", "action_params": [...]}, ...]."""
+    return await _request(
+        "POST",
+        f"/api/v1/accounts/{account_id}/macros",
+        token=token,
+        json_body={"name": name, "visibility": visibility, "actions": actions},
+    )
+
+
 async def list_inboxes(account_id: int, token: str) -> list[dict]:
     """Caixas de atendimento da conta, como o Chatwoot as conhece.
 
