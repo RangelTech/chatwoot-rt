@@ -7,3 +7,24 @@ venv/
 .env
 *.tmp
 node_modules/
+
+# Fork vendorizado do Chatwoot (chatwoot/ = arvore fonte v4.16.2 + branding +
+# entrypoints) — mesmas regras do .gitignore oficial do Chatwoot, generated
+# assets/gems/deps nunca vao pro historico.
+chatwoot/.bundle
+chatwoot/db/*.sqlite3
+chatwoot/db/*.sqlite3-journal
+chatwoot/log/*
+!chatwoot/log/.keep
+chatwoot/tmp/*
+!chatwoot/tmp/.keep
+chatwoot/node_modules/
+chatwoot/master.key
+chatwoot/.byebug_history
+chatwoot/public/assets
+chatwoot/public/packs
+chatwoot/public/packs-test
+chatwoot/public/vite-test
+chatwoot/public/vite
+chatwoot/.env
+chatwoot/coverage/
