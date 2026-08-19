@@ -149,8 +149,15 @@ jobs:
           ENVEOF
 
       - name: Build and restart
+        # ServerAliveInterval/CountMax: the fork's chatwoot-web image builds
+        # from source now (gem install + assets:precompile), which runs well
+        # past 10 minutes with long stretches of no stdout — a bare `ssh`
+        # dropped the connection mid-build ("client_loop: send disconnect:
+        # Broken pipe", found 2026-08-19 on the first real fork deploy).
+        # Keepalive pings every 30s, tolerate up to 20 missed replies (~10min).
         run: |
           ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
             "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml build && docker compose -f infra/docker-compose.prod.yml up -d --remove-orphans"
 
