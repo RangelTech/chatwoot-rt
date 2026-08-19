@@ -54,6 +54,11 @@ class ChannelIn(BaseModel):
     api_base: str = "https://api.w-api.app/v1"
 
 
+class MenuDemoIn(BaseModel):
+    tenant_id: str
+    inbox_name: str = "Fila Demo IVR"
+
+
 class AiConfigIn(BaseModel):
     tenant_id: str
     chatwoot_inbox_id: int | None = None
@@ -343,6 +348,96 @@ async def test_channel(channel_id: str):
     except wapi.ProviderError as exc:
         return {"ok": False, "detail": str(exc)}
     return {"ok": True, "detail": str(body)[:300]}
+
+
+@router.post("/menu-demo", dependencies=[Depends(require_admin)])
+async def provision_menu_demo(payload: MenuDemoIn):
+    """Produto-08: cria (idempotente) a inbox + o Team "Fila Demo IVR" e liga
+    o Agent Bot nela — feature OPCIONAL por tenant, nunca automática (não faz
+    parte de `provision_tenant`/`_ensure_default_teams`, que continuam só
+    criando "Fila IA"/"Fila Humano").
+
+    A inbox criada aqui é de canal `api`, igual às de `provision_channel`,
+    mas SEM registro em `tenant_channels` — ela não representa um canal
+    externo real (WhatsApp/Instagram), é só a superfície onde o Agent Bot
+    webhook vai bater. Quem entra em contato com ela hoje é só o teste
+    end-to-end (Application API cria a conversa direto na inbox).
+
+    O que garante isolamento do fluxo de IA não é este endpoint, e sim o
+    branch em `agent_bot.py`: a config gravada em `menu_bot_config` nunca é
+    lida por `ai_config_for`/`_handle_message`.
+    """
+    link = tenants.get_tenant_link(payload.tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        raise HTTPException(status_code=409, detail="tenant ainda não provisionado")
+    admin_link = _first_admin(payload.tenant_id)
+    if admin_link is None:
+        raise HTTPException(status_code=409, detail="tenant sem usuário administrador provisionado")
+
+    account_id = int(link["chatwoot_account_id"])
+    token = await chatwoot.user_access_token(int(admin_link["chatwoot_user_id"]))
+
+    from app.db import get_connection
+
+    with get_connection() as conn:
+        existente = conn.execute(
+            "SELECT * FROM menu_bot_config WHERE tenant_id = %s", (payload.tenant_id,)
+        ).fetchone()
+
+    if existente:
+        return {
+            "status": "ok",
+            "created": False,
+            "chatwoot_inbox_id": existente["chatwoot_inbox_id"],
+        }
+
+    inboxes = await chatwoot.list_inboxes(account_id, token)
+    inbox = next((i for i in inboxes if i.get("name") == payload.inbox_name), None)
+    if inbox is None:
+        inbox = await chatwoot.create_api_inbox(
+            account_id,
+            token,
+            name=payload.inbox_name,
+            # A fila demo não fala com nenhum provedor externo — não existe
+            # "resposta de saída" real, o outbound daqui é sempre
+            # `chatwoot.create_message` chamado de dentro do próprio bridge.
+            webhook_url="",
+        )
+    inbox_id = int(inbox["id"])
+
+    bot_id = link["chatwoot_agent_bot_id"]
+    if not bot_id:
+        bot = await chatwoot.create_agent_bot(
+            account_id,
+            name=f"IA {link['tenant_name'] or link['tenant_key']}".strip()[:60],
+            outgoing_url=f"{settings.bridge_public_url.rstrip('/')}/agent-bot",
+        )
+        bot_id = int(bot["id"])
+        tenants.set_agent_bot_id(payload.tenant_id, bot_id)
+    await chatwoot.set_agent_bot(account_id, token, inbox_id, int(bot_id))
+
+    macros_needed = [
+        ("Vendas Demo", "team_vendas_id"),
+        ("Suporte Demo", "team_suporte_id"),
+        ("Financeiro Demo", "team_financeiro_id"),
+    ]
+    team_ids: dict[str, int] = {}
+    for nome, campo in macros_needed:
+        team = await chatwoot.create_team(account_id, token, nome)
+        team_ids[campo] = int(team["id"])
+
+    config = tenants.upsert_menu_bot_config(
+        tenant_id=payload.tenant_id,
+        chatwoot_inbox_id=inbox_id,
+        **team_ids,
+    )
+    return {
+        "status": "ok",
+        "created": True,
+        "chatwoot_inbox_id": inbox_id,
+        "team_ids": team_ids,
+        "config_id": str(config["id"]),
+    }
 
 
 @router.post("/ai-config", dependencies=[Depends(require_admin)])

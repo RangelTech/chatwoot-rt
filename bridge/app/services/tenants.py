@@ -313,3 +313,64 @@ def tenant_by_conversation_webhook_token(token: str) -> dict | None:
         return conn.execute(
             "SELECT * FROM tenant_links WHERE conversation_webhook_token = %s", (token,)
         ).fetchone()
+
+
+# --------------------------------------------------------------------------
+# Fila Demo IVR (produto-08) — menu numerado sem IA, isolado do fluxo acima.
+# --------------------------------------------------------------------------
+
+
+def menu_bot_config_for(tenant_id: str, inbox_id: int) -> dict | None:
+    """Devolve a config da fila demo se esta inbox for uma delas — é essa
+    checagem (feita ANTES de tocar em `conversation_state`/`ai_config_for")
+    que garante o isolamento do fluxo de IA: nenhum outro código deste
+    arquivo lê `menu_bot_config`, e esta função nunca é chamada pelo
+    caminho de `_handle_message`."""
+    with get_connection() as conn:
+        return conn.execute(
+            """SELECT * FROM menu_bot_config
+                WHERE tenant_id = %s AND chatwoot_inbox_id = %s""",
+            (tenant_id, inbox_id),
+        ).fetchone()
+
+
+def upsert_menu_bot_config(
+    *,
+    tenant_id: str,
+    chatwoot_inbox_id: int,
+    team_vendas_id: int | None = None,
+    team_suporte_id: int | None = None,
+    team_financeiro_id: int | None = None,
+) -> dict:
+    with get_connection() as conn:
+        return conn.execute(
+            """INSERT INTO menu_bot_config (tenant_id, chatwoot_inbox_id,
+                                            team_vendas_id, team_suporte_id, team_financeiro_id)
+               VALUES (%s, %s, %s, %s, %s)
+               ON CONFLICT (tenant_id, chatwoot_inbox_id) DO UPDATE
+                   SET team_vendas_id = EXCLUDED.team_vendas_id,
+                       team_suporte_id = EXCLUDED.team_suporte_id,
+                       team_financeiro_id = EXCLUDED.team_financeiro_id,
+                       updated_at = now()
+               RETURNING *""",
+            (tenant_id, chatwoot_inbox_id, team_vendas_id, team_suporte_id, team_financeiro_id),
+        ).fetchone()
+
+
+def menu_step_for(tenant_id: str, conversation_id: int) -> str:
+    row = conversation_state(tenant_id, conversation_id)
+    return (row or {}).get("menu_step") or ""
+
+
+def set_menu_step(*, tenant_id: str, conversation_id: int, menu_step: str) -> dict:
+    """UPSERT que toca só `menu_step` — nunca escreve em `state`/`session_id`,
+    os campos do fluxo de IA, mesmo compartilhando a linha da tabela."""
+    with get_connection() as conn:
+        return conn.execute(
+            """INSERT INTO conversation_states (tenant_id, chatwoot_conversation_id, menu_step)
+               VALUES (%s, %s, %s)
+               ON CONFLICT (tenant_id, chatwoot_conversation_id) DO UPDATE
+                   SET menu_step = EXCLUDED.menu_step, updated_at = now()
+               RETURNING *""",
+            (tenant_id, conversation_id, menu_step),
+        ).fetchone()

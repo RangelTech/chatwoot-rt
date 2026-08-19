@@ -24,6 +24,120 @@ router = APIRouter(prefix="/agent-bot", tags=["agent-bot"])
 AI_STATES = {"ai_active"}
 HUMAN_STATES = {"human_queue", "human_active"}
 
+# --------------------------------------------------------------------------
+# Fila Demo IVR (produto-08): menu numerado "digite 1, digite 2", ZERO
+# chamada ao kernel. Isolado de propósito: vive na mesma tabela de estado
+# (`conversation_states.menu_step`) mas nunca lê/escreve `state`/`session_id`,
+# e o branch em `agent_bot_webhook` decide ANTES de chegar em `_handle_message`
+# — uma inbox nunca aciona os dois caminhos.
+# --------------------------------------------------------------------------
+
+MENU_WELCOME = (
+    "Bem-vindo! Escolha uma opção:\n"
+    "1 - Falar com vendas\n"
+    "2 - Suporte técnico\n"
+    "3 - Financeiro\n"
+    "0 - Encerrar"
+)
+
+MENU_FALLBACK = "Não entendi, digite 1, 2, 3 ou 0."
+MENU_GOODBYE = "Atendimento encerrado. Obrigado pelo contato!"
+MENU_VOLTAR = "Digite 0 para voltar ao menu."
+
+# opção -> (texto de resposta, campo da config com o Team a atribuir)
+MENU_OPTIONS = {
+    "1": (
+        "Você escolheu Falar com vendas. Um especialista vai te atender em breve. "
+        + MENU_VOLTAR,
+        "team_vendas_id",
+    ),
+    "2": (
+        "Você escolheu Suporte técnico. Nossa equipe já foi acionada. " + MENU_VOLTAR,
+        "team_suporte_id",
+    ),
+    "3": (
+        "Você escolheu Financeiro. Vamos te ajudar com sua questão financeira. " + MENU_VOLTAR,
+        "team_financeiro_id",
+    ),
+}
+
+
+async def _handle_menu_bot(
+    tenant_id: str, account_id: int, conversation_id: int, content: str, menu_config: dict
+) -> None:
+    """Fluxo síncrono e sem estado de IA nenhum: só lê/escreve `menu_step`."""
+    admin = _account_admin(tenant_id)
+    if admin is None:
+        return
+    token = await chatwoot.user_access_token(int(admin["chatwoot_user_id"]))
+
+    step = tenants.menu_step_for(tenant_id, conversation_id)
+
+    if not step:
+        # Primeira mensagem desta conversa na fila demo: manda o menu.
+        await chatwoot.create_message(
+            account_id, token, conversation_id, MENU_WELCOME, message_type="outgoing"
+        )
+        tenants.set_menu_step(
+            tenant_id=tenant_id, conversation_id=conversation_id, menu_step="root"
+        )
+        return
+
+    if step == "root":
+        if content == "0":
+            await chatwoot.create_message(
+                account_id, token, conversation_id, MENU_GOODBYE, message_type="outgoing"
+            )
+            try:
+                await chatwoot.toggle_status(account_id, token, conversation_id, "resolved")
+            except chatwoot.ChatwootError as exc:
+                logger.warning(
+                    "falha ao encerrar conversa %s da fila demo: %s", conversation_id, exc
+                )
+            tenants.set_menu_step(
+                tenant_id=tenant_id, conversation_id=conversation_id, menu_step="root"
+            )
+            return
+
+        opcao = MENU_OPTIONS.get(content)
+        if opcao is None:
+            await chatwoot.create_message(
+                account_id, token, conversation_id, MENU_FALLBACK, message_type="outgoing"
+            )
+            return
+
+        reply, team_field = opcao
+        await chatwoot.create_message(
+            account_id, token, conversation_id, reply, message_type="outgoing"
+        )
+        team_id = (menu_config or {}).get(team_field)
+        if team_id:
+            try:
+                await chatwoot.assign_team(account_id, token, conversation_id, int(team_id))
+            except chatwoot.ChatwootError as exc:
+                logger.warning(
+                    "falha ao atribuir o Team da opção %s na conversa %s: %s",
+                    content, conversation_id, exc,
+                )
+        tenants.set_menu_step(
+            tenant_id=tenant_id, conversation_id=conversation_id, menu_step=f"option:{content}"
+        )
+        return
+
+    # step == "option:<n>": só aceita "0" (volta ao menu); qualquer outra
+    # coisa reforça a instrução, sem travar nem ignorar a conversa.
+    if content == "0":
+        await chatwoot.create_message(
+            account_id, token, conversation_id, MENU_WELCOME, message_type="outgoing"
+        )
+        tenants.set_menu_step(
+            tenant_id=tenant_id, conversation_id=conversation_id, menu_step="root"
+        )
+        return
+    await chatwoot.create_message(
+        account_id, token, conversation_id, MENU_VOLTAR, message_type="outgoing"
+    )
+
 
 async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> None:
     conversation = payload.get("conversation") or {}
@@ -205,6 +319,25 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
 
     if message_type != "incoming":
         return {"status": "ignored"}
+
+    # Branch da fila demo ANTES de qualquer coisa relacionada ao kernel — a
+    # inbox nunca cai em `_handle_message` (custo zero de LLM garantido pela
+    # própria topologia do código, não por uma flag em runtime).
+    inbox_id = (conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id"))
+    if inbox_id:
+        menu_config = tenants.menu_bot_config_for(tenant_id, int(inbox_id))
+        if menu_config is not None:
+            content = (payload.get("content") or "").strip()
+            if content and conversation_id:
+                background.add_task(
+                    _handle_menu_bot,
+                    tenant_id,
+                    int(account_id),
+                    conversation_id,
+                    content,
+                    menu_config,
+                )
+            return {"status": "accepted"}
 
     background.add_task(_handle_message, tenant_id, int(account_id), payload)
     return {"status": "accepted"}
