@@ -82,6 +82,18 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     @inbox.channel.reset_secret!
   end
 
+  # Used by the WAPI inbox wizard's "test connection" button (spec section 3a) and
+  # by the WAPI/Evolution health indicator (section 3c) to force a fresh check
+  # instead of only trusting the last webhook-reported status.
+  def test_connection
+    return render json: { error: 'Connection test is only available for WAPI channels' }, status: :bad_request unless @inbox.channel.is_a?(Channel::Wapi)
+
+    render json: @inbox.channel.test_connection!
+  rescue StandardError => e
+    Rails.logger.error "[INBOX TEST_CONNECTION] #{e.message}"
+    render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+  end
+
   def destroy
     ::DeleteObjectJob.perform_later(@inbox, Current.user, request.ip) if @inbox.present?
     render status: :ok, json: { message: I18n.t('messages.inbox_deletetion_response') }
@@ -105,7 +117,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def allowed_channel_types
-    %w[web_widget api email line telegram whatsapp sms]
+    %w[web_widget api email line telegram whatsapp sms wapi]
   end
 
   def update_inbox_working_hours
@@ -215,7 +227,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
       'line' => Channel::Line,
       'telegram' => Channel::Telegram,
       'whatsapp' => Channel::Whatsapp,
-      'sms' => Channel::Sms
+      'sms' => Channel::Sms,
+      'wapi' => Channel::Wapi
     }[permitted_params[:channel][:type]]
   end
 
