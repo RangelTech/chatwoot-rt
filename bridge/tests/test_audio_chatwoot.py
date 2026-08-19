@@ -77,7 +77,7 @@ def test_extract_audio_attachment_reads_the_real_chatwoot_shape():
 def test_audio_filename_and_content_type_resolution(
     attachment, expected_suffix, expected_content_type
 ):
-    from app.api.agent_bot import _audio_filename, _AUDIO_CONTENT_TYPES
+    from app.api.agent_bot import _AUDIO_CONTENT_TYPES, _audio_filename
 
     filename = _audio_filename(attachment)
     assert filename.endswith(expected_suffix)
