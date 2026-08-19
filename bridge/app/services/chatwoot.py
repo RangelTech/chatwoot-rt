@@ -23,6 +23,41 @@ class ChatwootError(RuntimeError):
     pass
 
 
+# Voice notes are small (a few hundred KB at most); this cap just stops a
+# malformed/huge `data_url` from tying up the bridge or blowing past the
+# public API's own upload cap (`settings.max_upload_bytes` on the backend).
+MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+
+
+async def download_attachment(url: str) -> bytes:
+    """Baixa o payload de um anexo do Chatwoot (`attachment.data_url`).
+
+    O `data_url` que o Chatwoot manda no webhook já é uma URL completa e
+    assinada (ActiveStorage local ou o provedor de storage configurado) —
+    não precisa do `api_access_token` de conta/usuário, só um GET simples.
+    Mesma política de retry do resto do cliente: erro de transporte leva uma
+    segunda tentativa, erro de aplicação (4xx/5xx) não.
+    """
+    ultimo: Exception | None = None
+    response = None
+    for tentativa in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                response = await client.get(url)
+            break
+        except httpx.HTTPError as exc:
+            ultimo = exc
+            if tentativa == 0:
+                await asyncio.sleep(2)
+    if response is None:
+        raise ChatwootError(f"não foi possível baixar o anexo: {ultimo}") from ultimo
+    if response.status_code >= 400:
+        raise ChatwootError(f"download do anexo respondeu {response.status_code}")
+    if len(response.content) > MAX_ATTACHMENT_BYTES:
+        raise ChatwootError("anexo maior que o limite permitido")
+    return response.content
+
+
 async def _request(
     method: str,
     path: str,
@@ -188,6 +223,61 @@ async def create_message(
     )
 
 
+async def create_message_with_attachment(
+    account_id: int,
+    token: str,
+    conversation_id: int,
+    *,
+    file_bytes: bytes,
+    filename: str,
+    content_type: str,
+    content: str = "",
+    message_type: str = "outgoing",
+    private: bool = False,
+) -> dict:
+    """Same endpoint as `create_message`, but multipart — the only way the
+    Chatwoot API accepts a file (`Messages::MessageBuilder#process_attachments`
+    reads `params[:attachments]`, an array of uploaded files; the plain JSON
+    body `create_message` sends has no such field).
+
+    This is the piece that was missing for artifacts (chart PNGs, the PIX QR
+    code image) to ever show up as an actual image in a Chatwoot/WhatsApp
+    conversation: without it, an image artifact had no delivery path at all —
+    not "broken", just never attempted.
+    """
+    url = (
+        f"{settings.chatwoot_base_url.rstrip('/')}/api/v1/accounts/{account_id}"
+        f"/conversations/{conversation_id}/messages"
+    )
+    data = {"message_type": message_type, "private": str(private).lower()}
+    if content:
+        data["content"] = content
+    files = [("attachments[]", (filename, file_bytes, content_type))]
+    ultimo: Exception | None = None
+    response = None
+    for tentativa in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                response = await client.post(
+                    url, headers={"api_access_token": token}, data=data, files=files
+                )
+            break
+        except httpx.HTTPError as exc:
+            ultimo = exc
+            if tentativa == 0:
+                await asyncio.sleep(2)
+    if response is None:
+        raise ChatwootError(f"Chatwoot inacessível: {ultimo}") from ultimo
+    if response.status_code >= 400:
+        raise ChatwootError(f"Chatwoot respondeu {response.status_code}: {response.text[:400]}")
+    if not response.content:
+        return {}
+    try:
+        return response.json()
+    except ValueError:
+        return {"raw": response.text[:1000]}
+
+
 async def create_team(account_id: int, token: str, name: str) -> dict:
     """Team da conta (Application API — precisa de token de usuário da conta,
     não do token de plataforma: Teams não existem na Platform API)."""
@@ -233,8 +323,20 @@ async def create_account_webhook(
 
 
 async def list_account_webhooks(account_id: int, token: str) -> list[dict]:
+    """A resposta real do Chatwoot para esta rota é
+    ``{"payload": {"webhooks": [...]}}`` (payload é um dict com a chave
+    "webhooks", não a lista direto, ao contrário de `list_macros`/
+    `list_inboxes`/`get_conversation_labels`). Sem esse `isinstance` extra,
+    `existentes` virava o dict `{"webhooks": [...]}`, e iterar sobre ele em
+    `_ensure_devolver_para_ia` (`for w in existentes`) itera as CHAVES (str),
+    e `w.get(...)` explode com `AttributeError` — não é `ChatwootError`, então
+    nem o try/except best-effort ao redor pega, e a rota inteira de
+    `/admin/tenants` derruba com 500 (reproduzido em produção, conta 13,
+    2026-08-19)."""
     body = await _request("GET", f"/api/v1/accounts/{account_id}/webhooks", token=token)
     payload = body.get("payload", body) if isinstance(body, dict) else body
+    if isinstance(payload, dict):
+        payload = payload.get("webhooks", [])
     return payload or []
 
 

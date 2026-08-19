@@ -2,6 +2,14 @@
 
 ## Branding sem fork
 
+> **Atualização (18/08/2026)**: "nada de fork" deixou de ser regra absoluta — o
+> dono aprovou fork de verdade pra 3 casos específicos que não têm outro
+> caminho (AI Assist com base URL customizável, canais WAPI/Evolution API,
+> ver `mega-spec-agent-llm/produto-06-chatwoot-fork-whatsapp-extends-ai-assist.md`
+> e `produto-07-instagram-tiktok-nativos-upgrade-v4.md`). A tabela abaixo
+> continua valendo como **primeira opção sempre** — só forkar quando não der
+> pra resolver por config/env, como já era o espírito desta decisão.
+
 O que dá para mudar sem tocar no código do Chatwoot:
 
 | O quê | Onde |
@@ -46,8 +54,21 @@ credenciais cifradas por tenant e uma `Account` do Chatwoot por empresa.
 
 ## O que ainda não está pronto
 
-- Enviar cobrança PIX formatada (QR + copia-e-cola) pelo WhatsApp: a tool já
-  gera a cobrança, falta a camada de entrega interpretar o artifact.
+- ~~Enviar cobrança PIX formatada (QR + copia-e-cola) pelo WhatsApp~~ —
+  **fechado (19/08/2026)**: o gap era estrutural, não específico do PIX —
+  `/v1/messages` (usado pela ponte) descartava todo evento `artifact` da SSE
+  do kernel, e `chatwoot.create_message` só sabia mandar `content` em JSON,
+  sem campo de anexo nenhum. Agora `/v1/messages` devolve `artifacts` (e
+  ganhou `GET /v1/artifacts/{id}` autenticado pela própria chave da
+  integração, sem precisar de sessão de usuário) e a ponte
+  (`_deliver_artifacts` em `bridge/app/api/agent_bot.py`) baixa cada artefato
+  `kind="image"` e manda como anexo de verdade via
+  `chatwoot.create_message_with_attachment` (multipart, `attachments[]`).
+  Isso beneficia qualquer artefato de imagem (gráfico, QR do PIX), não só o
+  PIX. Testado com kernel/Chatwoot fake (13 testes novos); teste ponta-a-ponta
+  com token sandbox real do Mercado Pago e conversa real do WhatsApp ainda
+  depende de credencial/canal que não existem neste ambiente — ver relatório
+  de QA da spec `qa-02` seção 6.
 - Fila persistente para reprocessar eventos em massa (hoje é `BackgroundTasks`
   em processo, com o corpo cru guardado para replay manual).
 - Relatórios comerciais consolidados entre plataforma e atendimento.
