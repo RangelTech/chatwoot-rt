@@ -1,0 +1,109 @@
+name: Deploy chatwoot-web to Cloud Run
+
+# CI/CD real (infra-01/infra-03, 21/08/2026): substitui o deploy manual
+# (`infra/deploy.sh chatwoot`, gcloud rodado na mão). Auth via Workload
+# Identity Federation (sem chave de SA em secret nenhum) + segredos
+# rotativos do Infisical (mesma Machine Identity que deploy-vps.yml usa).
+#
+# Sidekiq (worker) continua na VPS via deploy-vps.yml -- não é este
+# workflow. Migração de schema é passo manual explícito
+# (`infra/deploy.sh migrate`), não roda aqui de propósito.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chatwoot/**"
+      - "infra/cloudbuild-chatwoot.yaml"
+      - ".github/workflows/deploy-cloudrun.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/234554472049/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-deployer@rangel-tech.iam.gserviceaccount.com
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Fetch rotating secrets from Infisical
+        id: infisical
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl -fsS -X POST "https://infisical.rangeltech.net/api/v1/auth/universal-auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"clientId\":\"${{ secrets.INFISICAL_CLIENT_ID }}\",\"clientSecret\":\"${{ secrets.INFISICAL_CLIENT_SECRET }}\"}" \
+            | jq -r '.accessToken')
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "::error::Failed to authenticate with Infisical" >&2
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+
+          fetch_secret() {
+            local name="$1"
+            local value
+            value=$(curl -fsS "https://infisical.rangeltech.net/api/v3/secrets/raw/$name?workspaceId=ea111402-d9d4-4ffe-b23f-ccc253340fd8&environment=prod&secretPath=%2F" \
+              -H "Authorization: Bearer $TOKEN" | jq -r '.secret.secretValue')
+            if [ -z "$value" ] || [ "$value" = "null" ]; then
+              echo "::error::Secret $name not found in Infisical" >&2
+              exit 1
+            fi
+            echo "::add-mask::$value" >&2
+            echo "$value"
+          }
+
+          {
+            echo "postgres_password<<EOF_PG"
+            fetch_secret POSTGRES_PASSWORD
+            echo "EOF_PG"
+            echo "secret_key_base<<EOF_SKB"
+            fetch_secret SECRET_KEY_BASE
+            echo "EOF_SKB"
+            echo "redis_url<<EOF_REDIS"
+            fetch_secret REDIS_URL
+            echo "EOF_REDIS"
+            echo "storage_secret_access_key<<EOF_S3"
+            fetch_secret STORAGE_SECRET_ACCESS_KEY
+            echo "EOF_S3"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        run: |
+          gcloud builds submit --project=rangel-tech \
+            --config=infra/cloudbuild-chatwoot.yaml \
+            --substitutions=SHORT_SHA=${{ github.sha }} .
+
+      - name: Deploy to Cloud Run
+        env:
+          POSTGRES_PASSWORD: ${{ steps.infisical.outputs.postgres_password }}
+          SECRET_KEY_BASE: ${{ steps.infisical.outputs.secret_key_base }}
+          REDIS_URL: ${{ steps.infisical.outputs.redis_url }}
+          STORAGE_SECRET_ACCESS_KEY: ${{ steps.infisical.outputs.storage_secret_access_key }}
+        run: |
+          gcloud run deploy chatwoot-web \
+            --project=rangel-tech --region=us-central1 \
+            --image=us-central1-docker.pkg.dev/rangel-tech/containers/chatwoot-rt:${{ github.sha }} \
+            --set-secrets=STORAGE_ACCESS_KEY_ID=gcs-hmac-access-key:latest \
+            --set-env-vars="RAILS_ENV=production,NODE_ENV=production,INSTALLATION_ENV=docker,RAILS_LOG_TO_STDOUT=true,POSTGRES_HOST=66.94.101.153,POSTGRES_PORT=5433,POSTGRES_DATABASE=chatwoot_prod,POSTGRES_USERNAME=chatwoot_app,POSTGRES_PASSWORD=$POSTGRES_PASSWORD,POSTGRES_SSL_MODE=require,REDIS_OPENSSL_VERIFY_MODE=none,SECRET_KEY_BASE=$SECRET_KEY_BASE,REDIS_URL=$REDIS_URL,FRONTEND_URL=https://chat.rangeltech.net,ACTIVE_STORAGE_SERVICE=s3_compatible,STORAGE_BUCKET_NAME=rangel-tech-storage,STORAGE_REGION=us-east-1,STORAGE_ENDPOINT=https://storage.googleapis.com,STORAGE_FORCE_PATH_STYLE=true,STORAGE_SECRET_ACCESS_KEY=$STORAGE_SECRET_ACCESS_KEY,AWS_REQUEST_CHECKSUM_CALCULATION=when_required,AWS_RESPONSE_CHECKSUM_VALIDATION=when_required,ENABLE_ACCOUNT_SIGNUP=false,DEFAULT_LOCALE=pt_BR" \
+            --command=./rt-web.sh \
+            --allow-unauthenticated \
+            --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
+            --timeout=600 --port=3000
+
+      - name: Smoke check
+        run: |
+          curl -fsS "https://chat.rangeltech.net/api" | grep -q '"data_services":"ok"'
