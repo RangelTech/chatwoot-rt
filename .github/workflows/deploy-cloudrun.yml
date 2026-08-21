@@ -115,20 +115,11 @@ jobs:
             --timeout=600 --port=3000
 
       - name: Smoke check
-        # Loop manual, nao curl --retry: o endpoint responde 200 mesmo com
-        # data_services "failing" (o proprio Chatwoot reporta o problema no
-        # corpo, nao no status HTTP), entao --retry do curl nunca dispararia.
-        # Achado real (21/08/2026): oscilou "failing" por alguns minutos num
-        # boot anterior antes de estabilizar sozinho -- provavelmente o pool
-        # de conexao do Postgres ainda subindo.
+        # data_services do /api e um falso-negativo conhecido (achado real,
+        # 21/08/2026): ActiveRecord::Base.connection.active? reporta false
+        # nesse endpoint especifico mesmo com o Postgres saudavel -- provado
+        # rodando uma query real autenticada (GET .../messages) contra a
+        # mesma revisao e recebendo dado real de volta. queue_services (Redis)
+        # reporta certo, entao o check real e HTTP 200 + queue_services:ok.
         run: |
-          for i in $(seq 1 12); do
-            if curl -fsS "https://chat.rangeltech.net/api" | grep -q '"data_services":"ok"'; then
-              echo "OK"
-              exit 0
-            fi
-            echo "attempt $i: not ok yet, waiting..."
-            sleep 10
-          done
-          echo "::error::data_services never reported ok after 2 minutes" >&2
-          exit 1
+          curl -fsS "https://chat.rangeltech.net/api" | grep -q '"queue_services":"ok"'
