@@ -2,8 +2,8 @@ class Platform::Api::V1::UsersController < PlatformController
   # ref: https://stackoverflow.com/a/45190318/939299
   # set resource is called for other actions already in platform controller
   # we want to add login and token to that chain as well
-  before_action(only: [:login, :token]) { set_resource }
-  before_action(only: [:login, :token]) { validate_platform_app_permissible }
+  before_action(only: [:login, :token, :logout]) { set_resource }
+  before_action(only: [:login, :token, :logout]) { validate_platform_app_permissible }
 
   def show; end
 
@@ -19,6 +19,15 @@ class Platform::Api::V1::UsersController < PlatformController
   end
 
   def token; end
+
+  # RAtende<->RAgentes (produto-05 secao 6c): zera devise_token_auth#tokens do
+  # usuario. Qualquer access-token/client/uid ja em uso (qualquer aba/sessao
+  # aberta) para de autenticar no proximo request -- e o mecanismo real de
+  # "logout forcado" server-side, simetrico ao SSO (#login) que ja existia.
+  def logout
+    @resource.update!(tokens: {})
+    head :ok
+  end
 
   def update
     @resource.assign_attributes(user_update_params)

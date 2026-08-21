@@ -144,6 +144,12 @@ async def login_link(user_id: int) -> str:
     return url
 
 
+async def logout_user(user_id: int) -> None:
+    """Zera devise_token_auth#tokens no Chatwoot -- derruba qualquer sessão
+    já aberta daquele usuário (produto-05 seção 6c, par do login_link)."""
+    await _request("POST", f"/platform/api/v1/users/{user_id}/logout", token=_platform_token())
+
+
 async def user_access_token(user_id: int) -> str:
     body = await _request("GET", f"/platform/api/v1/users/{user_id}", token=_platform_token())
     token = (body or {}).get("access_token")

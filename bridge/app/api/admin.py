@@ -276,6 +276,19 @@ async def sso_link(tenant_id: str, platform_user_id: str):
     return {"url": url}
 
 
+@router.post("/logout/{tenant_id}/{platform_user_id}", dependencies=[Depends(require_admin)])
+async def sso_logout(tenant_id: str, platform_user_id: str):
+    """Derruba a sessão do usuário no Chatwoot (produto-05 seção 6c) — par
+    de /sso: chamado no logout do RAgentes pra sincronizar o RAtende.
+    Idempotente: usuário nunca provisionado no Chatwoot não é erro, é no-op
+    (nada pra derrubar)."""
+    user_link = tenants.get_user_link(tenant_id, platform_user_id)
+    if user_link is None or not user_link["chatwoot_user_id"]:
+        return {"status": "noop", "detail": "usuário não provisionado no Chatwoot"}
+    await chatwoot.logout_user(int(user_link["chatwoot_user_id"]))
+    return {"status": "ok"}
+
+
 @router.post("/channels", dependencies=[Depends(require_admin)])
 async def provision_channel(payload: ChannelIn):
     """Registra o canal do tenant e cria a inbox de API correspondente."""

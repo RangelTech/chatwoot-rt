@@ -3,6 +3,20 @@
 schema_version: 1
 upstream_version: "4.16.2"
 extensions:
+  - id: sso_session_sync
+    status: active
+    strategy: small_upstream_patch
+    purpose: Platform API logout endpoint (RAtende<->RAgentes session sync, produto-05 secao 6c) -- pair of the pre-existing :login SSO action.
+    required_paths:
+      - config/routes.rb
+      - app/controllers/platform/api/v1/users_controller.rb
+    touchpoints:
+      - config/routes.rb
+      - app/controllers/platform/api/v1/users_controller.rb
+    markers:
+      config/routes.rb: "post :logout"
+      app/controllers/platform/api/v1/users_controller.rb: "def logout"
+
   - id: ai_assist_api_base
     status: active
     strategy: small_upstream_patch

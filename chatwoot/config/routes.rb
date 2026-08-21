@@ -578,6 +578,9 @@ Rails.application.routes.draw do
           member do
             get :login
             post :token
+            # RAtende<->RAgentes: zera tokens de sessao (produto-05 secao 6c),
+            # nao existe no upstream -- e o par de :login (que cria sessao).
+            post :logout
           end
         end
         resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
