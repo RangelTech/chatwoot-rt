@@ -43,9 +43,19 @@ class Evolution::Client
 
   def create_instance
     response = post('instance/create', instanceName: instance_name, integration: 'WHATSAPP-BAILEYS', qrcode: true)
-    return if response.success? || response.code == 409
+    return if response.success? || response.code == 409 || already_exists?(response)
 
     raise_api_error(response)
+  end
+
+  # Achado real (produto-05, provisionamento real testado 21/08/2026):
+  # instância já criada devolve 403 "This name ... is already in use.",
+  # não 409 como o código assumia -- clicar "Conectar" 2x (ex. reabrir o
+  # modal antes de escanear) quebrava a idempotência inteira.
+  def already_exists?(response)
+    return false unless response.code == 403
+
+    Array(response.parsed_response&.dig('response', 'message')).any? { |m| m.to_s.include?('already in use') }
   end
 
   def configure_webhook
