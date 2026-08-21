@@ -50,7 +50,7 @@ migrate_chatwoot() {
   gcloud run jobs deploy chatwoot-migrate \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=gcs-hmac-access-key:latest,STORAGE_SECRET_ACCESS_KEY=gcs-hmac-secret-key:latest \
     --set-env-vars="$(chatwoot_env)" \
     --command=bundle --args=exec,rails,db:chatwoot_prepare \
     --max-retries=1 --task-timeout=1800 \
@@ -85,7 +85,7 @@ agent_platform_url() {
 chatwoot_secrets() {
   # Só bootstrap: banco, sessão, fila e storage. Chave de canal vem do cofre da
   # plataforma pelo passo `sync-secrets`.
-  echo "POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest"
+  echo "POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=gcs-hmac-access-key:latest,STORAGE_SECRET_ACCESS_KEY=gcs-hmac-secret-key:latest"
 }
 
 # O TLS da VPS usa certificado próprio: o tráfego é cifrado, mas a cadeia não
@@ -107,10 +107,12 @@ POSTGRES_SSL_MODE=require
 REDIS_OPENSSL_VERIFY_MODE=none
 FRONTEND_URL=${frontend}
 ACTIVE_STORAGE_SERVICE=s3_compatible
-STORAGE_BUCKET_NAME=chatwoot
+STORAGE_BUCKET_NAME=rangel-tech-storage
 STORAGE_REGION=us-east-1
-STORAGE_ENDPOINT=https://storage.rangeltech.net
+STORAGE_ENDPOINT=https://storage.googleapis.com
 STORAGE_FORCE_PATH_STYLE=true
+AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 ENABLE_ACCOUNT_SIGNUP=false
 DEFAULT_LOCALE=pt_BR
 EOF
@@ -194,7 +196,7 @@ bootstrap_platform() {
   gcloud run jobs deploy chatwoot-bootstrap \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest,RT_SUPER_ADMIN_PASSWORD=chatwoot-super-admin-password:latest \
+    --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=gcs-hmac-access-key:latest,STORAGE_SECRET_ACCESS_KEY=gcs-hmac-secret-key:latest,RT_SUPER_ADMIN_PASSWORD=chatwoot-super-admin-password:latest \
     --set-env-vars="$(chatwoot_env),RT_SUPER_ADMIN_EMAIL=${RT_SUPER_ADMIN_EMAIL:-admin@rangeltech.net},RT_PLATFORM_APP_NAME=rangel-bridge" \
     --command=bundle --args=exec,rails,runner,scripts/ops/bootstrap_platform.rb \
     --max-retries=1 --task-timeout=900 \
