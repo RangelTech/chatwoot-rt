@@ -43,3 +43,27 @@ jobs:
       # coerente, e o build real acontece no Cloud Build durante o deploy.
       - name: Validate Dockerfile
         run: docker build --check -f chatwoot/Dockerfile . || true
+
+  # infra-01 seção 5 (21/08/2026): deploy real da bridge pro Cloud Run
+  # (rangel-tech), gated por CI verde. `infra/deploy.sh` original (chatwoot-
+  # web/worker/migrate/bootstrap) continua apontando pro projeto errado
+  # (eduk-prd-lake) — corrigido numa fatia separada, mais arriscado (Rails,
+  # min_instances=1, precisa de migration job).
+  deploy-bridge-cloudrun:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [bridge]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy bridge to Cloud Run
+        run: bash ./infra/deploy-bridge-cloudrun.sh
