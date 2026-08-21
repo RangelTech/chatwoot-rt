@@ -15,6 +15,7 @@ on:
     paths:
       - "chatwoot/**"
       - "infra/cloudbuild-chatwoot.yaml"
+      - "infra/terraform/**"
       - ".github/workflows/deploy-cloudrun.yml"
   workflow_dispatch: {}
 
