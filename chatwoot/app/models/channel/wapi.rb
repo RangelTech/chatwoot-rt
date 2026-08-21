@@ -48,7 +48,7 @@ class Channel::Wapi < ApplicationRecord
 
   # Public callback URL shown in the UI for the tenant to paste into the WAPI panel.
   def callback_url
-    "#{ENV.fetch('FRONTEND_URL', '')}/webhooks/wapi/#{project_id}"
+    "#{ENV.fetch('FRONTEND_URL', '')}/webhooks/wapi/#{project_id}?verify_token=#{webhook_verify_token}"
   end
 
   # Calls WAPI's status/ping endpoint and persists the result so the health

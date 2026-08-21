@@ -86,12 +86,30 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   # by the WAPI/Evolution health indicator (section 3c) to force a fresh check
   # instead of only trusting the last webhook-reported status.
   def test_connection
-    return render json: { error: 'Connection test is only available for WAPI channels' }, status: :bad_request unless @inbox.channel.is_a?(Channel::Wapi)
+    return render json: { error: 'Connection test is only available for WAPI or Evolution channels' }, status: :bad_request unless @inbox.channel.is_a?(Channel::Wapi) || @inbox.channel.is_a?(Channel::EvolutionApi)
 
-    render json: @inbox.channel.test_connection!
+    return render json: @inbox.channel.test_connection! if @inbox.channel.is_a?(Channel::Wapi)
+
+    render json: { state: Evolution::Client.new(channel: @inbox.channel).connection_state }
   rescue StandardError => e
     Rails.logger.error "[INBOX TEST_CONNECTION] #{e.message}"
     render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+  end
+
+  def connect_evolution
+    return render json: { error: 'Evolution connection is only available for Evolution channels' }, status: :bad_request unless @inbox.channel.is_a?(Channel::EvolutionApi)
+
+    render json: @inbox.channel.connect!
+  rescue Evolution::Client::ApiError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def reconnect_evolution
+    return render json: { error: 'Evolution reconnection is only available for Evolution channels' }, status: :bad_request unless @inbox.channel.is_a?(Channel::EvolutionApi)
+
+    render json: @inbox.channel.reconnect!
+  rescue Evolution::Client::ApiError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   def destroy
@@ -117,7 +135,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def allowed_channel_types
-    %w[web_widget api email line telegram whatsapp sms wapi]
+    %w[web_widget api email line telegram whatsapp sms wapi evolution_api]
   end
 
   def update_inbox_working_hours
@@ -228,7 +246,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
       'telegram' => Channel::Telegram,
       'whatsapp' => Channel::Whatsapp,
       'sms' => Channel::Sms,
-      'wapi' => Channel::Wapi
+      'wapi' => Channel::Wapi,
+      'evolution_api' => Channel::EvolutionApi
     }[permitted_params[:channel][:type]]
   end
 

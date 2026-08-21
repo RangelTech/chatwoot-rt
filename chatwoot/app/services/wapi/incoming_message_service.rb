@@ -54,7 +54,7 @@ class Wapi::IncomingMessageService
 
   def contact_attributes
     {
-      name: formatted_phone_number,
+      name: params[:name].presence || formatted_phone_number,
       phone_number: phone_number
     }
   end

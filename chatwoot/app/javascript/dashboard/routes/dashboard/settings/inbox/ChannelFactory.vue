@@ -13,6 +13,8 @@ import Telegram from './channels/Telegram.vue';
 import Instagram from './channels/Instagram.vue';
 import Tiktok from './channels/Tiktok.vue';
 import Voice from './channels/Voice.vue';
+import Wapi from './channels/Wapi.vue';
+import EvolutionApi from './channels/EvolutionApi.vue';
 
 const channelViewList = {
   facebook: Facebook,
@@ -28,6 +30,8 @@ const channelViewList = {
   instagram: Instagram,
   tiktok: Tiktok,
   voice: Voice,
+  wapi: Wapi,
+  evolution_api: EvolutionApi,
 };
 
 export default defineComponent({

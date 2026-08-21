@@ -112,7 +112,8 @@ module Api::V1::InboxesHelper
       'telegram' => Current.account.telegram_channels,
       'whatsapp' => Current.account.whatsapp_channels,
       'sms' => Current.account.sms_channels,
-      'wapi' => Current.account.wapi_channels
+      'wapi' => Current.account.wapi_channels,
+      'evolution_api' => Current.account.evolution_api_channels
     }[permitted_params[:channel][:type]]
   end
 end

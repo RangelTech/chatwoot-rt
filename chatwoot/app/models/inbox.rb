@@ -166,6 +166,14 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Whatsapp'
   end
 
+  def wapi?
+    channel_type == 'Channel::Wapi'
+  end
+
+  def evolution_api?
+    channel_type == 'Channel::EvolutionApi'
+  end
+
   def twilio_whatsapp?
     channel_type == 'Channel::TwilioSms' && channel.medium == 'whatsapp'
   end
@@ -200,6 +208,8 @@ class Inbox < ApplicationRecord
       "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/line/#{channel.line_channel_id}"
     when 'Channel::Whatsapp'
       "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/whatsapp/#{channel.phone_number}"
+    when 'Channel::Wapi', 'Channel::EvolutionApi'
+      channel.callback_url
     end
   end
 

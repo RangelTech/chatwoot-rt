@@ -1,0 +1,85 @@
+# Machine-readable contract for the customizations carried by chatwoot-rt.
+# Keep this file current whenever an upstream Chatwoot upgrade is prepared.
+schema_version: 1
+upstream_version: "4.16.2"
+extensions:
+  - id: ai_assist_api_base
+    status: active
+    strategy: small_upstream_patch
+    purpose: Per-account OpenAI-compatible API base for AI Assist.
+    required_paths:
+      - lib/integrations/llm_base_service.rb
+      - lib/integrations/openai/key_validator.rb
+      - config/integration/apps.yml
+      - spec/lib/integrations/llm_base_service_spec.rb
+    markers:
+      lib/integrations/llm_base_service.rb: "hook.settings['api_base']"
+      config/integration/apps.yml: "'api_base': { 'type': 'string' }"
+
+  - id: channel_wapi
+    status: active
+    strategy: additive_with_upstream_touchpoints
+    purpose: WAPI inbox channel and inbound webhook processing.
+    required_paths:
+      - app/models/channel/wapi.rb
+      - app/controllers/webhooks/wapi_controller.rb
+      - app/jobs/webhooks/wapi_events_job.rb
+      - app/services/wapi/incoming_message_service.rb
+      - app/services/wapi/payload_normalizer.rb
+      - app/services/wapi/client.rb
+      - app/services/wapi/send_on_wapi_service.rb
+      - app/services/wapi/connection_test_service.rb
+      - db/migrate/20260819000000_create_channel_wapi.rb
+      - spec/models/channel/wapi_spec.rb
+      - spec/requests/api/v1/accounts/inboxes_wapi_spec.rb
+    touchpoints:
+      - app/models/account.rb
+      - app/controllers/api/v1/accounts/inboxes_controller.rb
+      - app/helpers/api/v1/inboxes_helper.rb
+      - config/routes.rb
+    markers:
+      app/models/account.rb: "has_many :wapi_channels"
+      app/controllers/api/v1/accounts/inboxes_controller.rb: "'wapi' => Channel::Wapi"
+      app/helpers/api/v1/inboxes_helper.rb: "'wapi' => Current.account.wapi_channels"
+      config/routes.rb: "post 'webhooks/wapi/:project_id'"
+
+  - id: channel_evolution_api
+    status: active
+    strategy: additive_with_new_migration
+    purpose: Future Evolution API channel; intentionally not implemented yet.
+    required_paths:
+      - app/models/channel/evolution_api.rb
+      - app/controllers/webhooks/evolution_controller.rb
+      - app/jobs/webhooks/evolution_events_job.rb
+      - app/services/evolution/client.rb
+      - app/services/evolution/incoming_message_service.rb
+      - app/services/evolution/send_on_evolution_service.rb
+      - db/migrate/20260821000000_create_channel_evolution_api.rb
+      - spec/models/channel/evolution_api_spec.rb
+      - spec/jobs/webhooks/evolution_events_job_spec.rb
+    touchpoints:
+      - app/models/account.rb
+      - app/controllers/api/v1/accounts/inboxes_controller.rb
+      - app/helpers/api/v1/inboxes_helper.rb
+      - app/jobs/send_reply_job.rb
+      - config/routes.rb
+    markers:
+      app/models/account.rb: "has_many :evolution_api_channels"
+      app/controllers/api/v1/accounts/inboxes_controller.rb: "'evolution_api' => Channel::EvolutionApi"
+      app/helpers/api/v1/inboxes_helper.rb: "'evolution_api' => Current.account.evolution_api_channels"
+      app/jobs/send_reply_job.rb: "'Channel::EvolutionApi' => ::Evolution::SendOnEvolutionService"
+      config/routes.rb: "post 'webhooks/evolution/:instance_name'"
+
+  - id: branding_and_entrypoints
+    status: active
+    strategy: overlay_and_custom_entrypoints
+    purpose: External branding overlay plus RT web and worker entrypoints.
+    required_paths:
+      - branding/README.md
+      - entrypoints/web.sh
+      - entrypoints/worker.sh
+      - Dockerfile
+    markers:
+      Dockerfile: "COPY chatwoot/entrypoints/web.sh /app/rt-web.sh"
+      entrypoints/web.sh: "bundle exec rails server"
+      entrypoints/worker.sh: "bundle exec sidekiq"

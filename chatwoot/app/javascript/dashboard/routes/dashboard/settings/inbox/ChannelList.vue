@@ -42,6 +42,18 @@ const channelList = computed(() => {
       icon: 'i-woot-whatsapp',
     },
     {
+      key: 'wapi',
+      title: 'WAPI',
+      description: 'Connect an existing WAPI WhatsApp instance.',
+      icon: 'i-woot-whatsapp',
+    },
+    {
+      key: 'evolution_api',
+      title: 'Evolution API',
+      description: 'Connect a dedicated WhatsApp Web instance with QR code.',
+      icon: 'i-woot-whatsapp',
+    },
+    {
       key: 'sms',
       title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SMS.TITLE'),
       description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SMS.DESCRIPTION'),

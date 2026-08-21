@@ -367,6 +367,31 @@
           "ERROR_MESSAGE": "We were not able to create the voice channel"
         }
       },
+      "WAPI": {
+        "TITLE": "WAPI",
+        "DESC": "Connect an existing WAPI WhatsApp instance with its App ID and token.",
+        "APP_ID": "App ID",
+        "APP_ID_PLACEHOLDER": "WAPI instance ID",
+        "TOKEN": "Token",
+        "TOKEN_PLACEHOLDER": "WAPI bearer token",
+        "SUBMIT_BUTTON": "Create WAPI inbox",
+        "ERROR_MESSAGE": "Unable to create the WAPI inbox."
+      },
+      "EVOLUTION_API": {
+        "TITLE": "Evolution API",
+        "DESC": "Connect a dedicated Evolution API instance and scan its QR code after creating the inbox.",
+        "INSTANCE_NAME": "Instance name",
+        "INSTANCE_NAME_PLACEHOLDER": "tenant-whatsapp",
+        "API_URL": "Evolution URL",
+        "API_URL_PLACEHOLDER": "https://evolution-tenant.evolution.rangeltech.net",
+        "API_KEY": "API key",
+        "API_KEY_PLACEHOLDER": "Evolution API key",
+        "SUBMIT_BUTTON": "Create Evolution inbox",
+        "QR_ALT": "Evolution API connection QR code",
+        "QR_HELP": "Scan this QR code in WhatsApp, then continue to finish configuring the inbox.",
+        "CONTINUE_BUTTON": "Continue setup",
+        "ERROR_MESSAGE": "Unable to create the Evolution API inbox."
+      },
       "API_CHANNEL": {
         "TITLE": "API Channel",
         "DESC": "Integrate with API channel and start supporting your customers.",
@@ -1346,6 +1371,8 @@
       "API": "API Channel",
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
+      "WAPI": "WAPI",
+      "EVOLUTION_API": "Evolution API",
       "VOICE": "Voice"
     }
   }

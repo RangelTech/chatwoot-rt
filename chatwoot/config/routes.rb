@@ -286,6 +286,8 @@ Rails.application.routes.draw do
             post :register_webhook, on: :member
             post :reset_secret, on: :member
             post :test_connection, on: :member
+            post :connect_evolution, on: :member
+            post :reconnect_evolution, on: :member
             if ChatwootApp.enterprise?
               resource :conference, only: %i[create destroy], controller: 'conference' do
                 get :token, on: :member
@@ -649,6 +651,7 @@ Rails.application.routes.draw do
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   post 'webhooks/wapi/:project_id', to: 'webhooks/wapi#process_payload'
+  post 'webhooks/evolution/:instance_name', to: 'webhooks/evolution#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
