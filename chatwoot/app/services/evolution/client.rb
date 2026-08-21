@@ -49,7 +49,15 @@ class Evolution::Client
   end
 
   def configure_webhook
-    response = post("webhook/set/#{instance_name}", url: callback_url, events: %w[MESSAGES_UPSERT CONNECTION_UPDATE])
+    # Achado real (produto-05, provisionamento real testado 21/08/2026):
+    # a v2.3.7 exige o corpo aninhado sob "webhook" -- documentação
+    # publicada (v1/blog posts) mostra o formato antigo, sem aninhamento,
+    # e o payload flat dá 400 ("instance requires property \"webhook\"").
+    # Confirmado direto contra uma instância real rodando, não só doc.
+    response = post(
+      "webhook/set/#{instance_name}",
+      webhook: { url: callback_url, events: %w[MESSAGES_UPSERT CONNECTION_UPDATE], enabled: true }
+    )
     raise_api_error(response) unless response.success?
   end
 
@@ -57,8 +65,13 @@ class Evolution::Client
     raise_api_error(response) unless response.success?
 
     body = response.parsed_response
+    # Achado real (produto-05, provisionamento real testado 21/08/2026):
+    # GET /instance/connect devolve payload ACHATADO na v2.3.7
+    # (`{pairingCode, code, base64}`), não aninhado sob "qrcode"/"instance"
+    # como a documentação (mais antiga) e a spec original assumiam.
+    # Confirmado contra instância real -- sem esse fix o QR nunca renderiza.
     {
-      qr_code: body.dig('qrcode', 'base64'),
+      qr_code: body['base64'] || body.dig('qrcode', 'base64'),
       connection_status: {
         'state' => body.dig('instance', 'state') || body.dig('instance', 'status') || connection_state,
         'source' => 'provider',
