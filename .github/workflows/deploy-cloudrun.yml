@@ -79,6 +79,9 @@ jobs:
             echo "storage_secret_access_key<<EOF_S3"
             fetch_secret STORAGE_SECRET_ACCESS_KEY
             echo "EOF_S3"
+            echo "storage_access_key_id<<EOF_S3ID"
+            fetch_secret STORAGE_ACCESS_KEY_ID
+            echo "EOF_S3ID"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build image
@@ -93,12 +96,12 @@ jobs:
           SECRET_KEY_BASE: ${{ steps.infisical.outputs.secret_key_base }}
           REDIS_URL: ${{ steps.infisical.outputs.redis_url }}
           STORAGE_SECRET_ACCESS_KEY: ${{ steps.infisical.outputs.storage_secret_access_key }}
+          STORAGE_ACCESS_KEY_ID: ${{ steps.infisical.outputs.storage_access_key_id }}
         run: |
           gcloud run deploy chatwoot-web \
             --project=rangel-tech --region=us-central1 \
             --image=us-central1-docker.pkg.dev/rangel-tech/containers/chatwoot-rt:${{ github.sha }} \
-            --set-secrets=STORAGE_ACCESS_KEY_ID=gcs-hmac-access-key:latest \
-            --set-env-vars="RAILS_ENV=production,NODE_ENV=production,INSTALLATION_ENV=docker,RAILS_LOG_TO_STDOUT=true,POSTGRES_HOST=66.94.101.153,POSTGRES_PORT=5433,POSTGRES_DATABASE=chatwoot_prod,POSTGRES_USERNAME=chatwoot_app,POSTGRES_PASSWORD=$POSTGRES_PASSWORD,POSTGRES_SSL_MODE=require,REDIS_OPENSSL_VERIFY_MODE=none,SECRET_KEY_BASE=$SECRET_KEY_BASE,REDIS_URL=$REDIS_URL,FRONTEND_URL=https://chat.rangeltech.net,ACTIVE_STORAGE_SERVICE=s3_compatible,STORAGE_BUCKET_NAME=rangel-tech-storage,STORAGE_REGION=us-east-1,STORAGE_ENDPOINT=https://storage.googleapis.com,STORAGE_FORCE_PATH_STYLE=true,STORAGE_SECRET_ACCESS_KEY=$STORAGE_SECRET_ACCESS_KEY,AWS_REQUEST_CHECKSUM_CALCULATION=when_required,AWS_RESPONSE_CHECKSUM_VALIDATION=when_required,ENABLE_ACCOUNT_SIGNUP=false,DEFAULT_LOCALE=pt_BR" \
+            --set-env-vars="RAILS_ENV=production,NODE_ENV=production,INSTALLATION_ENV=docker,RAILS_LOG_TO_STDOUT=true,POSTGRES_HOST=66.94.101.153,POSTGRES_PORT=5433,POSTGRES_DATABASE=chatwoot_prod,POSTGRES_USERNAME=chatwoot_app,POSTGRES_PASSWORD=$POSTGRES_PASSWORD,POSTGRES_SSL_MODE=require,REDIS_OPENSSL_VERIFY_MODE=none,SECRET_KEY_BASE=$SECRET_KEY_BASE,REDIS_URL=$REDIS_URL,FRONTEND_URL=https://chat.rangeltech.net,ACTIVE_STORAGE_SERVICE=s3_compatible,STORAGE_BUCKET_NAME=rangel-tech-storage,STORAGE_REGION=us-east-1,STORAGE_ENDPOINT=https://storage.googleapis.com,STORAGE_FORCE_PATH_STYLE=true,STORAGE_ACCESS_KEY_ID=$STORAGE_ACCESS_KEY_ID,STORAGE_SECRET_ACCESS_KEY=$STORAGE_SECRET_ACCESS_KEY,AWS_REQUEST_CHECKSUM_CALCULATION=when_required,AWS_RESPONSE_CHECKSUM_VALIDATION=when_required,ENABLE_ACCOUNT_SIGNUP=false,DEFAULT_LOCALE=pt_BR" \
             --command=./rt-web.sh \
             --allow-unauthenticated \
             --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
