@@ -1,18 +1,17 @@
-name: Deploy Chatwoot+bridge to VPS
+name: Deploy Chatwoot worker to VPS
 
-# agent-llm mega spec (infra-04): chatwoot-web/worker/bridge saem do Cloud Run
-# e passam a rodar na VPS rangeltech.net, junto do resto do stack RT.
+# agent-llm mega spec (infra-01 §7, cutover 21/08/2026): só o worker
+# (Sidekiq) roda na VPS agora. web e bridge saíram pra Cloud Run (deploy via
+# infra/deploy.sh, gcloud) -- Cloud Run cobra CPU sempre alocada pro worker
+# permanentemente conectado ao Redis, então só ele compensa ficar na VPS.
 #
 # infra/.env.prod.chatwoot é renderizado automaticamente a cada deploy (step
 # "Render .env.prod.chatwoot on VPS", infra-07) — sobrescrita completa, não
-# incremental. infra/.env.prod.bridge continua sendo pré-requisito manual de
-# bootstrap na VPS, preenchido a partir do .example correspondente. São
-# arquivos SEPARADOS de propósito (ver docker-compose.prod.yml).
+# incremental. Historicamente era compartilhado com web (mesmo nome de
+# arquivo mantido pra não quebrar o pipeline).
 #
-# Migração de schema (db:chatwoot_prepare) é passo manual explícito — ver
-# comentário no docker-compose.prod.yml — não roda automaticamente aqui de
-# propósito (docs/decisions/0001-boundaries.md, item 6: nunca migrar no boot,
-# nunca automático demais pra rodar concorrente sem querer).
+# Migração de schema (db:chatwoot_prepare) roda contra o Cloud Run agora
+# (`infra/deploy.sh migrate`), não é mais coberta por este workflow.
 
 on:
   workflow_dispatch: {}
@@ -20,7 +19,6 @@ on:
     branches: [master, main]
     paths:
       - "chatwoot/**"
-      - "bridge/**"
       - "infra/docker-compose.prod.yml"
       - ".github/workflows/deploy-vps.yml"
 
@@ -49,8 +47,8 @@ jobs:
         run: |
           rsync -az --delete \
             -e "ssh -i ~/.ssh/vps_rt_infra_ed25519" \
-            --exclude ".env.prod.chatwoot" --exclude ".env.prod.bridge" \
-            chatwoot bridge scripts infra \
+            --exclude ".env.prod.chatwoot" \
+            chatwoot scripts infra \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/platform/chatwoot/"
 
       - name: Fetch rotating secrets from Infisical
@@ -132,12 +130,14 @@ jobs:
 
           FRONTEND_URL=https://chat.rangeltech.net
           ACTIVE_STORAGE_SERVICE=s3_compatible
-          STORAGE_BUCKET_NAME=chatwoot
+          STORAGE_BUCKET_NAME=rangel-tech-storage
           STORAGE_REGION=us-east-1
-          STORAGE_ENDPOINT=https://storage.rangeltech.net
+          STORAGE_ENDPOINT=https://storage.googleapis.com
           STORAGE_FORCE_PATH_STYLE=true
-          STORAGE_ACCESS_KEY_ID=minioadmin
+          STORAGE_ACCESS_KEY_ID=GOOG1EPDWBM4KXU5RIAUDLAGUFQFJWT44AVZ7UHOX7SV4URJ6FMQGWKHMQOX5
           STORAGE_SECRET_ACCESS_KEY=$STORAGE_SECRET_ACCESS_KEY
+          AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 
           ENABLE_ACCOUNT_SIGNUP=false
           DEFAULT_LOCALE=pt_BR
@@ -162,7 +162,10 @@ jobs:
             "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml build && docker compose -f infra/docker-compose.prod.yml up -d --remove-orphans"
 
       - name: Smoke check
+        # Sidekiq não expõe HTTP -- o sinal de saúde é "container de pé e
+        # conectado ao Redis", visto no log de boot (mesmo texto checado
+        # manualmente em produção, 21/08/2026).
         run: |
           ssh -i ~/.ssh/vps_rt_infra_ed25519 \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
-            "curl -fsS -o /dev/null -w 'web=%{http_code}\n' http://localhost:3000/ || true; curl -fsS -o /dev/null -w 'bridge=%{http_code}\n' http://localhost:8100/ || true"
+            "docker ps --filter name=chatwoot-worker --format '{{.Status}}' | grep -q Up && echo 'chatwoot-worker: up' || (echo '::error::chatwoot-worker not running after deploy' && exit 1)"

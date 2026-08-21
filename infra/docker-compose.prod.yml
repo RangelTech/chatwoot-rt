@@ -1,27 +1,24 @@
 # Produção na VPS rangeltech.net (agent-llm mega spec, infra-04).
-# web + worker (Sidekiq) + bridge, entrando na rede Docker externa do
+# Só o worker (Sidekiq) roda na VPS. web e bridge saíram pro Cloud Run
+# (infra-01 §7, cutover real em 21/08/2026) — Cloud Run cobra CPU sempre
+# alocada pra processo permanentemente conectado ao Redis (worker), então
+# só ele fica aqui; web/bridge são request-driven, ótimo fit pro Cloud Run
+# (min_instances=0/1, escala sozinho). Entra na rede Docker externa do
 # vps_rt_infra (precisa desse stack já de pé).
 #
 # Simplificação feita nesta migração (registrada em infra-04): Postgres e
-# Redis eram acessados por IP público + TLS de certificado próprio
-# (66.94.101.153:5433, rediss://...) porque o Chatwoot rodava fora da VPS
-# (Cloud Run). Rodando na mesma VPS agora, o tráfego vira rede interna do
-# Docker (nomes de serviço `postgres`/`redis`, sem TLS necessário) — mais
-# simples e sem exposição pública desnecessária desses dois bancos.
+# Redis são acessados por nome de serviço Docker (`postgres`/`redis`),
+# rede interna, sem TLS necessário — mais simples e sem exposição pública
+# desnecessária desses dois bancos, já que o worker roda na mesma VPS.
 #
 # Migração de schema é passo EXPLÍCITO (docs/decisions/0001-boundaries.md,
-# item 6) — nunca no boot do container. Rodar manualmente após o primeiro
-# `up`, e depois de qualquer upgrade de versão do Chatwoot:
-#   docker compose -f infra/docker-compose.prod.yml \
-#     run --rm chatwoot-web bundle exec rails db:chatwoot_prepare
+# item 6) — nunca no boot do container. Roda contra o Cloud Run via
+# `chatwoot-rt/infra/deploy.sh migrate` (job `chatwoot-migrate`), não mais
+# aqui.
 #
-# `.env.prod.chatwoot` (web+worker) e `.env.prod.bridge` (bridge) são
-# arquivos SEPARADOS de propósito — achado real em produção (17/08/2026):
-# um `.env.prod` único compartilhado vazou DATABASE_URL/PORT da bridge pro
-# Chatwoot via env_file, quebrando o boot 2 vezes (Rails prioriza
-# DATABASE_URL sobre POSTGRES_* e escutava na porta errada). Cada serviço só
-# lê o arquivo que é dele agora — não tem mais `--env-file` no CLI, os
-# valores de container vêm do `env_file:` de cada bloco abaixo.
+# `.env.prod.chatwoot` segue sendo o env_file do worker — historicamente
+# compartilhado com web, mantido pelo mesmo nome pra não quebrar o
+# workflow de deploy (`deploy-vps.yml` renderiza esse arquivo a cada push).
 #
 # Deploy real via pipeline do vps_rt_infra/CI, não SSH manual.
 #
@@ -31,31 +28,6 @@
 # containers do outro.
 name: chatwoot
 services:
-  chatwoot-web:
-    build:
-      context: ..
-      dockerfile: chatwoot/Dockerfile
-    container_name: chatwoot-web
-    restart: unless-stopped
-    command: ./rt-web.sh
-    env_file:
-      - .env.prod.chatwoot
-    networks:
-      - internal
-      - public
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=public
-      - traefik.http.routers.chatwoot-web.rule=Host(`${CHATWOOT_DOMAIN:-chat.rangeltech.net}`)
-      - traefik.http.routers.chatwoot-web.entrypoints=websecure
-      - traefik.http.routers.chatwoot-web.tls.certresolver=letsencrypt
-      - traefik.http.routers.chatwoot-web.middlewares=security-headers@file
-      - traefik.http.services.chatwoot-web.loadbalancer.server.port=3000
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-
   chatwoot-worker:
     build:
       context: ..
@@ -67,41 +39,17 @@ services:
       - .env.prod.chatwoot
     networks:
       - internal
-      # Sidekiq chama URLs públicas (bridge.rangeltech.net) pros webhooks de
-      # Agent Bot -- sem a rede `public`, o worker fica sem rota de saída pra
-      # internet (`internal` tem internal:true no vps_rt_infra, sem gateway).
-      # Achado real em producao (17/08/2026): parecia erro de DNS (falhava
-      # pra QUALQUER host, nao só bridge.rangeltech.net), mas era falta de
+      # Sidekiq chama URLs públicas (bridge.rangeltech.net, agora no Cloud
+      # Run) pros webhooks de Agent Bot -- sem a rede `public`, o worker
+      # fica sem rota de saída pra internet (`internal` tem internal:true
+      # no vps_rt_infra, sem gateway). Achado real em producao (17/08/2026):
+      # parecia erro de DNS (falhava pra QUALQUER host), mas era falta de
       # rota mesmo — sem network pública, nem DNS externo resolve.
       - public
     deploy:
       resources:
         limits:
           memory: 2G
-
-  chatwoot-bridge:
-    build:
-      context: ..
-      dockerfile: bridge/Dockerfile
-    container_name: chatwoot-bridge
-    restart: unless-stopped
-    env_file:
-      - .env.prod.bridge
-    networks:
-      - internal
-      - public
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=public
-      - traefik.http.routers.chatwoot-bridge.rule=Host(`${BRIDGE_DOMAIN:-bridge.rangeltech.net}`)
-      - traefik.http.routers.chatwoot-bridge.entrypoints=websecure
-      - traefik.http.routers.chatwoot-bridge.tls.certresolver=letsencrypt
-      - traefik.http.routers.chatwoot-bridge.middlewares=security-headers@file
-      - traefik.http.services.chatwoot-bridge.loadbalancer.server.port=8100
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
 networks:
   internal:
