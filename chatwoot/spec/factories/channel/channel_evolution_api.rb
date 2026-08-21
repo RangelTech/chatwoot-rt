@@ -3,7 +3,8 @@ FactoryBot.define do
     instance_name { "evolution-#{SecureRandom.hex(6)}" }
     api_url { 'https://evolution.example.test' }
     api_key { SecureRandom.hex(20) }
-    inbox
     account
+    # Mesmo achado do channel_wapi.rb -- ver comentário lá.
+    inbox { association :inbox, account: account }
   end
 end
