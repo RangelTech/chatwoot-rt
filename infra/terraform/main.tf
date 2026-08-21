@@ -1,0 +1,203 @@
+terraform {
+  required_version = ">= 1.9.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+  }
+  backend "gcs" {
+    bucket = "rangel-tech-tfstate"
+    prefix = "chatwoot-web"
+  }
+}
+
+provider "google" {
+  project = var.project
+  region  = var.region
+}
+
+variable "project" {
+  type    = string
+  default = "rangel-tech"
+}
+
+variable "region" {
+  type    = string
+  default = "us-central1"
+}
+
+variable "image" {
+  description = "Full image ref, tagged with the commit SHA being deployed."
+  type        = string
+}
+
+variable "postgres_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "secret_key_base" {
+  type      = string
+  sensitive = true
+}
+
+variable "redis_url" {
+  type      = string
+  sensitive = true
+}
+
+variable "storage_access_key_id" {
+  type      = string
+  sensitive = true
+}
+
+variable "storage_secret_access_key" {
+  type      = string
+  sensitive = true
+}
+
+resource "google_cloud_run_v2_service" "chatwoot_web" {
+  name     = "chatwoot-web"
+  project  = var.project
+  location = var.region
+  ingress  = "INGRESS_TRAFFIC_ALL"
+
+  template {
+    containers {
+      image   = var.image
+      command = ["./rt-web.sh"]
+
+      ports {
+        container_port = 3000
+      }
+
+      resources {
+        limits = {
+          cpu    = "2"
+          memory = "2Gi"
+        }
+      }
+
+      env {
+        name  = "RAILS_ENV"
+        value = "production"
+      }
+      env {
+        name  = "NODE_ENV"
+        value = "production"
+      }
+      env {
+        name  = "INSTALLATION_ENV"
+        value = "docker"
+      }
+      env {
+        name  = "RAILS_LOG_TO_STDOUT"
+        value = "true"
+      }
+      env {
+        name  = "POSTGRES_HOST"
+        value = "66.94.101.153"
+      }
+      env {
+        name  = "POSTGRES_PORT"
+        value = "5433"
+      }
+      env {
+        name  = "POSTGRES_DATABASE"
+        value = "chatwoot_prod"
+      }
+      env {
+        name  = "POSTGRES_USERNAME"
+        value = "chatwoot_app"
+      }
+      env {
+        name  = "POSTGRES_SSL_MODE"
+        value = "require"
+      }
+      env {
+        name  = "REDIS_OPENSSL_VERIFY_MODE"
+        value = "none"
+      }
+      env {
+        name  = "FRONTEND_URL"
+        value = "https://chat.rangeltech.net"
+      }
+      env {
+        name  = "ACTIVE_STORAGE_SERVICE"
+        value = "s3_compatible"
+      }
+      env {
+        name  = "STORAGE_BUCKET_NAME"
+        value = "rangel-tech-storage"
+      }
+      env {
+        name  = "STORAGE_REGION"
+        value = "us-east-1"
+      }
+      env {
+        name  = "STORAGE_ENDPOINT"
+        value = "https://storage.googleapis.com"
+      }
+      env {
+        name  = "STORAGE_FORCE_PATH_STYLE"
+        value = "true"
+      }
+      env {
+        name  = "AWS_REQUEST_CHECKSUM_CALCULATION"
+        value = "when_required"
+      }
+      env {
+        name  = "AWS_RESPONSE_CHECKSUM_VALIDATION"
+        value = "when_required"
+      }
+      env {
+        name  = "ENABLE_ACCOUNT_SIGNUP"
+        value = "false"
+      }
+      env {
+        name  = "DEFAULT_LOCALE"
+        value = "pt_BR"
+      }
+      env {
+        name  = "POSTGRES_PASSWORD"
+        value = var.postgres_password
+      }
+      env {
+        name  = "SECRET_KEY_BASE"
+        value = var.secret_key_base
+      }
+      env {
+        name  = "REDIS_URL"
+        value = var.redis_url
+      }
+      env {
+        name  = "STORAGE_ACCESS_KEY_ID"
+        value = var.storage_access_key_id
+      }
+      env {
+        name  = "STORAGE_SECRET_ACCESS_KEY"
+        value = var.storage_secret_access_key
+      }
+    }
+
+    scaling {
+      min_instance_count = 1
+      max_instance_count = 5
+    }
+
+    timeout = "600s"
+  }
+}
+
+resource "google_cloud_run_v2_service_iam_member" "public" {
+  project  = var.project
+  location = var.region
+  name     = google_cloud_run_v2_service.chatwoot_web.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+output "url" {
+  value = google_cloud_run_v2_service.chatwoot_web.uri
+}
