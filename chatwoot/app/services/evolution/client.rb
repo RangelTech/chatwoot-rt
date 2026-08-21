@@ -67,12 +67,24 @@ class Evolution::Client
     }
   end
 
+  # Achado real (produto-05 seção 9c, teste de conexão contra host inexistente):
+  # HTTParty deixa erro de rede (DNS não resolve, connection refused, timeout)
+  # subir como exceção própria da stdlib/rede (Socket::ResolutionError,
+  # Errno::ECONNREFUSED, Net::OpenTimeout, ...), não como ApiError -- o
+  # controller só captura ApiError (rescue Evolution::Client::ApiError), então
+  # qualquer falha de rede virava 500 puro em vez do erro tratado que o
+  # wizard/health indicator espera. Container Evolution por tenant (seção 4)
+  # ainda vai ficar fora do ar às vezes na vida real -- isso não pode 500.
   def get(path)
     HTTParty.get(url(path), headers: headers, timeout: 15)
+  rescue StandardError => e
+    raise ApiError, "Evolution API unreachable: #{e.message}"
   end
 
   def post(path, body = {})
     HTTParty.post(url(path), headers: headers, body: body.to_json, timeout: 15)
+  rescue StandardError => e
+    raise ApiError, "Evolution API unreachable: #{e.message}"
   end
 
   def url(path)
