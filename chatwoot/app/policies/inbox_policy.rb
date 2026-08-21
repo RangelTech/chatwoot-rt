@@ -70,6 +70,23 @@ class InboxPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  # WAPI/Evolution (produto-05 seções 3a/4a): mesmas 3 rotas ficaram sem
+  # policy quando os controllers foram adicionados -- Pundit's
+  # check_authorization (before_action global) exige um método por action
+  # existente, senão é NoMethodError -> 500 pra qualquer usuário, credencial
+  # certa ou não. Achado testando de verdade (curl real), não suposição.
+  def test_connection?
+    @account_user.administrator?
+  end
+
+  def connect_evolution?
+    @account_user.administrator?
+  end
+
+  def reconnect_evolution?
+    @account_user.administrator?
+  end
+
   def enable_whatsapp_calling?
     @account_user.administrator?
   end
