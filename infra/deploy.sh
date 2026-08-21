@@ -7,10 +7,9 @@
 # Uso: ./infra/deploy.sh [bridge|chatwoot|migrate|locale|sync-secrets|bootstrap|all]
 set -euo pipefail
 
-PROJECT=eduk-prd-lake
+PROJECT=rangel-tech
 REGION=us-central1
-REPO=us-central1-docker.pkg.dev/$PROJECT/cloud-run-source-deploy
-RUNTIME_SA=devlake@eduk-prd-lake.iam.gserviceaccount.com
+REPO=us-central1-docker.pkg.dev/$PROJECT/containers
 SHORT_SHA=$(git rev-parse --short HEAD)
 
 target=${1:-all}
@@ -28,7 +27,6 @@ deploy_bridge() {
   gcloud run deploy chatwoot-bridge \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt-bridge:$SHORT_SHA \
-    --service-account=$RUNTIME_SA \
     --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest \
     --set-env-vars="CHATWOOT_BASE_URL=$(chatwoot_url),AGENT_PLATFORM_URL=$(agent_platform_url)" \
     --allow-unauthenticated \
@@ -52,7 +50,6 @@ migrate_chatwoot() {
   gcloud run jobs deploy chatwoot-migrate \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --service-account=$RUNTIME_SA \
     --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest \
     --set-env-vars="$(chatwoot_env)" \
     --command=bundle --args=exec,rails,db:chatwoot_prepare \
@@ -61,40 +58,28 @@ migrate_chatwoot() {
 }
 
 deploy_chatwoot() {
+  # infra-01 seção 7: Sidekiq (worker) fica na VPS por decisão explícita
+  # (Cloud Run cobra CPU sempre alocada pra processo permanentemente
+  # conectado ao Redis — puro custo adicional, sem ganho). Só o Web
+  # (request-driven, ótimo fit) vai pro Cloud Run.
   build chatwoot
   gcloud run deploy chatwoot-web \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --service-account=$RUNTIME_SA \
     --set-secrets="$(chatwoot_secrets)" \
     --set-env-vars="$(chatwoot_env)" \
     --command=./rt-web.sh \
     --allow-unauthenticated \
     --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
     --timeout=600 --port=3000
-
-  # Sidekiq com min-instances=1: fila parada é atendimento parado.
-  gcloud run deploy chatwoot-worker \
-    --project=$PROJECT --region=$REGION \
-    --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --service-account=$RUNTIME_SA \
-    --set-secrets="$(chatwoot_secrets)" \
-    --set-env-vars="$(chatwoot_env)" \
-    --command=./rt-worker.sh \
-    --no-allow-unauthenticated \
-    --no-cpu-throttling \
-    --memory=2Gi --cpu=1 --min-instances=1 --max-instances=2 \
-    --timeout=3600
 }
 
 chatwoot_url() {
-  gcloud run services describe chatwoot-web --project=$PROJECT --region=$REGION \
-    --format='value(status.url)' 2>/dev/null || echo ""
+  echo "https://chat.rangeltech.net"
 }
 
 agent_platform_url() {
-  gcloud run services describe teste-ia-backend --project=$PROJECT --region=$REGION \
-    --format='value(status.url)' 2>/dev/null || echo ""
+  echo "https://ia.rangeltech.net"
 }
 
 chatwoot_secrets() {
@@ -162,7 +147,6 @@ roda_tarefa() {
   gcloud run jobs deploy chatwoot-tarefas \
     --project=$PROJECT --region=$REGION \
     --image="$imagem" \
-    --service-account=$RUNTIME_SA \
     --set-secrets="$(chatwoot_secrets),PLATFORM_SYNC_TOKEN=chatwoot-bridge-admin-token:latest" \
     --set-env-vars="$(chatwoot_env),PLATFORM_URL=$(agent_platform_url)" \
     --command=bundle --args="exec,rails,runner,${script}" \
@@ -210,7 +194,6 @@ bootstrap_platform() {
   gcloud run jobs deploy chatwoot-bootstrap \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --service-account=$RUNTIME_SA \
     --set-secrets=POSTGRES_PASSWORD=chatwoot-db-password:latest,SECRET_KEY_BASE=chatwoot-secret-key-base:latest,REDIS_URL=chatwoot-redis-url:latest,STORAGE_ACCESS_KEY_ID=teste-ia-s3-access-key:latest,STORAGE_SECRET_ACCESS_KEY=teste-ia-s3-secret-key:latest,RT_SUPER_ADMIN_PASSWORD=chatwoot-super-admin-password:latest \
     --set-env-vars="$(chatwoot_env),RT_SUPER_ADMIN_EMAIL=${RT_SUPER_ADMIN_EMAIL:-admin@rangeltech.net},RT_PLATFORM_APP_NAME=rangel-bridge" \
     --command=bundle --args=exec,rails,runner,scripts/ops/bootstrap_platform.rb \
