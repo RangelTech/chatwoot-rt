@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from app.api import admin, agent_bot, label_webhook, outbound, webhooks
+from app.api import admin, agent_bot, label_webhook
 from app.config import settings
 from app.db import get_connection
 
@@ -42,12 +42,12 @@ def run_migrations() -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Sem isso, credencial de canal (token W-API etc.) seria cifrada com a
+    # Sem isso, segredo em repouso (integration_key, etc.) seria cifrado com a
     # chave derivada pública do código-fonte — parece protegido, não está.
     if settings.environment == "production" and not settings.encryption_key.strip():
         raise RuntimeError(
             "ENCRYPTION_KEY é obrigatória com ENVIRONMENT=production — "
-            "sem ela, credenciais de canal seriam cifradas com a chave de "
+            "sem ela, segredos em repouso seriam cifrados com a chave de "
             "desenvolvimento conhecida no código-fonte."
         )
     applied = run_migrations()
@@ -58,10 +58,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="chatwoot-rt bridge", lifespan=lifespan)
 app.include_router(admin.router)
-app.include_router(webhooks.router)
 app.include_router(agent_bot.router)
 app.include_router(label_webhook.router)
-app.include_router(outbound.router)
 
 
 @app.get("/health")

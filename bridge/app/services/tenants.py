@@ -72,68 +72,6 @@ def get_user_link(tenant_id: str, platform_user_id: str) -> dict | None:
         ).fetchone()
 
 
-def upsert_channel(
-    *,
-    tenant_id: str,
-    provider: str,
-    external_id: str,
-    credentials: dict | None,
-    api_base: str,
-) -> dict:
-    import json
-
-    payload = encrypt(json.dumps(credentials)) if credentials else None
-    with get_connection() as conn:
-        existing = conn.execute(
-            "SELECT * FROM tenant_channels WHERE provider = %s AND external_id = %s",
-            (provider, external_id),
-        ).fetchone()
-        if existing and str(existing["tenant_id"]) != str(tenant_id):
-            # Um mesmo canal não pode servir dois tenants: seria vazamento.
-            raise PermissionError("canal já pertence a outro tenant")
-        return conn.execute(
-            """INSERT INTO tenant_channels (tenant_id, provider, external_id,
-                                            credentials_encrypted, api_base)
-               VALUES (%s, %s, %s, %s, %s)
-               ON CONFLICT (provider, external_id) DO UPDATE
-                   SET credentials_encrypted = COALESCE(
-                           EXCLUDED.credentials_encrypted, tenant_channels.credentials_encrypted),
-                       api_base = EXCLUDED.api_base,
-                       updated_at = now()
-               RETURNING *""",
-            (tenant_id, provider, external_id, payload, api_base),
-        ).fetchone()
-
-
-def set_channel_inbox(channel_id: str, inbox_id: int, identifier: str | None) -> dict:
-    with get_connection() as conn:
-        return conn.execute(
-            """UPDATE tenant_channels
-                  SET chatwoot_inbox_id = %s, chatwoot_inbox_identifier = %s, updated_at = now()
-                WHERE id = %s RETURNING *""",
-            (inbox_id, identifier, channel_id),
-        ).fetchone()
-
-
-def channel_by_webhook_token(token: str) -> dict | None:
-    """Resolve o tenant pela própria URL, antes de olhar o corpo do webhook."""
-    with get_connection() as conn:
-        return conn.execute(
-            """SELECT c.*, t.chatwoot_account_id
-                 FROM tenant_channels c
-                 JOIN tenant_links t ON t.tenant_id = c.tenant_id
-                WHERE c.webhook_token = %s AND c.is_active""",
-            (token,),
-        ).fetchone()
-
-
-def channel_credentials(channel: dict) -> dict:
-    import json
-
-    raw = decrypt(channel.get("credentials_encrypted"))
-    return json.loads(raw) if raw else {}
-
-
 def upsert_ai_config(
     *,
     tenant_id: str,

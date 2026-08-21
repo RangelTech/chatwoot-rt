@@ -39,7 +39,7 @@ def client(_schema):
     from app.main import app
 
     with psycopg.connect(settings.database_url, autocommit=True) as conn:
-        conn.execute("TRUNCATE tenant_links, channel_events CASCADE")
+        conn.execute("TRUNCATE tenant_links CASCADE")
     return TestClient(app)
 
 
