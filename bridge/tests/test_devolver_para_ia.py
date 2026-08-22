@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -167,3 +169,66 @@ def test_label_webhook_token_desconhecido(client):
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "unknown_tenant"
+
+
+def test_devolver_para_ia_suporta_ciclos_concorrentes_sem_deixar_label_presente(
+    tenant_id, monkeypatch
+):
+    """A macro pode ser usada repetidamente, inclusive com webhooks duplicados.
+
+    Chatwoot reentrega eventos em falhas transitórias. Cada processamento deve
+    voltar a conversa para a IA e remover somente a label reservada, sem perder
+    as labels de negócio nem criar um estado diferente por corrida.
+    """
+    from app.api import label_webhook
+    from app.services import chatwoot, tenants
+
+    _tenant_com_usuario(tenant_id)
+    tenants.set_conversation_state(
+        tenant_id=tenant_id, conversation_id=555, state="human_active"
+    )
+
+    labels = ["ia-retomar", "vip"]
+    labels_definidas = []
+
+    async def falso_token(_user_id):
+        return "token-de-conta"
+
+    async def falso_get_conversation(account_id, token, conversation_id):
+        assert account_id == 7
+        assert token == "token-de-conta"
+        assert conversation_id == 42
+        return {"id": 555}
+
+    async def falso_get_labels(account_id, token, conversation_id):
+        return list(labels)
+
+    async def falso_set_labels(account_id, token, conversation_id, novas_labels):
+        labels[:] = novas_labels
+        labels_definidas.append(list(novas_labels))
+        return {}
+
+    monkeypatch.setattr(chatwoot, "user_access_token", falso_token)
+    monkeypatch.setattr(chatwoot, "get_conversation", falso_get_conversation)
+    monkeypatch.setattr(chatwoot, "get_conversation_labels", falso_get_labels)
+    monkeypatch.setattr(chatwoot, "set_conversation_labels", falso_set_labels)
+
+    # Nove entregas representam tr\u00eas ciclos e os retries duplicados que o
+    # provedor pode fazer. Cada ciclo reaplica a macro depois da limpeza.
+    async def processar_retries():
+        await asyncio.gather(
+            *[
+                label_webhook._handle_label_event(tenant_id, 7, 42)
+                for _ in range(3)
+            ]
+        )
+
+    for _ in range(3):
+        labels[:] = ["ia-retomar", "vip"]
+        asyncio.run(processar_retries())
+
+    state = tenants.conversation_state(tenant_id, 555)
+    assert state["state"] == "ai_active"
+    assert labels == ["vip"]
+    assert labels_definidas
+    assert all(item == ["vip"] for item in labels_definidas)
