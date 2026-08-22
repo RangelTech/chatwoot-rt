@@ -15,34 +15,44 @@ No painel de desenvolvedores da Meta:
 
 1. Crie um app do tipo *Business*.
 2. Adicione os produtos **Messenger** e **Instagram**.
-3. Permissões necessárias: `pages_messaging`, `pages_manage_metadata`,
-   `pages_show_list`, `instagram_basic`, `instagram_manage_messages`.
-4. Webhook do Messenger/Instagram apontando para:
-   `https://<chatwoot-web>/webhooks/facebook` e `.../webhooks/instagram`,
-   com o mesmo *verify token* que você vai guardar abaixo.
+3. Para Messenger, a conexão da Página deve conceder `pages_show_list`,
+   `pages_read_engagement` e `pages_messaging`. A assinatura criada pelo
+   Chatwoot deve conter `messages`, `message_deliveries`, `message_echoes`,
+   `message_reads`, `standby` e `messaging_handovers`.
+4. O callback do **Messenger** é `https://chat.rangeltech.net/bot`. A Meta o
+   valida por `GET` com o verify token e entrega mensagens por `POST` no mesmo
+   endereço. Não configure `/webhooks/facebook`: ele não é a rota do servidor
+   Messenger deste fork.
+5. Para Instagram Business Login, cadastre a URL de redirecionamento exata
+   `https://chat.rangeltech.net/instagram/callback` e siga o wizard do
+   Chatwoot. O webhook Instagram é configurado no produto Instagram da Meta.
+
+Enquanto o app estiver em modo desenvolvimento, a Meta entrega eventos apenas
+de contas com papel no app (admin, developer ou tester). A Caixa de Entrada da
+Meta receber uma mensagem não prova que o webhook chegará ao Chatwoot. Para
+validar antes da publicação, envie a mensagem de uma conta com papel no app e
+confirme o evento no Chatwoot.
 
 ## 2. Guardar os segredos
 
-```bash
-printf '%s' "<app id>"        | gcloud secrets create chatwoot-meta-app-id      --data-file=- --project=eduk-prd-lake
-printf '%s' "<app secret>"    | gcloud secrets create chatwoot-meta-app-secret  --data-file=- --project=eduk-prd-lake
-printf '%s' "<verify token>"  | gcloud secrets create chatwoot-meta-verify-token --data-file=- --project=eduk-prd-lake
+Os segredos Meta vivem exclusivamente no projeto `chatwoot-prod` do
+**Infisical**, ambiente `prod`: `FB_APP_ID`, `FB_APP_SECRET`,
+`FB_VERIFY_TOKEN`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` e
+`INSTAGRAM_VERIFY_TOKEN`.
 
-for s in chatwoot-meta-app-id chatwoot-meta-app-secret chatwoot-meta-verify-token; do
-  gcloud secrets add-iam-policy-binding "$s" --project=eduk-prd-lake \
-    --member=serviceAccount:devlake@eduk-prd-lake.iam.gserviceaccount.com \
-    --role=roles/secretmanager.secretAccessor
-done
-```
+Os workflows de deploy os buscam por Universal Auth e os aplicam tanto no Cloud
+Run quanto no worker Sidekiq da VPS. O worker também sincroniza o
+`InstallationConfig` do Chatwoot. Nunca coloque esses valores em GitHub
+Variables, comandos versionados, código ou neste runbook.
 
-O `deploy.sh` injeta esses segredos **se existirem**. Enquanto não existirem, o
-Chatwoot sobe sem os canais Meta — não quebra.
+Para trocar uma credencial, atualize o Infisical e redeploye os dois destinos.
+O deploy deve falhar se algum segredo obrigatório estiver ausente, em vez de
+subir com valor vazio ou antigo.
 
 ## 3. Publicar
 
-```bash
-./infra/deploy.sh chatwoot
-```
+Use os workflows **Deploy chatwoot-web to Cloud Run** e **Deploy Chatwoot
+worker to VPS** para aplicar a mesma revisão nos dois destinos.
 
 ## 4. Conectar a página de uma empresa
 
@@ -71,5 +81,8 @@ o `/outbound` da ponte — que existe para o WhatsApp via W-API — não partici
 
 - **Janela de 24h** do Messenger/Instagram: fora dela, só template aprovado.
 - **App review** da Meta é requisito para sair do modo de desenvolvimento.
+- `pages_messaging` precisa de aprovação/Advanced Access para mensagens de
+  usuários comuns no Messenger. Instagram requer as permissões de mensagens
+  aprovadas e app em modo Live.
 - Um app compartilhado significa que um bloqueio da Meta afeta todos os tenants:
   é o custo aceito por não exigir app por cliente.
