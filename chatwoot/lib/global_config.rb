@@ -6,10 +6,15 @@ class GlobalConfig
   class << self
     def get(*args)
       config_keys = *args
-      config = {}
+      cache_keys = config_keys.map { |config_key| cache_key_for(config_key) }
+      cached_values = $alfred.with { |conn| conn.mget(*cache_keys) }
+      config = config_keys.zip(cached_values).to_h
 
-      config_keys.each do |config_key|
-        config[config_key] = load_from_cache(config_key)
+      config.each do |config_key, cached_value|
+        config[config_key] = load_from_cache(config_key) if cached_value.blank?
+        next if cached_value.blank?
+
+        config[config_key] = JSON.parse(cached_value)['value']
       end
 
       typecast_config(config)
@@ -38,7 +43,7 @@ class GlobalConfig
     end
 
     def load_from_cache(config_key)
-      cache_key = "#{VERSION}:#{KEY_PREFIX}:#{config_key}"
+      cache_key = cache_key_for(config_key)
       cached_value = $alfred.with { |conn| conn.get(cache_key) }
 
       if cached_value.blank?
@@ -48,6 +53,10 @@ class GlobalConfig
       end
 
       JSON.parse(cached_value)['value']
+    end
+
+    def cache_key_for(config_key)
+      "#{VERSION}:#{KEY_PREFIX}:#{config_key}"
     end
 
     def db_fallback(config_key)

@@ -34,6 +34,18 @@ describe GlobalConfig do
         expect(InstallationConfig).to receive(:find_by).with({ name: 'test' }).and_return(nil)
         described_class.get('test')
       end
+
+      it 'reads several cached settings in one Redis round trip' do
+        redis = instance_double(Redis)
+        cache_keys = %w[ONE TWO].map { |key| "V1:GLOBAL_CONFIG:#{key}" }
+        values = ['{"value":"one"}', '{"value":"two"}']
+
+        allow($alfred).to receive(:with).and_yield(redis)
+        expect(redis).to receive(:mget).with(*cache_keys).and_return(values)
+        expect(InstallationConfig).not_to receive(:find_by)
+
+        expect(described_class.get('ONE', 'TWO')).to include('ONE' => 'one', 'TWO' => 'two')
+      end
     end
   end
 end
