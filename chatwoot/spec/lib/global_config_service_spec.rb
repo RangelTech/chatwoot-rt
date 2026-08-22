@@ -39,6 +39,15 @@ describe GlobalConfigService do
         expect(config.reload.value).to eq 'runtime-app-id'
       end
 
+      it 'keeps a cached false boolean without clearing all global config keys' do
+        create(:installation_config, name: 'ENABLE_ACCOUNT_SIGNUP', value: 'false', locked: false)
+        GlobalConfig.clear_cache
+        expect(GlobalConfig.get('ENABLE_ACCOUNT_SIGNUP')['ENABLE_ACCOUNT_SIGNUP']).to be(false)
+
+        expect(GlobalConfig).not_to receive(:clear_cache)
+        expect(described_class.load('ENABLE_ACCOUNT_SIGNUP', 'true')).to be(false)
+      end
+
       # it 'get value from DB if found' do
       #   # Set a value in db first and make sure this value
       #   # is not respected even when load() method is called with
