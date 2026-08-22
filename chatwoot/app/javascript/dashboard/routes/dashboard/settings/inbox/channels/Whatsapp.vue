@@ -31,6 +31,10 @@ const hasWhatsappAppId = computed(() => {
   );
 });
 
+const hasWhatsappConfigurationId = computed(() => {
+  return Boolean(window.chatwootConfig?.whatsappConfigurationId);
+});
+
 const selectedProvider = computed(() => route.query.provider);
 
 const showProviderSelection = computed(() => !selectedProvider.value);
@@ -41,8 +45,17 @@ const shouldShowWhatsappEmbeddedSignup = computed(() => {
   return (
     selectedProvider.value === PROVIDER_TYPES.WHATSAPP &&
     hasWhatsappAppId.value &&
+    hasWhatsappConfigurationId.value &&
     (!isOnChatwootCloud.value ||
       isCloudFeatureEnabled(FEATURE_FLAGS.WHATSAPP_EMBEDDED_SIGNUP_FLOW))
+  );
+});
+
+const embeddedSignupConfigurationMissing = computed(() => {
+  return (
+    selectedProvider.value === PROVIDER_TYPES.WHATSAPP &&
+    hasWhatsappAppId.value &&
+    !hasWhatsappConfigurationId.value
   );
 });
 
@@ -136,7 +149,15 @@ const handleManualLinkClick = () => {
         </div>
 
         <!-- Show manual setup -->
-        <CloudWhatsapp v-else-if="shouldShowCloudWhatsapp(selectedProvider)" />
+        <template v-else-if="shouldShowCloudWhatsapp(selectedProvider)">
+          <div
+            v-if="embeddedSignupConfigurationMissing"
+            class="mb-4 rounded-lg border border-n-weak bg-n-alpha-1 p-4 text-sm text-n-slate-12"
+          >
+            O OAuth do WhatsApp ainda não está completo: falta a configuração de Business Login do app Meta. Configure `WHATSAPP_CONFIGURATION_ID` e recarregue esta página; enquanto isso, use o cadastro manual abaixo.
+          </div>
+          <CloudWhatsapp />
+        </template>
 
         <!-- Other providers -->
         <Twilio
