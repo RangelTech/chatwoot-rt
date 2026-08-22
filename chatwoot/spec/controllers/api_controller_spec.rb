@@ -8,6 +8,7 @@ RSpec.describe 'API Base', type: :request do
       expect(response.body).to include(Chatwoot.config[:version])
       expect(response.body).to include('queue_services')
       expect(response.body).to include('data_services')
+      expect(response.parsed_body['data_services']).to eq('ok')
     end
   end
 end

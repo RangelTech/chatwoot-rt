@@ -18,8 +18,11 @@ class ApiController < ApplicationController
   end
 
   def postgres_status
-    ActiveRecord::Base.connection.active? ? 'ok' : 'failing'
-  rescue ActiveRecord::ConnectionNotEstablished
+    # Rails opens database connections lazily. `active?` therefore returns
+    # false on a perfectly healthy idle web process, producing a misleading
+    # public health status. A tiny read is the actual dependency probe.
+    ActiveRecord::Base.connection.select_value('SELECT 1') == 1 ? 'ok' : 'failing'
+  rescue ActiveRecord::ConnectionNotEstablished, ActiveRecord::StatementInvalid
     'failing'
   end
 end
