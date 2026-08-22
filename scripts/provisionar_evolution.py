@@ -25,9 +25,16 @@ O que este script faz, em ordem:
   4. registra o canal no Chatwoot (Channel::EvolutionApi) via Application
      API, criando a inbox se ainda não existir.
 
+Um tenant pode ter mais de 1 conexão Evolution (ex. 2 números de WhatsApp
+não-oficial) -- cada uma com --indice diferente, cada uma com seu próprio
+container/Postgres/Redis/subdomínio, nunca compartilhados entre si (mesmo
+motivo do isolamento por tenant: 2 instâncias no mesmo processo reintroduz
+o bug #1687, mesmo sendo do mesmo cliente).
+
 Uso:
     python scripts/provisionar_evolution.py <tenant_id> <account_id>
-    python scripts/provisionar_evolution.py <tenant_id> <account_id> --remover
+    python scripts/provisionar_evolution.py <tenant_id> <account_id> --indice 2
+    python scripts/provisionar_evolution.py <tenant_id> <account_id> --remover [--indice N]
 """
 
 import argparse
@@ -63,18 +70,25 @@ def ssh(comando: str) -> str:
     return resultado.stdout.strip()
 
 
-def nomes(tenant_id: str) -> dict:
+def nomes(tenant_id: str, indice: int = 1) -> dict:
+    """indice=1 é a 1ª conexão do tenant (sufixo vazio, compatível com
+    instâncias já provisionadas antes desta função existir). indice>=2 é
+    uma conexão adicional -- container, Postgres, Redis e subdomínio TODOS
+    dedicados de novo, nunca compartilhados entre conexões do mesmo tenant
+    (mesmo motivo de sempre: 2 instâncias Evolution no mesmo processo
+    reintroduz o bug #1687, mesmo sendo do mesmo cliente)."""
     curto = tenant_id.replace("-", "")[:12]
+    sufixo = "" if indice <= 1 else f"-{indice}"
     return {
-        "evolution": f"evolution-{curto}",
-        "postgres": f"evolution-pg-{curto}",
-        "redis": f"evolution-redis-{curto}",
-        "host": f"evolution-{curto}.{DOMINIO}",
+        "evolution": f"evolution-{curto}{sufixo}",
+        "postgres": f"evolution-pg-{curto}{sufixo}",
+        "redis": f"evolution-redis-{curto}{sufixo}",
+        "host": f"evolution-{curto}{sufixo}.{DOMINIO}",
     }
 
 
-def provisionar(tenant_id: str, account_id: str) -> dict:
-    n = nomes(tenant_id)
+def provisionar(tenant_id: str, account_id: str, indice: int = 1) -> dict:
+    n = nomes(tenant_id, indice)
     pg_senha = secrets.token_urlsafe(24)
     redis_senha = secrets.token_urlsafe(24)
     api_key = secrets.token_urlsafe(24)
@@ -159,6 +173,7 @@ def provisionar(tenant_id: str, account_id: str) -> dict:
         "instance_name": n["evolution"],
         "api_url": f"https://{n['host']}",
         "api_key": api_key,
+        "indice": indice,
     }
 
 
@@ -184,11 +199,12 @@ def registrar_no_chatwoot(account_id: str, dados: dict) -> dict:
         ).json()
         access_token = user["access_token"]
 
+        rotulo = f" {dados['indice']}" if dados["indice"] > 1 else ""
         resposta = client.post(
             f"/api/v1/accounts/{account_id}/inboxes",
             headers={"api_access_token": access_token},
             json={
-                "name": "WhatsApp (Evolution)",
+                "name": f"WhatsApp (Evolution){rotulo}",
                 "channel": {
                     "type": "evolution_api",
                     "instance_name": dados["instance_name"],
@@ -201,25 +217,33 @@ def registrar_no_chatwoot(account_id: str, dados: dict) -> dict:
         return resposta.json()
 
 
-def remover(tenant_id: str) -> None:
-    n = nomes(tenant_id)
+def remover(tenant_id: str, indice: int = 1) -> None:
+    n = nomes(tenant_id, indice)
     for nome in (n["evolution"], n["postgres"], n["redis"]):
         ssh(f"docker rm -f {nome} || true")
-    print(f"containers de {tenant_id} removidos (volumes preservados em /opt/platform/data)")
+    print(f"containers de {tenant_id} (conexão {indice}) removidos (volumes preservados em /opt/platform/data)")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tenant_id")
     parser.add_argument("account_id")
+    parser.add_argument(
+        "--indice",
+        type=int,
+        default=1,
+        help="qual conexão Evolution deste tenant (1=primeira, sem sufixo; "
+        "2, 3... = conexões adicionais, cada uma com container/Postgres/"
+        "Redis/subdomínio próprios, nunca compartilhados)",
+    )
     parser.add_argument("--remover", action="store_true")
     args = parser.parse_args()
 
     if args.remover:
-        remover(args.tenant_id)
+        remover(args.tenant_id, args.indice)
         return
 
-    dados = provisionar(args.tenant_id, args.account_id)
+    dados = provisionar(args.tenant_id, args.account_id, args.indice)
     inbox = registrar_no_chatwoot(args.account_id, dados)
     print(json.dumps({**dados, "inbox": inbox}, indent=2))
     print("instância Evolution provisionada")
