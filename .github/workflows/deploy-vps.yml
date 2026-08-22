@@ -118,11 +118,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Render .env.prod.chatwoot on VPS
-        # infra-07: sobrescrita completa do arquivo a cada deploy — não é
-        # mais bootstrap manual único. FB_*/IG_* vêm de GitHub Actions
-        # Variables (vars.*), não Secrets, por decisão explícita do dono
-        # (vars dão pra ver/editar em texto). Os 4 valores que rotacionam
-        # (Postgres/Rails/Redis/MinIO) vêm do Infisical (step acima).
+        # Sobrescrita completa do arquivo a cada deploy. Todos os segredos,
+        # inclusive Meta/Facebook/Instagram, vêm do Infisical no step acima;
+        # nenhuma credencial de canal fica em GitHub Actions Variables.
         env:
           POSTGRES_PASSWORD: ${{ steps.infisical.outputs.postgres_password }}
           SECRET_KEY_BASE: ${{ steps.infisical.outputs.secret_key_base }}
