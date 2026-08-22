@@ -107,7 +107,10 @@ def _platform_token() -> str:
 
 async def create_account(name: str) -> dict:
     return await _request(
-        "POST", "/platform/api/v1/accounts", token=_platform_token(), json_body={"name": name}
+        "POST",
+        "/platform/api/v1/accounts",
+        token=_platform_token(),
+        json_body={"name": name, "locale": "pt_BR"},
     )
 
 
