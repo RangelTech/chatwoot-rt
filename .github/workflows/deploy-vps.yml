@@ -190,6 +190,17 @@ jobs:
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
             "cd /opt/platform/chatwoot && docker compose -f infra/docker-compose.prod.yml build && docker compose -f infra/docker-compose.prod.yml up -d --remove-orphans"
 
+      - name: Synchronize Meta credentials into Chatwoot
+        # Chatwoot persists installation settings in Postgres and prioritizes
+        # those values over environment variables. Keep Infisical authoritative
+        # after every worker deploy so a rotated Meta credential cannot leave a
+        # stale webhook token or OAuth app pair in the database.
+        run: |
+          ssh -i ~/.ssh/vps_rt_infra_ed25519 \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+            "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
+            "docker exec chatwoot-worker bundle exec rails installation_config:sync_meta"
+
       - name: Smoke check
         # Sidekiq não expõe HTTP -- o sinal de saúde é "container de pé e
         # conectado ao Redis", visto no log de boot (mesmo texto checado
