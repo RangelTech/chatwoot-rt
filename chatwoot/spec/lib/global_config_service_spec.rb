@@ -29,6 +29,16 @@ describe GlobalConfigService do
         end
       end
 
+      it 'hydrates an existing blank setting from the runtime environment' do
+        config = create(:installation_config, name: 'FB_APP_ID', value: nil, locked: false)
+
+        with_modified_env FB_APP_ID: 'runtime-app-id' do
+          expect(described_class.load('FB_APP_ID', '')).to eq 'runtime-app-id'
+        end
+
+        expect(config.reload.value).to eq 'runtime-app-id'
+      end
+
       # it 'get value from DB if found' do
       #   # Set a value in db first and make sure this value
       #   # is not respected even when load() method is called with
