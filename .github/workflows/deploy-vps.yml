@@ -115,6 +115,15 @@ jobs:
             echo "instagram_verify_token<<EOF_META"
             fetch_secret INSTAGRAM_VERIFY_TOKEN
             echo "EOF_META"
+            echo "whatsapp_app_id<<EOF_META"
+            fetch_secret WHATSAPP_APP_ID
+            echo "EOF_META"
+            echo "whatsapp_app_secret<<EOF_META"
+            fetch_secret WHATSAPP_APP_SECRET
+            echo "EOF_META"
+            echo "whatsapp_configuration_id<<EOF_META"
+            fetch_secret WHATSAPP_CONFIGURATION_ID
+            echo "EOF_META"
           } >> "$GITHUB_OUTPUT"
 
       - name: Render .env.prod.chatwoot on VPS
@@ -132,6 +141,9 @@ jobs:
           INSTAGRAM_APP_ID: ${{ steps.infisical.outputs.instagram_app_id }}
           INSTAGRAM_APP_SECRET: ${{ steps.infisical.outputs.instagram_app_secret }}
           INSTAGRAM_VERIFY_TOKEN: ${{ steps.infisical.outputs.instagram_verify_token }}
+          WHATSAPP_APP_ID: ${{ steps.infisical.outputs.whatsapp_app_id }}
+          WHATSAPP_APP_SECRET: ${{ steps.infisical.outputs.whatsapp_app_secret }}
+          WHATSAPP_CONFIGURATION_ID: ${{ steps.infisical.outputs.whatsapp_configuration_id }}
         run: |
           # Cloud Run reaches Redis through the VPS public endpoint, but the
           # VPS worker shares Docker's internal network with Redis. Keeping
@@ -175,6 +187,9 @@ jobs:
           INSTAGRAM_APP_SECRET=$INSTAGRAM_APP_SECRET
           INSTAGRAM_VERIFY_TOKEN=$INSTAGRAM_VERIFY_TOKEN
           IG_VERIFY_TOKEN=$INSTAGRAM_VERIFY_TOKEN
+          WHATSAPP_APP_ID=$WHATSAPP_APP_ID
+          WHATSAPP_APP_SECRET=$WHATSAPP_APP_SECRET
+          WHATSAPP_CONFIGURATION_ID=$WHATSAPP_CONFIGURATION_ID
           ENVEOF
 
       - name: Build and restart

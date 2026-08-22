@@ -10,6 +10,9 @@ namespace :installation_config do
       INSTAGRAM_APP_ID
       INSTAGRAM_APP_SECRET
       INSTAGRAM_VERIFY_TOKEN
+      WHATSAPP_APP_ID
+      WHATSAPP_APP_SECRET
+      WHATSAPP_CONFIGURATION_ID
     ].freeze
 
     missing = meta_keys.select { |name| ENV[name].blank? }
