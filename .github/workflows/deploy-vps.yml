@@ -111,6 +111,10 @@ jobs:
           REDIS_URL: ${{ steps.infisical.outputs.redis_url }}
           STORAGE_SECRET_ACCESS_KEY: ${{ steps.infisical.outputs.storage_secret_access_key }}
         run: |
+          # Cloud Run reaches Redis through the VPS public endpoint, but the
+          # VPS worker shares Docker's internal network with Redis. Keeping
+          # the public URL here makes Sidekiq time out against its own host.
+          WORKER_REDIS_URL="${REDIS_URL//@66.94.101.153:6379/@redis:6379}"
           ssh -i ~/.ssh/vps_rt_infra_ed25519 \
             "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" \
             "mkdir -p /opt/platform/chatwoot/infra && cat > /opt/platform/chatwoot/infra/.env.prod.chatwoot" <<ENVEOF
@@ -126,7 +130,7 @@ jobs:
           POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 
           SECRET_KEY_BASE=$SECRET_KEY_BASE
-          REDIS_URL=$REDIS_URL
+          REDIS_URL=$WORKER_REDIS_URL
 
           FRONTEND_URL=https://chat.rangeltech.net
           ACTIVE_STORAGE_SERVICE=s3_compatible
