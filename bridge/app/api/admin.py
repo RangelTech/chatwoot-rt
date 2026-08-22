@@ -59,6 +59,16 @@ class AiConfigIn(BaseModel):
     handoff_team_id: int | None = None
 
 
+class BrandingIn(BaseModel):
+    tenant_id: str
+    brand_name: str = Field(min_length=1, max_length=200)
+    primary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    secondary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    theme: str = Field(pattern=r"^(light|dark)$")
+    logo_url: str = Field(default="", max_length=2000)
+    version: int = Field(ge=1)
+
+
 @router.post("/tenants", dependencies=[Depends(require_admin)])
 async def provision_tenant(payload: TenantIn):
     """Cria (ou reaproveita) a Account do Chatwoot do tenant. Idempotente."""
@@ -88,6 +98,36 @@ async def provision_tenant(payload: TenantIn):
     await _ensure_default_teams(payload.tenant_id)
     await _ensure_devolver_para_ia(payload.tenant_id)
     return {"status": "ok", "chatwoot_account_id": link["chatwoot_account_id"], "created": True}
+
+
+@router.put("/branding", dependencies=[Depends(require_admin)])
+async def sync_branding(payload: BrandingIn):
+    """Espelha somente a cópia de consumo da marca no Chatwoot.
+
+    Não aceita um account_id do chamador: o vínculo tenant -> Account vem da
+    tabela da ponte, impedindo que um tenant escreva na conta de outro.
+    """
+    link = tenants.get_tenant_link(payload.tenant_id)
+    if link is None or not link["chatwoot_account_id"]:
+        raise HTTPException(status_code=409, detail="tenant ainda não provisionado no RAtende")
+    attrs = {
+        "ragentes_branding": {
+            "brand_name": payload.brand_name,
+            "primary_color": payload.primary_color,
+            "secondary_color": payload.secondary_color,
+            "theme": payload.theme,
+            "logo_url": payload.logo_url,
+            "version": payload.version,
+        }
+    }
+    await chatwoot.update_account_branding(
+        int(link["chatwoot_account_id"]), name=payload.brand_name, custom_attributes=attrs
+    )
+    return {
+        "status": "ok",
+        "chatwoot_account_id": link["chatwoot_account_id"],
+        "version": payload.version,
+    }
 
 
 async def _ensure_default_teams(tenant_id: str) -> None:

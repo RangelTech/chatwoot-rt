@@ -109,6 +109,13 @@ export default {
         accountId: this.currentAccountId,
       });
       const account = this.getAccount(this.currentAccountId);
+      const branding = account?.custom_attributes?.ragentes_branding;
+      if (branding) {
+        const root = document.documentElement;
+        root.style.setProperty('--brand', branding.primary_color);
+        root.style.setProperty('--brand-secondary', branding.secondary_color);
+        root.dataset.ragentesTheme = branding.theme;
+      }
       const { locale, latest_chatwoot_version: latestChatwootVersion } =
         account;
       const { pubsub_token: pubsubToken } = this.currentUser || {};

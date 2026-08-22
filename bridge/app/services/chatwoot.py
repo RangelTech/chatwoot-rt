@@ -120,6 +120,21 @@ async def get_account(account_id: int) -> dict:
     )
 
 
+async def update_account_branding(account_id: int, *, name: str, custom_attributes: dict) -> dict:
+    """Atualiza a cópia de consumo do branding no RAtende.
+
+    A Platform API é a única rota que pode alterar a Account sem usar o token
+    de um operador do tenant. O conteúdo fica em custom_attributes para não
+    criar uma segunda tabela autoritativa no Chatwoot.
+    """
+    return await _request(
+        "PATCH",
+        f"/platform/api/v1/accounts/{account_id}",
+        token=_platform_token(),
+        json_body={"name": name, "custom_attributes": custom_attributes},
+    )
+
+
 async def create_user(name: str, email: str, password: str) -> dict:
     return await _request(
         "POST",
