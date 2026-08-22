@@ -57,6 +57,34 @@ variable "storage_secret_access_key" {
   sensitive = true
 }
 
+# Credenciais dos canais Meta. Vêm exclusivamente do Infisical no workflow de
+# deploy; mantê-las como variáveis sensíveis garante que uma implantação nova
+# não dependa de InstallationConfig preenchido manualmente no passado.
+variable "fb_app_id" {
+  type      = string
+  sensitive = true
+}
+variable "fb_app_secret" {
+  type      = string
+  sensitive = true
+}
+variable "fb_verify_token" {
+  type      = string
+  sensitive = true
+}
+variable "instagram_app_id" {
+  type      = string
+  sensitive = true
+}
+variable "instagram_app_secret" {
+  type      = string
+  sensitive = true
+}
+variable "instagram_verify_token" {
+  type      = string
+  sensitive = true
+}
+
 resource "google_cloud_run_v2_service" "chatwoot_web" {
   name     = "chatwoot-web"
   project  = var.project
@@ -178,6 +206,30 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
       env {
         name  = "STORAGE_SECRET_ACCESS_KEY"
         value = var.storage_secret_access_key
+      }
+      env {
+        name  = "FB_APP_ID"
+        value = var.fb_app_id
+      }
+      env {
+        name  = "FB_APP_SECRET"
+        value = var.fb_app_secret
+      }
+      env {
+        name  = "FB_VERIFY_TOKEN"
+        value = var.fb_verify_token
+      }
+      env {
+        name  = "INSTAGRAM_APP_ID"
+        value = var.instagram_app_id
+      }
+      env {
+        name  = "INSTAGRAM_APP_SECRET"
+        value = var.instagram_app_secret
+      }
+      env {
+        name  = "INSTAGRAM_VERIFY_TOKEN"
+        value = var.instagram_verify_token
       }
     }
 

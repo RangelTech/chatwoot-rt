@@ -83,6 +83,24 @@ jobs:
             echo "storage_access_key_id<<EOF_S3ID"
             fetch_secret STORAGE_ACCESS_KEY_ID
             echo "EOF_S3ID"
+            echo "fb_app_id<<EOF_META"
+            fetch_secret FB_APP_ID
+            echo "EOF_META"
+            echo "fb_app_secret<<EOF_META"
+            fetch_secret FB_APP_SECRET
+            echo "EOF_META"
+            echo "fb_verify_token<<EOF_META"
+            fetch_secret FB_VERIFY_TOKEN
+            echo "EOF_META"
+            echo "instagram_app_id<<EOF_META"
+            fetch_secret INSTAGRAM_APP_ID
+            echo "EOF_META"
+            echo "instagram_app_secret<<EOF_META"
+            fetch_secret INSTAGRAM_APP_SECRET
+            echo "EOF_META"
+            echo "instagram_verify_token<<EOF_META"
+            fetch_secret INSTAGRAM_VERIFY_TOKEN
+            echo "EOF_META"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build image
@@ -115,6 +133,12 @@ jobs:
           TF_VAR_redis_url: ${{ steps.infisical.outputs.redis_url }}
           TF_VAR_storage_access_key_id: ${{ steps.infisical.outputs.storage_access_key_id }}
           TF_VAR_storage_secret_access_key: ${{ steps.infisical.outputs.storage_secret_access_key }}
+          TF_VAR_fb_app_id: ${{ steps.infisical.outputs.fb_app_id }}
+          TF_VAR_fb_app_secret: ${{ steps.infisical.outputs.fb_app_secret }}
+          TF_VAR_fb_verify_token: ${{ steps.infisical.outputs.fb_verify_token }}
+          TF_VAR_instagram_app_id: ${{ steps.infisical.outputs.instagram_app_id }}
+          TF_VAR_instagram_app_secret: ${{ steps.infisical.outputs.instagram_app_secret }}
+          TF_VAR_instagram_verify_token: ${{ steps.infisical.outputs.instagram_verify_token }}
         run: |
           terraform import -input=false -lock=false google_cloud_run_v2_service.chatwoot_web \
             projects/rangel-tech/locations/us-central1/services/chatwoot-web || true
@@ -130,6 +154,12 @@ jobs:
           TF_VAR_redis_url: ${{ steps.infisical.outputs.redis_url }}
           TF_VAR_storage_access_key_id: ${{ steps.infisical.outputs.storage_access_key_id }}
           TF_VAR_storage_secret_access_key: ${{ steps.infisical.outputs.storage_secret_access_key }}
+          TF_VAR_fb_app_id: ${{ steps.infisical.outputs.fb_app_id }}
+          TF_VAR_fb_app_secret: ${{ steps.infisical.outputs.fb_app_secret }}
+          TF_VAR_fb_verify_token: ${{ steps.infisical.outputs.fb_verify_token }}
+          TF_VAR_instagram_app_id: ${{ steps.infisical.outputs.instagram_app_id }}
+          TF_VAR_instagram_app_secret: ${{ steps.infisical.outputs.instagram_app_secret }}
+          TF_VAR_instagram_verify_token: ${{ steps.infisical.outputs.instagram_verify_token }}
         run: terraform apply -input=false -lock=false -auto-approve
 
       - name: Smoke check

@@ -97,6 +97,24 @@ jobs:
             echo "storage_secret_access_key<<EOF_S3"
             fetch_secret STORAGE_SECRET_ACCESS_KEY
             echo "EOF_S3"
+            echo "fb_app_id<<EOF_META"
+            fetch_secret FB_APP_ID
+            echo "EOF_META"
+            echo "fb_app_secret<<EOF_META"
+            fetch_secret FB_APP_SECRET
+            echo "EOF_META"
+            echo "fb_verify_token<<EOF_META"
+            fetch_secret FB_VERIFY_TOKEN
+            echo "EOF_META"
+            echo "instagram_app_id<<EOF_META"
+            fetch_secret INSTAGRAM_APP_ID
+            echo "EOF_META"
+            echo "instagram_app_secret<<EOF_META"
+            fetch_secret INSTAGRAM_APP_SECRET
+            echo "EOF_META"
+            echo "instagram_verify_token<<EOF_META"
+            fetch_secret INSTAGRAM_VERIFY_TOKEN
+            echo "EOF_META"
           } >> "$GITHUB_OUTPUT"
 
       - name: Render .env.prod.chatwoot on VPS
@@ -110,6 +128,12 @@ jobs:
           SECRET_KEY_BASE: ${{ steps.infisical.outputs.secret_key_base }}
           REDIS_URL: ${{ steps.infisical.outputs.redis_url }}
           STORAGE_SECRET_ACCESS_KEY: ${{ steps.infisical.outputs.storage_secret_access_key }}
+          FB_APP_ID: ${{ steps.infisical.outputs.fb_app_id }}
+          FB_APP_SECRET: ${{ steps.infisical.outputs.fb_app_secret }}
+          FB_VERIFY_TOKEN: ${{ steps.infisical.outputs.fb_verify_token }}
+          INSTAGRAM_APP_ID: ${{ steps.infisical.outputs.instagram_app_id }}
+          INSTAGRAM_APP_SECRET: ${{ steps.infisical.outputs.instagram_app_secret }}
+          INSTAGRAM_VERIFY_TOKEN: ${{ steps.infisical.outputs.instagram_verify_token }}
         run: |
           # Cloud Run reaches Redis through the VPS public endpoint, but the
           # VPS worker shares Docker's internal network with Redis. Keeping
@@ -146,10 +170,13 @@ jobs:
           ENABLE_ACCOUNT_SIGNUP=false
           DEFAULT_LOCALE=pt_BR
 
-          FB_APP_ID=${{ vars.FB_APP_ID }}
-          FB_APP_SECRET=${{ vars.FB_APP_SECRET }}
-          FB_VERIFY_TOKEN=${{ vars.FB_VERIFY_TOKEN }}
-          IG_VERIFY_TOKEN=${{ vars.IG_VERIFY_TOKEN }}
+          FB_APP_ID=$FB_APP_ID
+          FB_APP_SECRET=$FB_APP_SECRET
+          FB_VERIFY_TOKEN=$FB_VERIFY_TOKEN
+          INSTAGRAM_APP_ID=$INSTAGRAM_APP_ID
+          INSTAGRAM_APP_SECRET=$INSTAGRAM_APP_SECRET
+          INSTAGRAM_VERIFY_TOKEN=$INSTAGRAM_VERIFY_TOKEN
+          IG_VERIFY_TOKEN=$INSTAGRAM_VERIFY_TOKEN
           ENVEOF
 
       - name: Build and restart
