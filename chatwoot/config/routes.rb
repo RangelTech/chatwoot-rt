@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+  # Páginas públicas do RAtende. A Meta valida estes endereços no App Review;
+  # eles não podem depender da SPA autenticada nem de outro domínio do grupo.
+  get 'politica-de-privacidade', to: 'legal#privacy'
+  get 'termos-de-servico', to: 'legal#terms'
+  get 'exclusao-de-dados', to: 'legal#data_deletion'
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
