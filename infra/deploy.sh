@@ -160,11 +160,12 @@ roda_tarefa() {
 # grava no InstallationConfig. Roda no deploy e pode rodar sozinho depois que
 # alguém cadastra uma chave nova na tela — sem redeploy.
 sync_secrets() {
-  if [ -z "$(agent_platform_url)" ]; then
-    echo "AVISO: agent-platform não encontrado; pulei a sincronia de chaves" >&2
-    return 0
-  fi
-  roda_tarefa scripts/ops/sync_installation_config.rb
+  # O fluxo autoritativo é o CI: Infisical -> ambiente do worker ->
+  # `installation_config:sync_meta`. A implementação antiga abaixo tentava
+  # chamar uma rota do agent-platform que não existe mais; não a execute como
+  # se uma sincronização tivesse acontecido. Para rotação, use o workflow
+  # "Infisical - set secret", que redeploya Cloud Run e worker.
+  echo "Sincronização manual Meta descontinuada; use o workflow Infisical - set secret." >&2
 }
 
 # Instagram e Facebook usam um único Meta App por instalação (decisão da Fase
@@ -206,7 +207,7 @@ bootstrap_platform() {
 case $target in
   bridge) deploy_bridge ;;
   bootstrap) bootstrap_platform ;;
-  chatwoot) deploy_chatwoot; locale_das_contas; sync_secrets ;;
+  chatwoot) deploy_chatwoot; locale_das_contas ;;
   locale) locale_das_contas ;;
   sync-secrets) sync_secrets ;;
   migrate) migrate_chatwoot ;;
