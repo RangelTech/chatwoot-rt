@@ -24,7 +24,9 @@ def test_conta_sem_tenant_vinculado_eh_rejeitada(client, admin_auth):
     assert r.status_code == 404
 
 
-def test_provisiona_uma_vez_e_reaproveita_na_segunda_chamada(client, admin_auth, tenant_id, monkeypatch):
+def test_provisiona_uma_vez_e_reaproveita_na_segunda_chamada(
+    client, admin_auth, tenant_id, monkeypatch
+):
     from app.services import evolution
 
     chamadas = []

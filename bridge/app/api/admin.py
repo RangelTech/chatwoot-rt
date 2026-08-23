@@ -531,7 +531,9 @@ async def provision_evolution(payload: EvolutionProvisionIn):
         except evolution.ProvisioningError as exc:
             tenants.mark_evolution_connection(str(row["id"]), status="failed", last_error=str(exc))
             logger.error("provisionamento Evolution falhou para tenant %s: %s", tenant_id, exc)
-            raise HTTPException(status_code=502, detail="provisionamento da instância WhatsApp falhou") from exc
+            raise HTTPException(
+                status_code=502, detail="provisionamento da instância WhatsApp falhou"
+            ) from exc
         row = tenants.mark_evolution_connection(str(row["id"]), status="ready")
 
     return {

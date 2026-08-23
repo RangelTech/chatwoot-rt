@@ -35,7 +35,7 @@ fi
 "$GCLOUD_BIN" run deploy chatwoot-bridge \
   --project=$PROJECT --region=$REGION \
   --image=$REPO/chatwoot-rt-bridge:$SHORT_SHA \
-  --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest \
+  --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
   --set-env-vars="CHATWOOT_BASE_URL=https://chat.rangeltech.net,AGENT_PLATFORM_URL=https://ia.rangeltech.net,BRIDGE_PUBLIC_URL=https://bridge.rangeltech.net,ENVIRONMENT=production" \
   --allow-unauthenticated \
   --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \

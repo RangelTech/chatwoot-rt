@@ -81,7 +81,7 @@ async def _ssh(comando: str, *, timeout: float = 60.0) -> str:
     )
     try:
         stdout, stderr = await asyncio.wait_for(processo.communicate(), timeout=timeout)
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         processo.kill()
         raise ProvisioningError(f"ssh expirou executando: {comando[:80]}") from exc
     if processo.returncode != 0:
@@ -156,7 +156,9 @@ async def provisionar_container(tenant_id: str, indice: int, api_key: str) -> No
             f"-l traefik.http.services.{n['evolution']}.loadbalancer.server.port=8080 "
             f"{settings.evolution_image}"
         )
-        await _ssh(f"docker network connect {settings.evolution_public_network} {n['evolution']} || true")
+        await _ssh(
+            f"docker network connect {settings.evolution_public_network} {n['evolution']} || true"
+        )
 
     for _ in range(40):
         saude = await _ssh(
