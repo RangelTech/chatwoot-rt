@@ -33,6 +33,19 @@ class Settings(BaseSettings):
     # responde uma conversa, para a mensagem voltar ao canal do cliente.
     bridge_public_url: str = ""
 
+    # Provisionamento privilegiado de instâncias Evolution na VPS (produto-05
+    # seção 4, QR automático). A ponte é o único lugar que sabe SSH na VPS —
+    # nem o navegador do tenant, nem o Chatwoot Rails, têm essa credencial.
+    evolution_ssh_host: str = "66.94.101.153"
+    evolution_ssh_user: str = "deploy"
+    # Chave privada em texto (conteúdo do arquivo PEM), vinda do Secret
+    # Manager em produção -- nunca um caminho de arquivo committado.
+    evolution_ssh_private_key: str = ""
+    evolution_domain: str = "evolution.rangeltech.net"
+    evolution_image: str = "evoapicloud/evolution-api:v2.3.7"
+    evolution_internal_network: str = "internal"
+    evolution_public_network: str = "public"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

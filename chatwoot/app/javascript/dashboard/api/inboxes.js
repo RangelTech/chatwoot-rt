@@ -53,6 +53,10 @@ class Inboxes extends CacheEnabledApiClient {
     return axios.post(`${this.url}/${inboxId}/reset_secret`);
   }
 
+  provisionEvolution() {
+    return axios.post(`${this.url}/provision_evolution`);
+  }
+
   connectEvolution(inboxId) {
     return axios.post(`${this.url}/${inboxId}/connect_evolution`);
   }

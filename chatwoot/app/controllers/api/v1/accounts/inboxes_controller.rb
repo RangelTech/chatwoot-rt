@@ -1,6 +1,6 @@
 class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   include Api::V1::InboxesHelper
-  before_action :fetch_inbox, except: [:index, :create]
+  before_action :fetch_inbox, except: [:index, :create, :provision_evolution]
   before_action :fetch_agent_bot, only: [:set_agent_bot]
   # we are already handling the authorization in fetch inbox
   before_action :check_authorization, except: [:show]
@@ -94,6 +94,18 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   rescue StandardError => e
     Rails.logger.error "[INBOX TEST_CONNECTION] #{e.message}"
     render json: { status: 'error', message: e.message }, status: :unprocessable_entity
+  end
+
+  # Produto-05 seção 4 -- QR automático. Diferente de `connect_evolution`
+  # (que age sobre uma inbox que já existe), esta rota CRIA a inbox: o
+  # administrador do tenant nunca escolhe/digita instance_name, api_url ou
+  # api_key -- eles vêm do provisionamento privilegiado na ponte
+  # (`Evolution::ProvisioningService`), derivado só da conta autenticada.
+  def provision_evolution
+    @inbox = Evolution::ProvisioningService.new(account: Current.account).call
+    render 'api/v1/accounts/inboxes/show'
+  rescue Evolution::ProvisioningService::ProvisioningError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   def connect_evolution

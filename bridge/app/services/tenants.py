@@ -41,6 +41,20 @@ def get_tenant_link(tenant_id: str) -> dict | None:
         ).fetchone()
 
 
+def tenant_link_by_account(chatwoot_account_id: int) -> dict | None:
+    """Resolve o tenant a partir da Account do Chatwoot -- direção inversa de
+    `get_tenant_link`. É o que permite ao Rails do Chatwoot (que só conhece a
+    própria `Current.account.id`, autenticada pela sessão) provisionar
+    recursos privilegiados (Evolution QR) sem nunca precisar saber ou
+    declarar um `tenant_id`: a ponte é a única fonte de verdade desse
+    vínculo, então não existe como um tenant forjar o id de outro."""
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT * FROM tenant_links WHERE chatwoot_account_id = %s",
+            (chatwoot_account_id,),
+        ).fetchone()
+
+
 def upsert_user_link(
     *, tenant_id: str, platform_user_id: str, email: str, role: str = "agent"
 ) -> dict:
@@ -250,6 +264,53 @@ def tenant_by_conversation_webhook_token(token: str) -> dict | None:
     with get_connection() as conn:
         return conn.execute(
             "SELECT * FROM tenant_links WHERE conversation_webhook_token = %s", (token,)
+        ).fetchone()
+
+
+# --------------------------------------------------------------------------
+# Evolution API por tenant (produto-05 seção 4) — QR automático, sem o
+# administrador do tenant nunca digitar instance_name/api_url/api_key.
+# --------------------------------------------------------------------------
+
+
+def ensure_evolution_connection(
+    *, tenant_id: str, indice: int, instance_name: str, api_url: str, api_key: str
+) -> dict:
+    """Cria a linha se não existir (gera o nome/URL/chave definitivos desta
+    conexão UMA vez) ou devolve a existente sem tocar nela -- é isto que
+    garante que repetir a chamada nunca gera um segundo container/instância
+    para o mesmo (tenant_id, indice): quem decide se um provisionamento novo
+    é necessário é sempre esta linha, nunca o chamador."""
+    with get_connection() as conn:
+        return conn.execute(
+            """INSERT INTO evolution_connections
+                   (tenant_id, indice, instance_name, api_url, api_key_encrypted, status)
+               VALUES (%s, %s, %s, %s, %s, 'provisioning')
+               ON CONFLICT (tenant_id, indice) DO UPDATE
+                   SET updated_at = evolution_connections.updated_at
+               RETURNING *""",
+            (tenant_id, indice, instance_name, api_url, encrypt(api_key)),
+        ).fetchone()
+
+
+def get_evolution_connection(tenant_id: str, indice: int = 1) -> dict | None:
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT * FROM evolution_connections WHERE tenant_id = %s AND indice = %s",
+            (tenant_id, indice),
+        ).fetchone()
+
+
+def mark_evolution_connection(
+    connection_id: str, *, status: str, last_error: str = ""
+) -> dict:
+    with get_connection() as conn:
+        return conn.execute(
+            """UPDATE evolution_connections
+                  SET status = %s, last_error = %s, updated_at = now()
+                WHERE id = %s
+                RETURNING *""",
+            (status, last_error, connection_id),
         ).fetchone()
 
 

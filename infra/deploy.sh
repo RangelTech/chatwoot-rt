@@ -27,7 +27,7 @@ deploy_bridge() {
   gcloud run deploy chatwoot-bridge \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt-bridge:$SHORT_SHA \
-    --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest \
+    --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
     --set-env-vars="CHATWOOT_BASE_URL=$(chatwoot_url),AGENT_PLATFORM_URL=$(agent_platform_url)" \
     --allow-unauthenticated \
     --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
@@ -66,8 +66,8 @@ deploy_chatwoot() {
   gcloud run deploy chatwoot-web \
     --project=$PROJECT --region=$REGION \
     --image=$REPO/chatwoot-rt:$SHORT_SHA \
-    --set-secrets="$(chatwoot_secrets)" \
-    --set-env-vars="$(chatwoot_env)" \
+    --set-secrets="$(chatwoot_secrets),BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest" \
+    --set-env-vars="$(chatwoot_env),BRIDGE_URL=$(bridge_url)" \
     --command=./rt-web.sh \
     --allow-unauthenticated \
     --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
@@ -80,6 +80,22 @@ chatwoot_url() {
 
 agent_platform_url() {
   echo "https://ia.rangeltech.net"
+}
+
+# URL real do Cloud Run da ponte (não existe domínio próprio para ela ainda
+# -- só o *.run.app). É o que o Chatwoot Rails usa para chamar rotas
+# server-a-server da ponte (ex.: provisionamento Evolution, produto-05
+# seção 4). Falha explícita, não string vazia, se a ponte ainda não foi
+# deployada: silenciar aqui viraria um BRIDGE_URL quebrado sem aviso.
+bridge_url() {
+  local url
+  url=$(gcloud run services describe chatwoot-bridge \
+    --project=$PROJECT --region=$REGION --format='value(status.url)' 2>/dev/null)
+  if [ -z "$url" ]; then
+    echo "chatwoot-bridge ainda não foi deployado -- rode '$0 bridge' antes de '$0 chatwoot'" >&2
+    exit 1
+  fi
+  echo "$url"
 }
 
 chatwoot_secrets() {
@@ -211,6 +227,8 @@ case $target in
   locale) locale_das_contas ;;
   sync-secrets) sync_secrets ;;
   migrate) migrate_chatwoot ;;
-  all) migrate_chatwoot; deploy_chatwoot; locale_das_contas; sync_secrets; bootstrap_platform; deploy_bridge ;;
+  # bridge antes de chatwoot: deploy_chatwoot lê a URL viva da ponte
+  # (BRIDGE_URL) para as chamadas server-a-servidor do produto-05.
+  all) migrate_chatwoot; deploy_bridge; deploy_chatwoot; locale_das_contas; sync_secrets; bootstrap_platform ;;
   *) echo "usage: $0 [bridge|chatwoot|migrate|locale|sync-secrets|bootstrap|all]" >&2; exit 1 ;;
 esac

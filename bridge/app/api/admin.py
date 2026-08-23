@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.services import chatwoot, tenants
+from app.services import chatwoot, evolution, tenants
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,17 @@ class AiConfigIn(BaseModel):
     integration_key: str | None = None
     autopilot: bool = True
     handoff_team_id: int | None = None
+
+
+class EvolutionProvisionIn(BaseModel):
+    # A conta do Chatwoot, não um tenant_id: o Rails autenticado é quem
+    # chama esta rota, e ele só conhece `Current.account.id` — nunca o
+    # tenant_id do agent-platform. É a própria ponte que resolve a conta
+    # para o tenant certo (`tenant_link_by_account`), o que torna
+    # estruturalmente impossível um tenant provisionar em nome de outro:
+    # não existe campo aqui em que forjar isso faria diferença.
+    chatwoot_account_id: int
+    indice: int = Field(default=1, ge=1, le=20)
 
 
 class BrandingIn(BaseModel):
@@ -481,6 +492,54 @@ async def _garante_bot_na_caixa(tenant_id: str, inbox_id: int | None, *, ligado:
     except chatwoot.ChatwootError as exc:
         logger.warning("falha ao associar o Agent Bot na inbox %s: %s", inbox_id, exc)
         return f"erro: {exc}"
+
+
+@router.post("/evolution/provision", dependencies=[Depends(require_admin)])
+async def provision_evolution(payload: EvolutionProvisionIn):
+    """Provisiona (ou reaproveita) a instância Evolution desta conexão do
+    tenant e devolve as credenciais para o Chatwoot Rails criar o canal
+    local (`Channel::EvolutionApi`) — é o Rails quem guarda e usa essas
+    credenciais depois (QR/status via `Evolution::Client`, já existente);
+    esta rota nunca é chamada pelo navegador, e o navegador nunca vê o
+    corpo desta resposta.
+
+    Idempotente por `(tenant_id, indice)`: repetir a chamada para uma
+    conexão já pronta não recria container nem gera credencial nova —
+    devolve exatamente a mesma instância.
+    """
+    link = tenants.tenant_link_by_account(payload.chatwoot_account_id)
+    if link is None:
+        raise HTTPException(status_code=404, detail="conta do Chatwoot sem tenant vinculado")
+
+    tenant_id = str(link["tenant_id"])
+    n = evolution.nomes(tenant_id, payload.indice)
+    candidata_api_key = secrets.token_urlsafe(24)
+    row = tenants.ensure_evolution_connection(
+        tenant_id=tenant_id,
+        indice=payload.indice,
+        instance_name=n["evolution"],
+        api_url=f"https://{n['host']}",
+        api_key=candidata_api_key,
+    )
+    from app.crypto import decrypt
+
+    api_key = decrypt(row["api_key_encrypted"])
+
+    if row["status"] != "ready":
+        try:
+            await evolution.provisionar_container(tenant_id, payload.indice, api_key)
+        except evolution.ProvisioningError as exc:
+            tenants.mark_evolution_connection(str(row["id"]), status="failed", last_error=str(exc))
+            logger.error("provisionamento Evolution falhou para tenant %s: %s", tenant_id, exc)
+            raise HTTPException(status_code=502, detail="provisionamento da instância WhatsApp falhou") from exc
+        row = tenants.mark_evolution_connection(str(row["id"]), status="ready")
+
+    return {
+        "status": row["status"],
+        "instance_name": row["instance_name"],
+        "api_url": row["api_url"],
+        "api_key": api_key,
+    }
 
 
 def _first_admin(tenant_id: str) -> dict | None:

@@ -378,19 +378,15 @@
         "ERROR_MESSAGE": "Unable to create the WAPI inbox."
       },
       "EVOLUTION_API": {
-        "TITLE": "Evolution API",
-        "DESC": "Connect a dedicated Evolution API instance and scan its QR code after creating the inbox.",
-        "INSTANCE_NAME": "Instance name",
-        "INSTANCE_NAME_PLACEHOLDER": "tenant-whatsapp",
-        "API_URL": "Evolution URL",
-        "API_URL_PLACEHOLDER": "https://evolution-tenant.evolution.rangeltech.net",
-        "API_KEY": "API key",
-        "API_KEY_PLACEHOLDER": "Evolution API key",
-        "SUBMIT_BUTTON": "Create Evolution inbox",
-        "QR_ALT": "Evolution API connection QR code",
-        "QR_HELP": "Scan this QR code in WhatsApp, then continue to finish configuring the inbox.",
+        "TITLE": "WhatsApp (QR code)",
+        "DESC": "Connect a WhatsApp number by scanning a QR code. We provision and manage the connection for you.",
+        "SUBMIT_BUTTON": "Create connection",
+        "PROVISIONING": "Setting up your WhatsApp connection, this may take a minute...",
+        "QR_ALT": "WhatsApp connection QR code",
+        "QR_HELP": "Open WhatsApp on your phone, go to Linked Devices and scan this QR code.",
+        "CONNECTED": "WhatsApp connected successfully.",
         "CONTINUE_BUTTON": "Continue setup",
-        "ERROR_MESSAGE": "Unable to create the Evolution API inbox."
+        "ERROR_MESSAGE": "Unable to create the WhatsApp connection."
       },
       "API_CHANNEL": {
         "TITLE": "API Channel",

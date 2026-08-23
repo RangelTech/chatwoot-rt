@@ -83,6 +83,10 @@ class InboxPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  def provision_evolution?
+    @account_user.administrator?
+  end
+
   def reconnect_evolution?
     @account_user.administrator?
   end
