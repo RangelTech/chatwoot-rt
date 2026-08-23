@@ -36,7 +36,22 @@ fi
   --project=$PROJECT --region=$REGION \
   --image=$REPO/chatwoot-rt-bridge:$SHORT_SHA \
   --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
-  --set-env-vars="CHATWOOT_BASE_URL=https://chat.rangeltech.net,AGENT_PLATFORM_URL=https://ia.rangeltech.net,BRIDGE_PUBLIC_URL=https://bridge.rangeltech.net,ENVIRONMENT=production" \
+  --set-env-vars="CHATWOOT_BASE_URL=https://chat.rangeltech.net,AGENT_PLATFORM_URL=https://ia.rangeltech.net,ENVIRONMENT=production" \
   --allow-unauthenticated \
   --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
   --timeout=600 --port=8100
+
+# BRIDGE_PUBLIC_URL vira o outgoing_url de todo Agent Bot (é o webhook que o
+# Chatwoot chama a cada mensagem nova -- sem isso resolver, a IA nunca vê a
+# mensagem). Achado real 23/08/2026: "https://bridge.rangeltech.net" está no
+# DNS mas ainda aponta pro IP antigo da VPS (66.94.101.153), de antes da
+# bridge migrar pro Cloud Run (infra-01) -- Traefik lá responde 404 (rota
+# nunca existiu pra bridge, só chat/ia ganharam proxy reverso pro Cloud Run
+# na migração). Até alguém configurar esse proxy reverso (ou um domain
+# mapping do Cloud Run) meia URL morta é pior que a URL real do Cloud Run:
+# usar sempre a URL viva do próprio serviço.
+BRIDGE_URL=$("$GCLOUD_BIN" run services describe chatwoot-bridge \
+  --project=$PROJECT --region=$REGION --format='value(status.url)')
+"$GCLOUD_BIN" run services update chatwoot-bridge \
+  --project=$PROJECT --region=$REGION \
+  --update-env-vars="BRIDGE_PUBLIC_URL=$BRIDGE_URL"
