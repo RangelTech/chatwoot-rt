@@ -85,6 +85,21 @@ variable "instagram_verify_token" {
   sensitive = true
 }
 
+# Produto-05 seção 4 (QR automático): o Rails precisa chamar rotas
+# server-a-servidor da ponte (provisionamento Evolution). Lidas direto do
+# Secret Manager/Cloud Run em vez de passadas pelo workflow -- não é
+# credencial rotativa do Infisical, é interna desta infraestrutura GCP.
+data "google_secret_manager_secret_version" "bridge_admin_token" {
+  secret  = "chatwoot-bridge-admin-token"
+  project = var.project
+}
+
+data "google_cloud_run_v2_service" "chatwoot_bridge" {
+  name     = "chatwoot-bridge"
+  project  = var.project
+  location = var.region
+}
+
 resource "google_cloud_run_v2_service" "chatwoot_web" {
   name     = "chatwoot-web"
   project  = var.project
@@ -230,6 +245,14 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
       env {
         name  = "INSTAGRAM_VERIFY_TOKEN"
         value = var.instagram_verify_token
+      }
+      env {
+        name  = "BRIDGE_URL"
+        value = data.google_cloud_run_v2_service.chatwoot_bridge.uri
+      }
+      env {
+        name  = "BRIDGE_ADMIN_TOKEN"
+        value = data.google_secret_manager_secret_version.bridge_admin_token.secret_data
       }
     }
 
