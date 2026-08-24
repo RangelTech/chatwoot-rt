@@ -370,6 +370,8 @@
       "WAPI": {
         "TITLE": "WAPI",
         "DESC": "Connect an existing WAPI WhatsApp instance with its App ID and token.",
+        "INBOX_NAME": "Inbox name",
+        "INBOX_NAME_PLACEHOLDER": "e.g. WhatsApp Support",
         "APP_ID": "App ID",
         "APP_ID_PLACEHOLDER": "WAPI instance ID",
         "TOKEN": "Token",

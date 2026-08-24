@@ -9,6 +9,7 @@ import { useStore } from 'dashboard/composables/store';
 import PageHeader from '../../SettingsSubPageHeader.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
+const inboxName = ref('');
 const projectId = ref('');
 const token = ref('');
 const callbackUrl = ref('');
@@ -16,7 +17,10 @@ const inboxId = ref(null);
 const store = useStore();
 const { t } = useI18n();
 const router = useRouter();
-const v$ = useVuelidate({ projectId: { required }, token: { required } }, { projectId, token });
+const v$ = useVuelidate(
+  { inboxName: { required }, projectId: { required }, token: { required } },
+  { inboxName, projectId, token }
+);
 
 const createChannel = async () => {
   const valid = await v$.value.$validate();
@@ -24,6 +28,7 @@ const createChannel = async () => {
 
   try {
     const inbox = await store.dispatch('inboxes/createChannel', {
+      name: inboxName.value.trim(),
       channel: { type: 'wapi', project_id: projectId.value, token: token.value },
     });
     // The verification token is generated server-side. Show the exact callback
@@ -45,6 +50,10 @@ const continueSetup = () => {
   <div class="h-full w-full p-6 col-span-6">
     <PageHeader :header-title="t('INBOX_MGMT.ADD.WAPI.TITLE')" :header-content="t('INBOX_MGMT.ADD.WAPI.DESC')" />
     <form v-if="!inboxId" class="flex flex-col gap-4 max-w-xl" @submit.prevent="createChannel">
+      <label>
+        {{ t('INBOX_MGMT.ADD.WAPI.INBOX_NAME') }}
+        <input v-model="inboxName" type="text" :placeholder="t('INBOX_MGMT.ADD.WAPI.INBOX_NAME_PLACEHOLDER')" @blur="v$.inboxName.$touch" />
+      </label>
       <label>
         {{ t('INBOX_MGMT.ADD.WAPI.APP_ID') }}
         <input v-model="projectId" type="text" :placeholder="t('INBOX_MGMT.ADD.WAPI.APP_ID_PLACEHOLDER')" @blur="v$.projectId.$touch" />
