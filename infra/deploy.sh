@@ -70,10 +70,10 @@ deploy_chatwoot() {
     --set-env-vars="$(chatwoot_env),BRIDGE_URL=$(bridge_url)" \
     --command=./rt-web.sh \
     --allow-unauthenticated \
-    --memory=2Gi --cpu=2 --min-instances=0 --max-instances=5 \
+    --memory=2Gi --cpu=2 --min-instances=1 --max-instances=5 \
     --timeout=600 --port=3000
-  # min=0 por decisão do dono (23/08/2026), contenção de custo em dev. Este
-  # script é legado (não é o que o CI roda pra chatwoot-web -- ver
+  # min=1 restaurado por decisão do dono (24/08/2026), entrou em produção.
+  # Este script é legado (não é o que o CI roda pra chatwoot-web -- ver
   # deploy-cloudrun.yml/infra/terraform/main.tf), mantido em sync por
   # consistência.
 }
