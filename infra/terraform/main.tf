@@ -127,6 +127,17 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
         value = "production"
       }
       env {
+        # Achado real 24/08/2026: default do rack-timeout e 15s, mas
+        # Evolution::ProvisioningService#provision_on_bridge! (produto-05
+        # secao 4, "QR automatico") chama a ponte com timeout proprio de
+        # 180s -- criar container novo na VPS de verdade (docker pull +
+        # start + health check) estoura os 15s globais antes da ponte
+        # terminar, sempre 500 (Rack::Timeout::RequestTimeoutException),
+        # nunca da pra provisionar instancia nova do zero pela tela.
+        name  = "RACK_TIMEOUT_SERVICE_TIMEOUT"
+        value = "180"
+      }
+      env {
         name  = "NODE_ENV"
         value = "production"
       }
