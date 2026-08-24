@@ -52,6 +52,15 @@ jobs:
   deploy-bridge-cloudrun:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [bridge]
+    # Achado real 24/08/2026: sem isso, 2 pushes seguidos rápidos disparam 2
+    # runs deste job em paralelo sem ordem garantida -- o mais antigo pode
+    # terminar DEPOIS do mais novo e sobrescrever um fix real (foi exatamente
+    # o que aconteceu com o fix da senha do Postgres do Evolution: a imagem
+    # que ficou no ar era de um commit anterior). Mesmo achado já corrigido
+    # em kernel-llm e no deploy-cloudrun.yml deste repo -- faltava aqui.
+    concurrency:
+      group: chatwoot-bridge-cloudrun-production
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
