@@ -31,8 +31,8 @@ def test_provisiona_uma_vez_e_reaproveita_na_segunda_chamada(
 
     chamadas = []
 
-    async def fake_provisionar_container(tenant, indice, api_key):
-        chamadas.append((tenant, indice, api_key))
+    async def fake_provisionar_container(tenant, indice, api_key, pg_senha, redis_senha):
+        chamadas.append((tenant, indice, api_key, pg_senha, redis_senha))
 
     monkeypatch.setattr(evolution, "provisionar_container", fake_provisionar_container)
     _link_tenant(tenant_id, account_id=501)
@@ -66,7 +66,7 @@ def test_dois_tenants_geram_instancias_diferentes_e_isoladas(client, admin_auth,
 
     from app.services import evolution
 
-    async def fake_provisionar_container(tenant, indice, api_key):
+    async def fake_provisionar_container(tenant, indice, api_key, pg_senha, redis_senha):
         return None
 
     monkeypatch.setattr(evolution, "provisionar_container", fake_provisionar_container)
@@ -91,7 +91,7 @@ def test_falha_no_provisionamento_marca_a_conexao_como_failed_e_devolve_502(
 ):
     from app.services import evolution, tenants
 
-    async def fake_falha(tenant, indice, api_key):
+    async def fake_falha(tenant, indice, api_key, pg_senha, redis_senha):
         raise evolution.ProvisioningError("instância não respondeu ao health check")
 
     monkeypatch.setattr(evolution, "provisionar_container", fake_falha)
