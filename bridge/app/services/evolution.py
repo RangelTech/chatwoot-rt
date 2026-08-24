@@ -15,7 +15,6 @@ container que já existe, só espera ele ficar saudável.
 
 import asyncio
 import logging
-import secrets
 import tempfile
 from pathlib import Path
 
@@ -89,18 +88,25 @@ async def _ssh(comando: str, *, timeout: float = 60.0) -> str:
     return stdout.decode(errors="replace").strip()
 
 
-async def provisionar_container(tenant_id: str, indice: int, api_key: str) -> None:
+async def provisionar_container(
+    tenant_id: str, indice: int, api_key: str, pg_senha: str, redis_senha: str
+) -> None:
     """Garante que o container Evolution (+ Postgres/Redis dedicados) desta
     conexão existe e está saudável. Idempotente: se o container já existe
     (nome determinístico por tenant+índice), só espera o health check —
-    nunca recria, nunca duplica."""
+    nunca recria, nunca duplica.
+
+    `pg_senha`/`redis_senha` vêm de `tenants.ensure_evolution_db_passwords`
+    (achado real 24/08/2026, produto-09) -- persistidas na linha da conexão,
+    não geradas aqui. Antes eram geradas a cada chamada: se Postgres/Redis já
+    existiam (sobreviventes de uma tentativa interrompida) mas o Evolution
+    ainda não, a senha nova não batia com a do banco já criado -- container
+    em crash-loop permanente (`P1000: Authentication failed`). A linha na
+    ponte agora é a fonte de verdade da senha, não a chamada."""
     n = nomes(tenant_id, indice)
 
     ja_existe = await _ssh(f"docker ps -aq -f name=^{n['evolution']}$")
     if not ja_existe:
-        pg_senha = secrets.token_urlsafe(24)
-        redis_senha = secrets.token_urlsafe(24)
-
         if not await _ssh(f"docker ps -aq -f name=^{n['postgres']}$"):
             await _ssh(f"mkdir -p /opt/platform/data/{n['postgres']}")
             await _ssh(
@@ -126,12 +132,6 @@ async def provisionar_container(tenant_id: str, indice: int, api_key: str) -> No
         else:
             raise ProvisioningError(f"Postgres de {tenant_id} não ficou pronto a tempo")
 
-        # Precisa da senha real do Postgres/Redis que acabaram de subir -- se
-        # eles já existiam (ramo raro: container evolution morreu mas os
-        # dependentes sobreviveram), não temos como recuperar a senha antiga
-        # daqui; nesse caso a recriação abaixo falhará de forma visível
-        # (connection refused/auth), o que é preferível a inventar uma senha
-        # errada silenciosamente.
         db_uri = f"postgresql://evolution:{pg_senha}@{n['postgres']}:5432/evolution"
         redis_uri = f"redis://:{redis_senha}@{n['redis']}:6379/0"
         await _ssh(

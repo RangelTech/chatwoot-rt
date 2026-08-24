@@ -293,6 +293,38 @@ def ensure_evolution_connection(
         ).fetchone()
 
 
+def ensure_evolution_db_passwords(connection_id: str) -> tuple[str, str]:
+    """Devolve (pg_senha, redis_senha) desta conexão -- gera na primeira vez,
+    sempre a MESMA depois. Achado real 24/08/2026 (produto-09): gerar senha
+    nova a cada chamada de `provisionar_container`, mesmo quando o Postgres/
+    Redis dependentes já existiam (sobreviventes de uma tentativa
+    interrompida), deixava o container do Evolution com uma senha que não
+    batia mais com a do banco -- crash-loop permanente. Ler daqui em vez de
+    `secrets.token_urlsafe` direto é o que fecha esse buraco: a *linha* é a
+    fonte de verdade da senha, não a chamada."""
+    with get_connection() as conn:
+        linha = conn.execute(
+            """SELECT pg_password_encrypted, redis_password_encrypted
+                 FROM evolution_connections WHERE id = %s""",
+            (connection_id,),
+        ).fetchone()
+        if linha["pg_password_encrypted"] and linha["redis_password_encrypted"]:
+            return (
+                decrypt(linha["pg_password_encrypted"]),
+                decrypt(linha["redis_password_encrypted"]),
+            )
+
+        pg_senha = secrets.token_urlsafe(24)
+        redis_senha = secrets.token_urlsafe(24)
+        conn.execute(
+            """UPDATE evolution_connections
+                  SET pg_password_encrypted = %s, redis_password_encrypted = %s, updated_at = now()
+                WHERE id = %s""",
+            (encrypt(pg_senha), encrypt(redis_senha), connection_id),
+        )
+        return pg_senha, redis_senha
+
+
 def get_evolution_connection(tenant_id: str, indice: int = 1) -> dict | None:
     with get_connection() as conn:
         return conn.execute(

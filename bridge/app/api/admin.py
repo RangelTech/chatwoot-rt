@@ -526,8 +526,11 @@ async def provision_evolution(payload: EvolutionProvisionIn):
     api_key = decrypt(row["api_key_encrypted"])
 
     if row["status"] != "ready":
+        pg_senha, redis_senha = tenants.ensure_evolution_db_passwords(str(row["id"]))
         try:
-            await evolution.provisionar_container(tenant_id, payload.indice, api_key)
+            await evolution.provisionar_container(
+                tenant_id, payload.indice, api_key, pg_senha, redis_senha
+            )
         except evolution.ProvisioningError as exc:
             tenants.mark_evolution_connection(str(row["id"]), status="failed", last_error=str(exc))
             logger.error("provisionamento Evolution falhou para tenant %s: %s", tenant_id, exc)
