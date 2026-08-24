@@ -1,12 +1,43 @@
 class Webhooks::WapiController < ActionController::API
   before_action :ensure_valid_channel
 
+  # Achado real 24/08/2026 (produto-09): o WAPI manda POST de verdade
+  # (corpo real de 1.7-5.3KB, confirmado no log de infra), mas o Rails
+  # processava como "as HTML" -- Content-Type que não bate com
+  # application/json, então `params` só tinha o que veio na URL
+  # (project_id/verify_token), nunca o corpo. `Wapi::PayloadNormalizer`
+  # rodava sobre um payload vazio, sem erro nenhum, sem fazer nada --
+  # webhook sempre 200, nenhuma mensagem chegava na conversa.
+  #
+  # Log temporário (Content-Type + corpo bruto) até confirmar o formato
+  # real numa mensagem de teste de verdade -- remover depois de
+  # confirmado, não é pra ficar em produção pra sempre (corpo pode ter
+  # dado de mensagem real do cliente).
   def process_payload
-    Webhooks::WapiEventsJob.perform_later(project_id: params[:project_id], params: params.to_unsafe_hash)
+    Rails.logger.info(
+      "[WAPI raw] content_type=#{request.content_type.inspect} body=#{request.raw_post}"
+    )
+    Webhooks::WapiEventsJob.perform_later(project_id: params[:project_id], params: corpo_normalizado)
     head :ok
   end
 
   private
+
+  # Se o Rails não reconheceu o Content-Type como JSON, `params` só tem o
+  # que veio na URL -- tenta decodificar o corpo bruto como JSON na mão
+  # antes de desistir, em vez de silenciosamente processar um payload
+  # vazio (era exatamente esse silêncio que escondia o bug).
+  def corpo_normalizado
+    base = params.to_unsafe_hash
+    campos_extras = base.keys - %w[project_id verify_token controller action]
+    return base if campos_extras.any?
+
+    begin
+      JSON.parse(request.raw_post).merge(base)
+    rescue JSON::ParserError
+      base
+    end
+  end
 
   def ensure_valid_channel
     head :not_found and return unless channel

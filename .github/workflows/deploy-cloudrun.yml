@@ -25,6 +25,16 @@ permissions:
 
 jobs:
   deploy:
+    # Achado real 24/08/2026: este workflow nunca teve concurrency group
+    # (diferente de agent-platform/kernel-llm, que já tinham essa proteção
+    # -- mesmo achado de arquitetura da madrugada de 23/08, só que aqui
+    # ficou pra trás). 2 pushes seguidos rápidos disparam 2 runs em
+    # paralelo sem ordem garantida -- o que terminar por último vence,
+    # podendo reverter um fix mais novo silenciosamente. cancel-in-progress
+    # serializa: o run mais novo cancela o mais velho do mesmo grupo.
+    concurrency:
+      group: chatwoot-web-cloudrun-production
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     environment: production
     steps:
