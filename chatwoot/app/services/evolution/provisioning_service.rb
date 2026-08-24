@@ -44,7 +44,13 @@ class Evolution::ProvisioningService
       "#{bridge_url}/admin/evolution/provision",
       headers: { 'Content-Type' => 'application/json', 'Authorization' => "Bearer #{bridge_admin_token}" },
       body: { chatwoot_account_id: account.id, indice: indice }.to_json,
-      timeout: 180 # provisionamento real de container pode levar dezenas de segundos
+      # Achado real 24/08/2026 (testado ao vivo com provisionamento do zero,
+      # não idempotente): pior caso da ponte é ~40s de espera do Postgres
+      # (20 tentativas x 2s) + até 120s de health check (40 tentativas x 3s)
+      # + overhead de várias chamadas SSH sequenciais -- passa de 180s sem
+      # exagero, não é hipotético. 240s dá margem de verdade acima do pior
+      # caso calculado da ponte (~180-200s), sem inflar demais.
+      timeout: 240
     )
     raise ProvisioningError, "ponte indisponível: #{response.code}" unless response.success?
 

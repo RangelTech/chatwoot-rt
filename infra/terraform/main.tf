@@ -129,13 +129,18 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
       env {
         # Achado real 24/08/2026: default do rack-timeout e 15s, mas
         # Evolution::ProvisioningService#provision_on_bridge! (produto-05
-        # secao 4, "QR automatico") chama a ponte com timeout proprio de
-        # 180s -- criar container novo na VPS de verdade (docker pull +
-        # start + health check) estoura os 15s globais antes da ponte
-        # terminar, sempre 500 (Rack::Timeout::RequestTimeoutException),
-        # nunca da pra provisionar instancia nova do zero pela tela.
+        # secao 4, "QR automatico") chama a ponte com timeout proprio --
+        # criar container novo na VPS de verdade (docker pull + start +
+        # health check, ate 40s Postgres + ate 120s health check) estoura
+        # os 15s globais antes da ponte terminar, sempre 500
+        # (Rack::Timeout::RequestTimeoutException). Subido pra 180 antes,
+        # ainda estourou num teste real de provisionamento do zero
+        # (pior caso da ponte passa de 180s) -- 260 da margem de verdade
+        # acima do timeout de 240s do HTTParty (provisioning_service.rb),
+        # pra o erro client-side aparecer tratado em vez do rack-timeout
+        # bruto cortar primeiro.
         name  = "RACK_TIMEOUT_SERVICE_TIMEOUT"
-        value = "180"
+        value = "260"
       }
       env {
         name  = "NODE_ENV"
