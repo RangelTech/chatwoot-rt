@@ -10,11 +10,11 @@ RSpec.describe Evolution::ProvisioningService do
     ))
   end
 
-  def stub_bridge(status: 200, body: {})
+  def stub_bridge(status: 200, body: {}, indice: 1)
     stub_request(:post, 'https://bridge.example.test/admin/evolution/provision')
       .with(
         headers: { 'Authorization' => 'Bearer admin-token' },
-        body: { chatwoot_account_id: account.id, indice: 1 }.to_json
+        body: { chatwoot_account_id: account.id, indice: indice }.to_json
       )
       .to_return(status: status, body: body.to_json, headers: { 'Content-Type' => 'application/json' })
   end
@@ -53,17 +53,37 @@ RSpec.describe Evolution::ProvisioningService do
     expect(inbox.name).to eq('joaopedro')
   end
 
-  it 'is idempotent: calling twice for the same account never creates a second inbox' do
+  it 'is idempotent for the same explicit indice: calling twice never creates a second inbox' do
     stub_bridge(body: {
       status: 'ready', instance_name: 'evolution-abc123', api_url: 'https://evolution-abc.example', api_key: 'k'
     })
 
-    first = described_class.new(account: account).call
-    second = described_class.new(account: account).call
+    first = described_class.new(account: account, indice: 1).call
+    second = described_class.new(account: account, indice: 1).call
 
     expect(second.id).to eq(first.id)
     expect(account.evolution_api_channels.count).to eq(1)
     expect(account.inboxes.where(name: 'WhatsApp (Evolution)').count).to eq(1)
+  end
+
+  # Achado real 24/08/2026: sem indice explicito o controller nunca variava
+  # esse valor -- "criar segunda conexao Evolution" sempre resolvia pro
+  # MESMO instance_name na ponte e devolvia a mesma inbox, nunca uma nova.
+  # Nao era o nome do inbox que travava, era o indice nunca avancar.
+  it 'auto-advances the indice for a second connection on the same account, creating a distinct inbox' do
+    stub_bridge(indice: 1, body: {
+      status: 'ready', instance_name: 'evolution-abc123', api_url: 'https://evolution-abc.example', api_key: 'k'
+    })
+    first = described_class.new(account: account).call
+
+    stub_bridge(indice: 2, body: {
+      status: 'ready', instance_name: 'evolution-abc123-2', api_url: 'https://evolution-abc-2.example', api_key: 'k2'
+    })
+    second = described_class.new(account: account).call
+
+    expect(second.id).not_to eq(first.id)
+    expect(account.evolution_api_channels.count).to eq(2)
+    expect(second.name).to eq('WhatsApp (Evolution) 2')
   end
 
   it 'raises ProvisioningError, not a raw HTTP failure, when the bridge is unreachable' do

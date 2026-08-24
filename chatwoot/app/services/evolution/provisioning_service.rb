@@ -11,7 +11,7 @@
 class Evolution::ProvisioningService
   class ProvisioningError < StandardError; end
 
-  def initialize(account:, indice: 1, name: nil)
+  def initialize(account:, indice: nil, name: nil)
     @account = account
     @indice = indice
     @name = name.to_s.strip.presence
@@ -27,7 +27,18 @@ class Evolution::ProvisioningService
   # segundo Channel::EvolutionApi/Inbox no Postgres do Chatwoot para essas
   # mesmas credenciais — por isso a ordem é sempre "pergunta à ponte
   # primeiro, só cria linha local se ainda não existir uma com esse nome".
+  #
+  # Achado real 24/08/2026: `indice` nunca era passado pelo controller,
+  # ficava sempre no default 1 -- criar uma "segunda" conexão Evolution
+  # no mesmo tenant sempre resolvia pro MESMO instance_name na ponte, e
+  # este `find_by` sempre achava o canal já existente e devolvia a MESMA
+  # inbox, nunca criava uma nova. Não era o nome do inbox, era o índice
+  # nunca variar. Agora, sem `indice` explícito, o próximo é derivado do
+  # número de conexões Evolution que a conta já tem -- seguro porque
+  # canal local e provisionamento na ponte sempre nascem juntos (mesma
+  # transação), nunca ficam dessincronizados nesse sentido.
   def call
+    @indice ||= account.evolution_api_channels.count + 1
     credentials = provision_on_bridge!
 
     existing = account.evolution_api_channels.find_by(instance_name: credentials.fetch('instance_name'))
