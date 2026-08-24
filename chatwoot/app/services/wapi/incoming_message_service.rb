@@ -52,11 +52,16 @@ class Wapi::IncomingMessageService
     @contact = contact_inbox.contact
   end
 
+  # Achado real 24/08/2026 (produto-09, testado ao vivo): `sender.id` do
+  # WAPI vem em dígitos puros ("556291118043"), sem "+" -- o Chatwoot exige
+  # E.164 nesse campo e rejeita com 422 ("Phone number should be in e164
+  # format"), igual já tinha acontecido antes com o Evolution/bridge (ver
+  # `bridge/app/services/chatwoot.py:create_contact`). Mesmo fix: só manda
+  # `phone_number` quando o identificador é só dígito, prefixado com "+".
   def contact_attributes
-    {
-      name: params[:name].presence || formatted_phone_number,
-      phone_number: phone_number
-    }
+    atributos = { name: params[:name].presence || formatted_phone_number }
+    atributos[:phone_number] = "+#{phone_number}" if phone_number.to_s.match?(/\A\d+\z/)
+    atributos
   end
 
   def conversation_params
