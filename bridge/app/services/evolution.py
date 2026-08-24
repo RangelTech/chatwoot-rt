@@ -149,6 +149,26 @@ async def provisionar_container(
             f"-e DATABASE_SAVE_MESSAGE_UPDATE=false "
             f"-e CACHE_REDIS_ENABLED=true -e CACHE_REDIS_URI='{redis_uri}' "
             f"-e AUTHENTICATION_API_KEY='{api_key}' "
+            # Identidade de sessão (24/08/2026, pedido do dono): aparece no
+            # "dispositivo conectado" do WhatsApp do cliente. Sem isso o
+            # padrão da biblioteca aparece cru (mais fácil de identificar
+            # como cliente não-oficial). Não resolve o sinal real de risco
+            # (IP de VPS/datacenter -- já registrado como pendente,
+            # precisaria de proxy residencial), só o cosmético.
+            f"-e CONFIG_SESSION_PHONE_CLIENT='Windows' "
+            f"-e CONFIG_SESSION_PHONE_NAME='Chrome' "
+            # Confiabilidade do webhook (Evolution -> chatwoot-web): sem
+            # retry configurado, uma resposta lenta do chatwoot-web (cold
+            # start, deploy em andamento) descarta o evento sem tentar de
+            # novo -- mensagem simplesmente não chega, sem erro visível em
+            # lugar nenhum. Valores da própria documentação do Evolution.
+            f"-e WEBHOOK_REQUEST_TIMEOUT_MS=60000 "
+            f"-e WEBHOOK_RETRY_MAX_ATTEMPTS=10 "
+            f"-e WEBHOOK_RETRY_INITIAL_DELAY_SECONDS=5 "
+            # Log só do que importa -- LOG_BAILEYS=error some com o ruído
+            # de protocolo (muito verboso por padrão), mantém erro real.
+            f"-e LOG_LEVEL=ERROR,WARN,INFO "
+            f"-e LOG_BAILEYS=error "
             f"-l traefik.enable=true "
             f"-l 'traefik.http.routers.{n['evolution']}.rule=Host(`{n['host']}`)' "
             f"-l traefik.http.routers.{n['evolution']}.entrypoints=websecure "

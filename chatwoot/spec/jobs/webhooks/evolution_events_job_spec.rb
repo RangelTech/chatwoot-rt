@@ -18,4 +18,48 @@ RSpec.describe Webhooks::EvolutionEventsJob do
 
     expect(Evolution::IncomingMessageService).to have_received(:new).with(inbox: channel.inbox, params: hash_including('event' => 'MESSAGES_UPSERT'))
   end
+
+  describe 'MESSAGES_UPDATE' do
+    let(:conversation) { create(:conversation, inbox: channel.inbox, account: channel.inbox.account) }
+    let(:message) do
+      create(:message, conversation: conversation, account: conversation.account, source_id: 'wamid-123',
+                        message_type: :outgoing, status: :sent)
+    end
+
+    it 'marks an outgoing message as delivered on DELIVERY_ACK' do
+      described_class.new.perform(
+        instance_name: channel.instance_name,
+        params: { event: 'MESSAGES_UPDATE', data: { fromMe: true, messageId: message.source_id, status: 'DELIVERY_ACK' } }
+      )
+
+      expect(message.reload.status).to eq('delivered')
+    end
+
+    it 'marks an outgoing message as read on READ' do
+      described_class.new.perform(
+        instance_name: channel.instance_name,
+        params: { event: 'MESSAGES_UPDATE', data: { fromMe: true, messageId: message.source_id, status: 'READ' } }
+      )
+
+      expect(message.reload.status).to eq('read')
+    end
+
+    it 'ignores updates for messages we received (fromMe: false)' do
+      described_class.new.perform(
+        instance_name: channel.instance_name,
+        params: { event: 'MESSAGES_UPDATE', data: { fromMe: false, messageId: message.source_id, status: 'READ' } }
+      )
+
+      expect(message.reload.status).to eq('sent')
+    end
+
+    it 'does nothing when no message matches the source_id' do
+      expect do
+        described_class.new.perform(
+          instance_name: channel.instance_name,
+          params: { event: 'MESSAGES_UPDATE', data: { fromMe: true, messageId: 'unknown-id', status: 'READ' } }
+        )
+      end.not_to raise_error
+    end
+  end
 end

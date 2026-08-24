@@ -66,7 +66,11 @@ class Evolution::Client
     # Confirmado direto contra uma instância real rodando, não só doc.
     response = post(
       "webhook/set/#{instance_name}",
-      webhook: { url: callback_url, events: %w[MESSAGES_UPSERT CONNECTION_UPDATE], enabled: true }
+      # MESSAGES_UPDATE (24/08/2026): status real de entrega/leitura vindo do
+      # WhatsApp de verdade (SERVER_ACK/DELIVERY_ACK/READ, protocolo Baileys
+      # documentado) -- sem isso a mensagem ficava só em "entregue" pra
+      # sempre (achado do mesmo dia, ver Webhooks::EvolutionEventsJob).
+      webhook: { url: callback_url, events: %w[MESSAGES_UPSERT MESSAGES_UPDATE CONNECTION_UPDATE], enabled: true }
     )
     raise_api_error(response) unless response.success?
   end
