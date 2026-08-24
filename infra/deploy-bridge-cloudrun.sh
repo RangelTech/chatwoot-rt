@@ -38,15 +38,17 @@ fi
   --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
   --set-env-vars="CHATWOOT_BASE_URL=https://chat.rangeltech.net,AGENT_PLATFORM_URL=https://ia.rangeltech.net,ENVIRONMENT=production" \
   --allow-unauthenticated \
-  --memory=512Mi --cpu=1 --min-instances=1 --max-instances=5 \
+  --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
   --timeout=600 --port=8100
-# min-instances=1: achado real 23/08/2026 (mega-spec-reestrutura, item B) --
-# 4,7s de cold start medido em GET /health (1ª de 6 amostras, as outras 5
-# ~0,27-0,29s). Bridge está no caminho de toda mensagem de saída real
-# (Chatwoot -> Agent Bot -> bridge -> provedor); mesmo achado/correção já
-# aplicado em agent-llm-backend e kernel-llm hoje. Confirmado antes de
-# editar: este é o único workflow que deploya chatwoot-bridge neste repo
-# (sem a armadilha de 2 caminhos competindo achada no kernel-llm).
+# min-instances=0 por decisão do dono (23/08/2026): ainda em dev, contenção
+# de custo é prioridade. O valor PROVADO com evidência real pra produção é
+# min=1 -- 4,7s de cold start medido em GET /health (1ª de 6 amostras, as
+# outras 5 ~0,27-0,29s). Bridge está no caminho de toda mensagem de saída
+# real (Chatwoot -> Agent Bot -> bridge -> provedor) -- documentado na
+# skill `agentllm` (personal-skills), seção "min_instances provados
+# 23/08/2026", pra usar quando entrar em produção de verdade. Confirmado
+# antes de editar: este é o único workflow que deploya chatwoot-bridge
+# neste repo (sem a armadilha de 2 caminhos competindo achada no kernel-llm).
 
 # BRIDGE_PUBLIC_URL vira o outgoing_url de todo Agent Bot (é o webhook que o
 # Chatwoot chama a cada mensagem nova -- sem isso resolver, a IA nunca vê a

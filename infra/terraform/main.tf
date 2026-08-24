@@ -257,7 +257,12 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
     }
 
     scaling {
-      min_instance_count = 1
+      # Voltado pra min=0 por decisão do dono (23/08/2026): ainda em dev,
+      # contenção de custo é prioridade sobre cold start enquanto não tem
+      # cliente real. Valor a reavaliar com evidência real (cold start
+      # medido) quando entrar em produção -- registrar achado na skill
+      # `agentllm` (personal-skills) antes de subir de novo pra 1.
+      min_instance_count = 0
       max_instance_count = 5
     }
 
