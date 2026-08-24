@@ -7,6 +7,7 @@ class Channel::EvolutionApi < ApplicationRecord
   encrypts :api_key if Chatwoot.encryption_configured?
 
   before_validation :ensure_webhook_verify_token
+  before_destroy :deprovision_on_bridge!
 
   validates :instance_name, :api_url, :api_key, presence: true
   validates :instance_name, uniqueness: true
@@ -48,5 +49,15 @@ class Channel::EvolutionApi < ApplicationRecord
 
   def ensure_webhook_verify_token
     self.webhook_verify_token ||= SecureRandom.hex(16)
+  end
+
+  # Achado real 24/08/2026: sem isso, apagar a inbox nunca desligava a
+  # instância real na VPS -- reconectar reaproveitava a mesma sessão
+  # WhatsApp já logada, pulando o QR (ver produto-09 seção 5/deprovision).
+  def deprovision_on_bridge!
+    Evolution::DeprovisioningService.new(channel: self).call
+  rescue Evolution::DeprovisioningService::DeprovisioningError => e
+    errors.add(:base, e.message)
+    throw :abort
   end
 end

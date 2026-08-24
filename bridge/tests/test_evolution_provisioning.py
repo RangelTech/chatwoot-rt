@@ -102,3 +102,63 @@ def test_falha_no_provisionamento_marca_a_conexao_como_failed_e_devolve_502(
     )
     assert r.status_code == 502
     assert tenants.get_evolution_connection(tenant_id)["status"] == "failed"
+
+
+# Achado real 24/08/2026 (produto-09 seção 5): esta rota não existia --
+# apagar a inbox no Chatwoot nunca desligava a instância real, reconectar
+# reaproveitava a mesma sessão WhatsApp já logada em vez de gerar QR novo.
+
+
+def test_deprovision_remove_container_e_a_linha_da_ponte(
+    client, admin_auth, tenant_id, monkeypatch
+):
+    from app.services import evolution, tenants
+
+    async def fake_provisionar_container(tenant, indice, api_key, pg_senha, redis_senha):
+        return None
+
+    chamadas_remocao = []
+
+    async def fake_remover_container(tenant, indice):
+        chamadas_remocao.append((tenant, indice))
+
+    monkeypatch.setattr(evolution, "provisionar_container", fake_provisionar_container)
+    monkeypatch.setattr(evolution, "remover_container", fake_remover_container)
+    _link_tenant(tenant_id, account_id=801)
+
+    provisionado = client.post(
+        "/admin/evolution/provision", json={"chatwoot_account_id": 801}, headers=admin_auth
+    ).json()
+
+    r = client.post(
+        "/admin/evolution/deprovision",
+        json={"chatwoot_account_id": 801, "instance_name": provisionado["instance_name"]},
+        headers=admin_auth,
+    )
+
+    assert r.status_code == 200
+    assert r.json()["status"] == "removed"
+    assert chamadas_remocao == [(tenant_id, 1)]
+    assert tenants.get_evolution_connection(tenant_id) is None
+
+
+def test_deprovision_de_instancia_inexistente_eh_um_no_op(client, admin_auth, tenant_id):
+    _link_tenant(tenant_id, account_id=802)
+
+    r = client.post(
+        "/admin/evolution/deprovision",
+        json={"chatwoot_account_id": 802, "instance_name": "evolution-nunca-existiu"},
+        headers=admin_auth,
+    )
+
+    assert r.status_code == 200
+    assert r.json()["status"] == "not_found"
+
+
+def test_deprovision_de_conta_sem_tenant_vinculado_eh_rejeitada(client, admin_auth):
+    r = client.post(
+        "/admin/evolution/deprovision",
+        json={"chatwoot_account_id": 424242, "instance_name": "evolution-x"},
+        headers=admin_auth,
+    )
+    assert r.status_code == 404

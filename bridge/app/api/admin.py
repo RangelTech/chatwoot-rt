@@ -59,6 +59,11 @@ class AiConfigIn(BaseModel):
     handoff_team_id: int | None = None
 
 
+class EvolutionDeprovisionIn(BaseModel):
+    chatwoot_account_id: int
+    instance_name: str = Field(min_length=1, max_length=200)
+
+
 class EvolutionProvisionIn(BaseModel):
     # A conta do Chatwoot, não um tenant_id: o Rails autenticado é quem
     # chama esta rota, e ele só conhece `Current.account.id` — nunca o
@@ -545,6 +550,30 @@ async def provision_evolution(payload: EvolutionProvisionIn):
         "api_url": row["api_url"],
         "api_key": api_key,
     }
+
+
+@router.post("/evolution/deprovision", dependencies=[Depends(require_admin)])
+async def deprovision_evolution(payload: EvolutionDeprovisionIn):
+    """Achado real 24/08/2026 (dono reportou ao testar): apagar a inbox no
+    Chatwoot nunca chamava esta rota (não existia) -- o container/Postgres/
+    Redis reais na VPS e a linha em `evolution_connections` sobreviviam pra
+    sempre. Reconectar reaproveitava a MESMA instância (idempotente por
+    design), pulava direto pro estado "conectado" sem QR novo -- parecia bug
+    de fluxo, era infra órfã. Rails chama esta rota antes de apagar o
+    `Channel::EvolutionApi` local (`Evolution::DeprovisioningService`).
+    """
+    link = tenants.tenant_link_by_account(payload.chatwoot_account_id)
+    if link is None:
+        raise HTTPException(status_code=404, detail="conta do Chatwoot sem tenant vinculado")
+
+    tenant_id = str(link["tenant_id"])
+    row = tenants.get_evolution_connection_by_instance_name(tenant_id, payload.instance_name)
+    if row is None:
+        return {"status": "not_found"}
+
+    await evolution.remover_container(tenant_id, row["indice"])
+    tenants.delete_evolution_connection(str(row["id"]))
+    return {"status": "removed"}
 
 
 def _first_admin(tenant_id: str) -> dict | None:

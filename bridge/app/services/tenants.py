@@ -333,6 +333,22 @@ def get_evolution_connection(tenant_id: str, indice: int = 1) -> dict | None:
         ).fetchone()
 
 
+def get_evolution_connection_by_instance_name(tenant_id: str, instance_name: str) -> dict | None:
+    """Usada no desprovisionamento: o Rails só conhece `instance_name`
+    (guardado no `Channel::EvolutionApi`), não o `indice` interno da
+    ponte -- é essa linha que faz a ponte entre os dois."""
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT * FROM evolution_connections WHERE tenant_id = %s AND instance_name = %s",
+            (tenant_id, instance_name),
+        ).fetchone()
+
+
+def delete_evolution_connection(connection_id: str) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM evolution_connections WHERE id = %s", (connection_id,))
+
+
 def mark_evolution_connection(
     connection_id: str, *, status: str, last_error: str = ""
 ) -> dict:

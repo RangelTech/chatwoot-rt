@@ -193,6 +193,13 @@ async def provisionar_container(
 
 
 async def remover_container(tenant_id: str, indice: int) -> None:
+    """Achado real 24/08/2026 (produto-09 seção 1z): `docker rm -f` nunca
+    apaga volume bind-mounted -- sem o `rm -rf` do diretório de dados aqui,
+    reprovisionar a mesma (tenant_id, indice) reconecta no Postgres antigo
+    com a senha antiga, ou (se a linha da ponte já sumiu também) fica órfão
+    ocupando disco pra sempre. Redis não tem `-v` no `docker run`, não
+    precisa de limpeza de diretório."""
     n = nomes(tenant_id, indice)
     for nome in (n["evolution"], n["postgres"], n["redis"]):
         await _ssh(f"docker rm -f {nome} || true")
+    await _ssh(f"rm -rf /opt/platform/data/{n['postgres']} || true")
