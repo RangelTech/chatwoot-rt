@@ -5,7 +5,16 @@ class Webhooks::EvolutionEventsJob < ApplicationJob
     channel = Channel::EvolutionApi.find_by(instance_name: instance_name)
     return unless channel
 
-    case params[:event].to_s.upcase
+    # Achado real 24/08/2026, testado ao vivo: o Evolution manda o nome do
+    # evento em minúsculo com PONTO ("messages.upsert", "connection.update"),
+    # não "MESSAGES_UPSERT" com underscore como o código assumia -- `.upcase`
+    # sozinho nunca resolvia a diferença (ponto continua ponto). O case
+    # nunca batia com nada, os 2 branches ficavam mortos desde sempre:
+    # conexão nunca atualizava por aqui (mascarado pela resposta síncrona do
+    # `connect!`) e MENSAGEM NENHUMA jamais virava conversa -- era isto,
+    # não as tentativas de provisionamento, a causa raiz de "conecta mas não
+    # recebe nada" a madrugada inteira.
+    case params[:event].to_s.upcase.tr('.', '_')
     when 'CONNECTION_UPDATE'
       state = params.dig(:data, :state)
       channel.update!(connection_status: { 'state' => state, 'source' => 'webhook', 'checked_at' => Time.current.iso8601 },

@@ -19,6 +19,25 @@ RSpec.describe Webhooks::EvolutionEventsJob do
     expect(Evolution::IncomingMessageService).to have_received(:new).with(inbox: channel.inbox, params: hash_including('event' => 'MESSAGES_UPSERT'))
   end
 
+  # Achado real 24/08/2026: o Evolution manda o evento como "messages.upsert"
+  # (minúsculo, ponto), não "MESSAGES_UPSERT" -- o case nunca batia com isso,
+  # mensagem nenhuma chegava na conversa, silenciosamente, a madrugada
+  # inteira. Este teste usa o formato REAL, não o que o código assumia.
+  it 'delegates inbound messages using the real lowercase dotted event name from Evolution' do
+    service = instance_double(Evolution::IncomingMessageService, perform: true)
+    allow(Evolution::IncomingMessageService).to receive(:new).and_return(service)
+
+    described_class.new.perform(instance_name: channel.instance_name, params: { event: 'messages.upsert', data: {} })
+
+    expect(Evolution::IncomingMessageService).to have_received(:new).with(inbox: channel.inbox, params: hash_including('event' => 'messages.upsert'))
+  end
+
+  it 'persists the connection state using the real lowercase dotted event name from Evolution' do
+    described_class.new.perform(instance_name: channel.instance_name, params: { event: 'connection.update', data: { state: 'open' } })
+
+    expect(channel.reload.connection_status['state']).to eq('open')
+  end
+
   describe 'MESSAGES_UPDATE' do
     let(:conversation) { create(:conversation, inbox: channel.inbox, account: channel.inbox.account) }
     let(:message) do
@@ -51,6 +70,15 @@ RSpec.describe Webhooks::EvolutionEventsJob do
       )
 
       expect(message.reload.status).to eq('sent')
+    end
+
+    it 'marks delivered using the real lowercase dotted event name from Evolution' do
+      described_class.new.perform(
+        instance_name: channel.instance_name,
+        params: { event: 'messages.update', data: { fromMe: true, messageId: message.source_id, status: 'DELIVERY_ACK' } }
+      )
+
+      expect(message.reload.status).to eq('delivered')
     end
 
     it 'does nothing when no message matches the source_id' do
