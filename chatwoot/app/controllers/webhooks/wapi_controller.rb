@@ -1,22 +1,14 @@
 class Webhooks::WapiController < ActionController::API
   before_action :ensure_valid_channel
 
-  # Achado real 24/08/2026 (produto-09): o WAPI manda POST de verdade
-  # (corpo real de 1.7-5.3KB, confirmado no log de infra), mas o Rails
-  # processava como "as HTML" -- Content-Type que não bate com
-  # application/json, então `params` só tinha o que veio na URL
-  # (project_id/verify_token), nunca o corpo. `Wapi::PayloadNormalizer`
-  # rodava sobre um payload vazio, sem erro nenhum, sem fazer nada --
-  # webhook sempre 200, nenhuma mensagem chegava na conversa.
-  #
-  # Log temporário (Content-Type + corpo bruto) até confirmar o formato
-  # real numa mensagem de teste de verdade -- remover depois de
-  # confirmado, não é pra ficar em produção pra sempre (corpo pode ter
-  # dado de mensagem real do cliente).
+  # Achado real 24/08/2026 (produto-09): o corpo real do WAPI é
+  # Content-Type application/json de verdade (confirmado com log temporário,
+  # já removido -- tinha texto de mensagem real de cliente, não é pra ficar
+  # em produção). O formato real: `{event, instanceId, isGroup, fromMe,
+  # chat: {id}, sender: {id, senderLid, pushName}, messageId,
+  # msgContent: {conversation}}` -- nada parecido com os paths especulativos
+  # que `Wapi::PayloadNormalizer` tinha antes (corrigidos no mesmo achado).
   def process_payload
-    Rails.logger.info(
-      "[WAPI raw] content_type=#{request.content_type.inspect} body=#{request.raw_post}"
-    )
     Webhooks::WapiEventsJob.perform_later(project_id: params[:project_id], params: corpo_normalizado)
     head :ok
   end
