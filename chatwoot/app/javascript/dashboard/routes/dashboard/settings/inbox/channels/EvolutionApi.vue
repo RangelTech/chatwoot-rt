@@ -15,6 +15,7 @@ import PageHeader from '../../SettingsSubPageHeader.vue';
 const STEP = { START: 'start', PROVISIONING: 'provisioning', QR: 'qr', CONNECTED: 'connected' };
 
 const step = ref(STEP.START);
+const inboxName = ref('');
 const qrCode = ref('');
 const inboxId = ref(null);
 const errorMessage = ref('');
@@ -52,7 +53,7 @@ const startProvisioning = async () => {
   step.value = STEP.PROVISIONING;
   errorMessage.value = '';
   try {
-    const inbox = await InboxesAPI.provisionEvolution();
+    const inbox = await InboxesAPI.provisionEvolution(inboxName.value.trim());
     inboxId.value = inbox.data.id;
 
     const connectResponse = await InboxesAPI.connectEvolution(inboxId.value);
@@ -89,6 +90,14 @@ onBeforeUnmount(stopPolling);
 
     <div v-if="step === STEP.START" class="flex flex-col gap-4 max-w-xl">
       <p v-if="errorMessage" class="text-n-ruby-9">{{ errorMessage }}</p>
+      <label>
+        {{ t('INBOX_MGMT.ADD.EVOLUTION_API.INBOX_NAME') }}
+        <input
+          v-model="inboxName"
+          type="text"
+          :placeholder="t('INBOX_MGMT.ADD.EVOLUTION_API.INBOX_NAME_PLACEHOLDER')"
+        />
+      </label>
       <NextButton
         solid
         blue

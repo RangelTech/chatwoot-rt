@@ -382,6 +382,8 @@
       "EVOLUTION_API": {
         "TITLE": "WhatsApp (QR code)",
         "DESC": "Connect a WhatsApp number by scanning a QR code. We provision and manage the connection for you.",
+        "INBOX_NAME": "Inbox name",
+        "INBOX_NAME_PLACEHOLDER": "e.g. WhatsApp Support",
         "SUBMIT_BUTTON": "Create connection",
         "PROVISIONING": "Setting up your WhatsApp connection, this may take a minute...",
         "QR_ALT": "WhatsApp connection QR code",

@@ -43,6 +43,16 @@ RSpec.describe Evolution::ProvisioningService do
     expect(channel.api_key).to eq('secret-key')
   end
 
+  it 'uses the admin-provided name for the inbox, falling back to the default when blank' do
+    stub_bridge(body: {
+      status: 'ready', instance_name: 'evolution-abc123', api_url: 'https://evolution-abc.example', api_key: 'k'
+    })
+
+    inbox = described_class.new(account: account, name: '  joaopedro  ').call
+
+    expect(inbox.name).to eq('joaopedro')
+  end
+
   it 'is idempotent: calling twice for the same account never creates a second inbox' do
     stub_bridge(body: {
       status: 'ready', instance_name: 'evolution-abc123', api_url: 'https://evolution-abc.example', api_key: 'k'

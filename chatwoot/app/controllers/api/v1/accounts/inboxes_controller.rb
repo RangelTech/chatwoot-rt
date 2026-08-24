@@ -102,7 +102,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   # api_key -- eles vêm do provisionamento privilegiado na ponte
   # (`Evolution::ProvisioningService`), derivado só da conta autenticada.
   def provision_evolution
-    @inbox = Evolution::ProvisioningService.new(account: Current.account).call
+    @inbox = Evolution::ProvisioningService.new(account: Current.account, name: params[:name]).call
     render 'api/v1/accounts/inboxes/show'
   rescue Evolution::ProvisioningService::ProvisioningError => e
     render json: { error: e.message }, status: :unprocessable_entity

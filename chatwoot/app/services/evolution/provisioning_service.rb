@@ -11,9 +11,10 @@
 class Evolution::ProvisioningService
   class ProvisioningError < StandardError; end
 
-  def initialize(account:, indice: 1)
+  def initialize(account:, indice: 1, name: nil)
     @account = account
     @indice = indice
+    @name = name.to_s.strip.presence
   end
 
   # Devolve o Inbox pronto para uso (criado agora ou reaproveitado de uma
@@ -37,7 +38,7 @@ class Evolution::ProvisioningService
 
   private
 
-  attr_reader :account, :indice
+  attr_reader :account, :indice, :name
 
   def provision_on_bridge!
     response = HTTParty.post(
@@ -63,6 +64,7 @@ class Evolution::ProvisioningService
 
   def create_inbox!(credentials)
     rotulo = indice > 1 ? " #{indice}" : ''
+    inbox_name = name || "WhatsApp (Evolution)#{rotulo}"
     inbox = nil
     ActiveRecord::Base.transaction do
       channel = account.evolution_api_channels.create!(
@@ -70,7 +72,7 @@ class Evolution::ProvisioningService
         api_url: credentials.fetch('api_url'),
         api_key: credentials.fetch('api_key')
       )
-      inbox = account.inboxes.create!(name: "WhatsApp (Evolution)#{rotulo}", channel: channel)
+      inbox = account.inboxes.create!(name: inbox_name, channel: channel)
     end
     inbox
   end
