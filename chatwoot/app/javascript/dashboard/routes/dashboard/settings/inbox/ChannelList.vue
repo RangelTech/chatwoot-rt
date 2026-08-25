@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useMapGetter } from 'dashboard/composables/store';
@@ -7,14 +7,42 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 
 import ChannelItem from 'dashboard/components/widgets/ChannelItem.vue';
+import Switch from 'next/switch/Switch.vue';
 
 const { t } = useI18n();
 const router = useRouter();
-const { accountId, currentAccount } = useAccount();
+const { accountId, currentAccount, updateAccount } = useAccount();
 
 const globalConfig = useMapGetter('globalConfig/get');
 
 const enabledFeatures = computed(() => currentAccount.value?.features || {});
+
+// Conectores "não oficiais" (Whatsapp/Instagram/Facebook Unoficial) usam
+// sessão de navegador, não API oficial -- alguns tenants preferem nem ver
+// essa opção na tela. Config por tenant (account.settings), não global --
+// pedido do dono: quem decide é cada empresa, não uma flag de instalação.
+const UNOFFICIAL_CHANNEL_KEYS = [
+  'evolution_api',
+  'instagram_unofficial',
+  'facebook_unofficial',
+];
+
+const showUnofficialChannels = ref(true);
+watch(
+  currentAccount,
+  () => {
+    const stored = currentAccount.value?.settings?.show_unofficial_channels;
+    showUnofficialChannels.value = stored ?? true;
+  },
+  { deep: true, immediate: true }
+);
+
+const toggleUnofficialChannels = async () => {
+  await updateAccount(
+    { show_unofficial_channels: showUnofficialChannels.value },
+    { silent: true }
+  );
+};
 
 const hasTiktokConfigured = computed(() => {
   return window.chatwootConfig?.tiktokAppId;
@@ -43,26 +71,26 @@ const channelList = computed(() => {
     },
     {
       key: 'wapi',
-      title: 'WAPI',
-      description: 'Connect an existing WAPI WhatsApp instance.',
+      title: t('INBOX_MGMT.ADD.WAPI.TITLE'),
+      description: t('INBOX_MGMT.ADD.WAPI.DESC'),
       icon: 'i-woot-whatsapp',
     },
     {
       key: 'evolution_api',
-      title: 'Whatsapp Unoficial',
-      description: 'Connect a dedicated WhatsApp Web instance with QR code.',
+      title: t('INBOX_MGMT.ADD.EVOLUTION_API.TITLE'),
+      description: t('INBOX_MGMT.ADD.EVOLUTION_API.DESC'),
       icon: 'i-woot-whatsapp',
     },
     {
       key: 'instagram_unofficial',
-      title: 'Instagram Unoficial',
-      description: 'Connect an Instagram account by logging in directly (non-official, session-based).',
+      title: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.INSTAGRAM.TITLE'),
+      description: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.INSTAGRAM.DESC'),
       icon: 'i-woot-instagram',
     },
     {
       key: 'facebook_unofficial',
-      title: 'Facebook Unoficial',
-      description: 'Connect a Facebook account by logging in directly (non-official, session-based).',
+      title: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.FACEBOOK.TITLE'),
+      description: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.FACEBOOK.DESC'),
       icon: 'i-woot-messenger',
     },
     {
@@ -129,6 +157,13 @@ const channelList = computed(() => {
   return channels;
 });
 
+const visibleChannelList = computed(() => {
+  if (showUnofficialChannels.value) return channelList.value;
+  return channelList.value.filter(
+    channel => !UNOFFICIAL_CHANNEL_KEYS.includes(channel.key)
+  );
+});
+
 const initChannelAuth = channel => {
   const params = {
     sub_page: channel,
@@ -139,15 +174,26 @@ const initChannelAuth = channel => {
 </script>
 
 <template>
-  <div
-    class="grid max-w-3xl grid-cols-1 xs:grid-cols-2 mx-0 gap-6 sm:grid-cols-3 p-8"
-  >
-    <ChannelItem
-      v-for="channel in channelList"
-      :key="channel.key"
-      :channel="channel"
-      :enabled-features="enabledFeatures"
-      @channel-item-click="initChannelAuth"
-    />
+  <div class="max-w-3xl">
+    <div
+      class="flex items-center justify-between gap-4 px-8 pt-6 -mb-2 text-sm text-n-slate-11"
+    >
+      <span>{{ t('INBOX_MGMT.ADD.UNOFFICIAL_TOGGLE.LABEL') }}</span>
+      <Switch
+        v-model="showUnofficialChannels"
+        @change="toggleUnofficialChannels"
+      />
+    </div>
+    <div
+      class="grid max-w-3xl grid-cols-1 xs:grid-cols-2 mx-0 gap-6 sm:grid-cols-3 p-8"
+    >
+      <ChannelItem
+        v-for="channel in visibleChannelList"
+        :key="channel.key"
+        :channel="channel"
+        :enabled-features="enabledFeatures"
+        @channel-item-click="initChannelAuth"
+      />
+    </div>
   </div>
 </template>

@@ -369,6 +369,53 @@
           "ERROR_MESSAGE": "Não conseguimos criar o canal de voz"
         }
       },
+      "WAPI": {
+        "TITLE": "WAPI",
+        "DESC": "Conecte uma instância WAPI do WhatsApp já existente com o App ID e o token dela.",
+        "INBOX_NAME": "Nome da caixa de entrada",
+        "INBOX_NAME_PLACEHOLDER": "ex.: Suporte WhatsApp",
+        "APP_ID": "App ID",
+        "APP_ID_PLACEHOLDER": "ID da instância WAPI",
+        "TOKEN": "Token",
+        "TOKEN_PLACEHOLDER": "Token de acesso da WAPI",
+        "SUBMIT_BUTTON": "Criar caixa de entrada WAPI",
+        "ERROR_MESSAGE": "Não foi possível criar a caixa de entrada WAPI."
+      },
+      "EVOLUTION_API": {
+        "TITLE": "Whatsapp Unoficial",
+        "DESC": "Conecte um número de WhatsApp escaneando um QR code. Nós provisionamos e gerenciamos a conexão pra você.",
+        "INBOX_NAME": "Nome da caixa de entrada",
+        "INBOX_NAME_PLACEHOLDER": "ex.: Suporte WhatsApp",
+        "SUBMIT_BUTTON": "Criar conexão",
+        "PROVISIONING": "Preparando sua conexão do WhatsApp, isso pode levar um minuto...",
+        "QR_ALT": "QR code de conexão do WhatsApp",
+        "QR_HELP": "Abra o WhatsApp no seu celular, vá em Aparelhos conectados e escaneie este QR code.",
+        "CONNECTED": "WhatsApp conectado com sucesso.",
+        "CONTINUE_BUTTON": "Continuar configuração",
+        "ERROR_MESSAGE": "Não foi possível criar a conexão do WhatsApp."
+      },
+      "SOCIAL_UNOFFICIAL": {
+        "RISK_WARNING": "Conector não oficial: usa a sessão da sua conta real, não uma API oficial. Desconexões, verificações de segurança e limites/banimentos de conta podem acontecer.",
+        "INBOX_NAME": "Nome da caixa de entrada",
+        "SUBMIT_BUTTON": "Conectar",
+        "OPENING": "Abrindo o navegador, isso pode levar um instante...",
+        "LOGIN_HINT": "Faça login normalmente na tela abaixo",
+        "LOGIN_TIP": "Clique na tela pra focar e digitar. Ela fecha sozinha assim que você estiver logado.",
+        "CONNECTED": "Conectado com sucesso.",
+        "CONTINUE_BUTTON": "Continuar configuração",
+        "ERROR_MESSAGE": "Não foi possível criar a conexão.",
+        "INSTAGRAM": {
+          "TITLE": "Instagram Unoficial",
+          "DESC": "Conecte uma conta do Instagram fazendo login diretamente. Conector não oficial."
+        },
+        "FACEBOOK": {
+          "TITLE": "Facebook Unoficial",
+          "DESC": "Conecte uma conta do Facebook fazendo login diretamente. Conector não oficial."
+        }
+      },
+      "UNOFFICIAL_TOGGLE": {
+        "LABEL": "Mostrar conectores não oficiais (Whatsapp/Instagram/Facebook Unoficial)"
+      },
       "API_CHANNEL": {
         "TITLE": "Canal da API",
         "DESC": "Integre com canal API e comece a ajudar seus clientes.",
