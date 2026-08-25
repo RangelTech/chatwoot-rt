@@ -416,4 +416,45 @@ RSpec.describe Inbox do
       end
     end
   end
+
+  # Achado real 25/08/2026, testado ao vivo via SSH na VPS: isto precisa
+  # ficar aqui, não num before_destroy de Channel::EvolutionApi --
+  # `channel.inbox` já vem nil quando o callback do canal roda dentro da
+  # cascata de destroy (produto-09 seção 6). Aqui `channel` ainda está
+  # intacto e `account_id` é coluna própria do Inbox.
+  describe '#deprovision_evolution_on_bridge!' do
+    let(:channel) { create(:channel_evolution_api) }
+    let(:inbox) { channel.inbox }
+
+    it 'tears down the real Evolution instance on the bridge before destroying an Evolution inbox' do
+      service = instance_double(Evolution::DeprovisioningService, call: true)
+      allow(Evolution::DeprovisioningService).to receive(:new)
+        .with(account_id: inbox.account_id, instance_name: channel.instance_name)
+        .and_return(service)
+
+      inbox.destroy!
+
+      expect(service).to have_received(:call)
+      expect(Inbox.exists?(inbox.id)).to be false
+    end
+
+    it 'blocks destruction when the bridge cannot be reached, keeping the inbox around to retry' do
+      service = instance_double(Evolution::DeprovisioningService)
+      allow(Evolution::DeprovisioningService).to receive(:new)
+        .with(account_id: inbox.account_id, instance_name: channel.instance_name)
+        .and_return(service)
+      allow(service).to receive(:call)
+        .and_raise(Evolution::DeprovisioningService::DeprovisioningError, 'ponte indisponível: 502')
+
+      expect { inbox.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
+      expect(Inbox.exists?(inbox.id)).to be true
+    end
+
+    it 'does nothing for inboxes on other channel types' do
+      other_inbox = create(:inbox)
+
+      expect(Evolution::DeprovisioningService).not_to receive(:new)
+      expect { other_inbox.destroy! }.not_to raise_error
+    end
+  end
 end

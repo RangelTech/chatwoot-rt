@@ -27,26 +27,8 @@ RSpec.describe Channel::EvolutionApi do
     expect(channel.connection_status).to eq({ 'state' => 'connecting' })
   end
 
-  # Achado real 24/08/2026: apagar a inbox nunca desligava a instância real
-  # na VPS -- reconectar reaproveitava a mesma sessão WhatsApp já logada.
-  it 'deprovisions the real instance on the bridge before destroying the channel' do
-    channel = create(:channel_evolution_api)
-    service = instance_double(Evolution::DeprovisioningService, call: true)
-    allow(Evolution::DeprovisioningService).to receive(:new).with(channel: channel).and_return(service)
-
-    channel.destroy!
-
-    expect(service).to have_received(:call)
-    expect(Channel::EvolutionApi.exists?(channel.id)).to be false
-  end
-
-  it 'blocks destruction when the bridge cannot be reached, keeping the channel around to retry' do
-    channel = create(:channel_evolution_api)
-    service = instance_double(Evolution::DeprovisioningService)
-    allow(Evolution::DeprovisioningService).to receive(:new).with(channel: channel).and_return(service)
-    allow(service).to receive(:call).and_raise(Evolution::DeprovisioningService::DeprovisioningError, 'ponte indisponível: 502')
-
-    expect { channel.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
-    expect(Channel::EvolutionApi.exists?(channel.id)).to be true
-  end
+  # Desprovisionamento na ponte roda a partir de Inbox#before_destroy, não
+  # daqui -- ver spec/models/inbox_spec.rb. Achado real 25/08/2026:
+  # `channel.inbox` vem nil dentro de um before_destroy do próprio canal
+  # (a cascata de destroy já limpou a associação reversa nesse ponto).
 end

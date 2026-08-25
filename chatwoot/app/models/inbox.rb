@@ -80,6 +80,15 @@ class Inbox < ApplicationRecord
   enum sender_name_type: { friendly: 0, professional: 1 }
 
   before_destroy :capture_filtered_unread_count_user_ids, prepend: true
+  # Achado real 25/08/2026, testado ao vivo: isto precisa rodar aqui, não
+  # num before_destroy de Channel::EvolutionApi -- `channel.inbox` já vem
+  # nil quando o callback do canal roda dentro da cascata de destroy (o
+  # `has_one :inbox, dependent: :destroy_async` limpa a associação reversa
+  # antes). Aqui `channel` ainda está intacto e `account_id` é coluna
+  # própria, sem precisar navegar associação nenhuma. `prepend: true` pra
+  # rodar antes do `dependent: :destroy` de `channel` (declarado acima)
+  # tentar destruir o canal e disparar a validação de presença dele.
+  before_destroy :deprovision_evolution_on_bridge!, prepend: true
   after_destroy :delete_round_robin_agents
 
   after_create_commit :dispatch_create_event
@@ -273,6 +282,15 @@ class Inbox < ApplicationRecord
 
   def delete_round_robin_agents
     ::AutoAssignment::InboxRoundRobinService.new(inbox: self).clear_queue
+  end
+
+  def deprovision_evolution_on_bridge!
+    return unless channel.is_a?(Channel::EvolutionApi)
+
+    Evolution::DeprovisioningService.new(account_id: account_id, instance_name: channel.instance_name).call
+  rescue Evolution::DeprovisioningService::DeprovisioningError => e
+    errors.add(:base, e.message)
+    throw :abort
   end
 
   def capture_filtered_unread_count_user_ids

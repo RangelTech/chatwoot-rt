@@ -9,15 +9,25 @@
 class Evolution::DeprovisioningService
   class DeprovisioningError < StandardError; end
 
-  def initialize(channel:)
-    @channel = channel
+  # Achado real 25/08/2026, testado ao vivo via SSH: chamar isto a partir de
+  # um `before_destroy` em Channel::EvolutionApi quebrava sempre com
+  # "undefined method 'account_id' for nil" -- `channel.inbox` já vem nil
+  # nesse ponto (a cascata de destroy em `has_one :inbox, dependent:
+  # :destroy_async` limpa a associação reversa antes do callback do canal
+  # rodar). Por isso o serviço recebe account_id/instance_name explícitos
+  # em vez de navegar `channel.inbox` -- chamado do `before_destroy` do
+  # Inbox (que ainda tem `account_id` como coluna própria e `channel`
+  # intacto), não do Channel.
+  def initialize(account_id:, instance_name:)
+    @account_id = account_id
+    @instance_name = instance_name
   end
 
   def call
     response = HTTParty.post(
       "#{bridge_url}/admin/evolution/deprovision",
       headers: { 'Content-Type' => 'application/json', 'Authorization' => "Bearer #{bridge_admin_token}" },
-      body: { chatwoot_account_id: channel.inbox.account_id, instance_name: channel.instance_name }.to_json,
+      body: { chatwoot_account_id: account_id, instance_name: instance_name }.to_json,
       timeout: 60
     )
     raise DeprovisioningError, "ponte indisponível: #{response.code}" unless response.success?
@@ -29,7 +39,7 @@ class Evolution::DeprovisioningService
 
   private
 
-  attr_reader :channel
+  attr_reader :account_id, :instance_name
 
   def bridge_url
     ENV.fetch('BRIDGE_URL') { raise DeprovisioningError, 'BRIDGE_URL não configurada' }
