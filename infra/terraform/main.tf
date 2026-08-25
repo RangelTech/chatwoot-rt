@@ -279,7 +279,7 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
       }
       env {
         name  = "OAUTH_BROWSER_URL"
-        value = "https://oauth-browser-pujq3pjmca-rj.a.run.app"
+        value = "https://oauth-browser-pujq3pjmca-uc.a.run.app"
       }
       env {
         name  = "OAUTH_BROWSER_ADMIN_TOKEN"
