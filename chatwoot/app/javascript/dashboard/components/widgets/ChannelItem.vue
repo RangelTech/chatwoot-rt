@@ -63,6 +63,8 @@ const isActive = computed(() => {
     'whatsapp',
     'wapi',
     'evolution_api',
+    'instagram_unofficial',
+    'facebook_unofficial',
     'sms',
     'telegram',
     'line',
