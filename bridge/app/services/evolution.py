@@ -198,8 +198,18 @@ async def remover_container(tenant_id: str, indice: int) -> None:
     reprovisionar a mesma (tenant_id, indice) reconecta no Postgres antigo
     com a senha antiga, ou (se a linha da ponte já sumiu também) fica órfão
     ocupando disco pra sempre. Redis não tem `-v` no `docker run`, não
-    precisa de limpeza de diretório."""
+    precisa de limpeza de diretório.
+
+    Achado real 25/08/2026, testado ao vivo: o primeiro `rm -rf` (sem
+    sudo) falhava CALADO -- o diretório é escrito pelo Postgres com o UID
+    interno do container (70), não pelo usuário `deploy` que faz SSH, e o
+    `|| true` (posto pra tolerar "já não existe") escondia a falha de
+    permissão também. Resultado: reprovisionar a MESMA (tenant_id, indice)
+    reconectava no diretório de dados antigo com senha nova ->
+    P1000/crash-loop, reproduzindo o bug da seção 1z de novo, apesar do
+    fix. `deploy` tem sudo sem senha na VPS -- usar `sudo rm -rf` resolve
+    de verdade."""
     n = nomes(tenant_id, indice)
     for nome in (n["evolution"], n["postgres"], n["redis"]):
         await _ssh(f"docker rm -f {nome} || true")
-    await _ssh(f"rm -rf /opt/platform/data/{n['postgres']} || true")
+    await _ssh(f"sudo rm -rf /opt/platform/data/{n['postgres']}")
