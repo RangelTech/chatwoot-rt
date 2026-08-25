@@ -125,10 +125,17 @@ jobs:
             fetch_secret WHATSAPP_CONFIGURATION_ID
             echo "EOF_META"
             echo "tiktok_app_id<<EOF_META"
-            fetch_secret TIKTOK_APP_ID
+            # TEMPORARIO (25/08/2026): app de producao no TikTok Developers
+            # ainda esta em Draft, sem App Review aprovado -- usando as
+            # credenciais de Sandbox por enquanto pra poder testar/gravar o
+            # video de demo. TIKTOK_APP_ID/TIKTOK_APP_SECRET (producao) *nao*
+            # foram apagados do Infisical, so nao estao sendo lidos aqui.
+            # Reverter pra TIKTOK_APP_ID/TIKTOK_APP_SECRET assim que a Meta
+            # aprovar o app de producao.
+            fetch_secret TIKTOK_APP_ID_SANDBOX
             echo "EOF_META"
             echo "tiktok_app_secret<<EOF_META"
-            fetch_secret TIKTOK_APP_SECRET
+            fetch_secret TIKTOK_APP_SECRET_SANDBOX
             echo "EOF_META"
             echo "bridge_admin_token<<EOF_BAT"
             fetch_secret BRIDGE_ADMIN_TOKEN
