@@ -49,9 +49,21 @@ const channelList = computed(() => {
     },
     {
       key: 'evolution_api',
-      title: 'Evolution API',
+      title: 'Whatsapp Unoficial',
       description: 'Connect a dedicated WhatsApp Web instance with QR code.',
       icon: 'i-woot-whatsapp',
+    },
+    {
+      key: 'instagram_unofficial',
+      title: 'Instagram Unoficial',
+      description: 'Connect an Instagram account by logging in directly (non-official, session-based).',
+      icon: 'i-woot-instagram',
+    },
+    {
+      key: 'facebook_unofficial',
+      title: 'Facebook Unoficial',
+      description: 'Connect a Facebook account by logging in directly (non-official, session-based).',
+      icon: 'i-woot-messenger',
     },
     {
       key: 'sms',

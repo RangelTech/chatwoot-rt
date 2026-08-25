@@ -13,6 +13,8 @@ export const INBOX_TYPES = {
   TIKTOK: 'Channel::Tiktok',
   WAPI: 'Channel::Wapi',
   EVOLUTION_API: 'Channel::EvolutionApi',
+  INSTAGRAM_UNOFFICIAL: 'Channel::InstagramUnofficial',
+  FACEBOOK_UNOFFICIAL: 'Channel::FacebookUnofficial',
 };
 
 // Short channel-type slugs used to identify a channel without leaning on its

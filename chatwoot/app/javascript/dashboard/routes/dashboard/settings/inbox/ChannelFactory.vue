@@ -15,6 +15,8 @@ import Tiktok from './channels/Tiktok.vue';
 import Voice from './channels/Voice.vue';
 import Wapi from './channels/Wapi.vue';
 import EvolutionApi from './channels/EvolutionApi.vue';
+import InstagramUnofficial from './channels/InstagramUnofficial.vue';
+import FacebookUnofficial from './channels/FacebookUnofficial.vue';
 
 const channelViewList = {
   facebook: Facebook,
@@ -32,6 +34,8 @@ const channelViewList = {
   voice: Voice,
   wapi: Wapi,
   evolution_api: EvolutionApi,
+  instagram_unofficial: InstagramUnofficial,
+  facebook_unofficial: FacebookUnofficial,
 };
 
 export default defineComponent({

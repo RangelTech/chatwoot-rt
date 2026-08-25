@@ -65,6 +65,18 @@ class Inboxes extends CacheEnabledApiClient {
     return axios.post(`${this.url}/${inboxId}/reconnect_evolution`);
   }
 
+  iniciarSocialUnofficial(provider) {
+    return axios.post(`${this.url}/iniciar_social_unofficial`, { provider });
+  }
+
+  concluirSocialUnofficial(provider, cookies, name) {
+    return axios.post(`${this.url}/concluir_social_unofficial`, {
+      provider,
+      cookies,
+      name,
+    });
+  }
+
   enableWhatsappCalling(inboxId) {
     return axios.post(`${this.url}/${inboxId}/enable_whatsapp_calling`);
   }

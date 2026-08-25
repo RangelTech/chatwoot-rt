@@ -84,6 +84,13 @@ variable "instagram_verify_token" {
   type      = string
   sensitive = true
 }
+# Produto-10 (25/08/2026): navegador remoto (oauth-browser, produto-08)
+# reaproveitado pra capturar cookie de Instagram/Facebook não oficiais --
+# ver SocialUnofficial::NavegadorRemotoService.
+variable "oauth_browser_admin_token" {
+  type      = string
+  sensitive = true
+}
 
 # Produto-05 seção 4 (QR automático): o Rails precisa chamar rotas
 # server-a-servidor da ponte (provisionamento Evolution). Lidas direto do
@@ -269,6 +276,14 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
       env {
         name  = "BRIDGE_ADMIN_TOKEN"
         value = data.google_secret_manager_secret_version.bridge_admin_token.secret_data
+      }
+      env {
+        name  = "OAUTH_BROWSER_URL"
+        value = "https://oauth-browser-pujq3pjmca-uc.a.run.app"
+      }
+      env {
+        name  = "OAUTH_BROWSER_ADMIN_TOKEN"
+        value = var.oauth_browser_admin_token
       }
     }
 

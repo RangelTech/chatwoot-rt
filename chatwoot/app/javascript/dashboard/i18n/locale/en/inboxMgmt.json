@@ -392,6 +392,25 @@
         "CONTINUE_BUTTON": "Continue setup",
         "ERROR_MESSAGE": "Unable to create the WhatsApp connection."
       },
+      "SOCIAL_UNOFFICIAL": {
+        "RISK_WARNING": "Non-official connector: uses your real account session, not an official API. Disconnections, security challenges and account limits/bans can happen.",
+        "INBOX_NAME": "Inbox name",
+        "SUBMIT_BUTTON": "Connect",
+        "OPENING": "Opening the browser, this may take a moment...",
+        "LOGIN_HINT": "Log in normally on the screen below",
+        "LOGIN_TIP": "Click the screen to focus and type. It closes automatically once you're logged in.",
+        "CONNECTED": "Connected successfully.",
+        "CONTINUE_BUTTON": "Continue setup",
+        "ERROR_MESSAGE": "Unable to create the connection.",
+        "INSTAGRAM": {
+          "TITLE": "Instagram Unoficial",
+          "DESC": "Connect an Instagram account by logging in directly. Non-official connector."
+        },
+        "FACEBOOK": {
+          "TITLE": "Facebook Unoficial",
+          "DESC": "Connect a Facebook account by logging in directly. Non-official connector."
+        }
+      },
       "API_CHANNEL": {
         "TITLE": "API Channel",
         "DESC": "Integrate with API channel and start supporting your customers.",
@@ -1373,6 +1392,8 @@
       "TIKTOK": "TikTok",
       "WAPI": "WAPI",
       "EVOLUTION_API": "Whatsapp Unoficial",
+      "INSTAGRAM_UNOFFICIAL": "Instagram Unoficial",
+      "FACEBOOK_UNOFFICIAL": "Facebook Unoficial",
       "VOICE": "Voice"
     }
   }
