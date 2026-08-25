@@ -13,6 +13,8 @@ namespace :installation_config do
       WHATSAPP_APP_ID
       WHATSAPP_APP_SECRET
       WHATSAPP_CONFIGURATION_ID
+      TIKTOK_APP_ID
+      TIKTOK_APP_SECRET
     ].freeze
 
     missing = meta_keys.select { |name| ENV[name].blank? }

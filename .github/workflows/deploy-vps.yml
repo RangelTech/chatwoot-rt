@@ -124,6 +124,12 @@ jobs:
             echo "whatsapp_configuration_id<<EOF_META"
             fetch_secret WHATSAPP_CONFIGURATION_ID
             echo "EOF_META"
+            echo "tiktok_app_id<<EOF_META"
+            fetch_secret TIKTOK_APP_ID
+            echo "EOF_META"
+            echo "tiktok_app_secret<<EOF_META"
+            fetch_secret TIKTOK_APP_SECRET
+            echo "EOF_META"
             echo "bridge_admin_token<<EOF_BAT"
             fetch_secret BRIDGE_ADMIN_TOKEN
             echo "EOF_BAT"
@@ -147,6 +153,8 @@ jobs:
           WHATSAPP_APP_ID: ${{ steps.infisical.outputs.whatsapp_app_id }}
           WHATSAPP_APP_SECRET: ${{ steps.infisical.outputs.whatsapp_app_secret }}
           WHATSAPP_CONFIGURATION_ID: ${{ steps.infisical.outputs.whatsapp_configuration_id }}
+          TIKTOK_APP_ID: ${{ steps.infisical.outputs.tiktok_app_id }}
+          TIKTOK_APP_SECRET: ${{ steps.infisical.outputs.tiktok_app_secret }}
           BRIDGE_ADMIN_TOKEN: ${{ steps.infisical.outputs.bridge_admin_token }}
         run: |
           # Cloud Run reaches Redis through the VPS public endpoint, but the
@@ -194,6 +202,8 @@ jobs:
           WHATSAPP_APP_ID=$WHATSAPP_APP_ID
           WHATSAPP_APP_SECRET=$WHATSAPP_APP_SECRET
           WHATSAPP_CONFIGURATION_ID=$WHATSAPP_CONFIGURATION_ID
+          TIKTOK_APP_ID=$TIKTOK_APP_ID
+          TIKTOK_APP_SECRET=$TIKTOK_APP_SECRET
 
           # Achado real 24/08/2026: o worker nunca teve isso -- só o
           # chatwoot-web (Cloud Run) chamava a ponte. Evolution::
