@@ -29,6 +29,38 @@ class SocialUnofficial::NavegadorRemotoService
     raise NavegadorRemotoError, "navegador remoto inacessível: #{e.message}"
   end
 
+  # Facebook não tem API HTTP não-oficial funcional (SPA JS-only, ver
+  # produto-10 seção 6b) -- estes dois batem em endpoints do oauth-browser
+  # que navegam de verdade (Playwright) e leem/escrevem no DOM, um contexto
+  # descartável por chamada carregado com os cookies do canal.
+  def facebook_inbox(cookies:)
+    response = HTTParty.post(
+      "#{oauth_browser_url}/facebook/inbox",
+      headers: { 'Content-Type' => 'application/json', 'Authorization' => "Bearer #{oauth_browser_admin_token}" },
+      body: { cookies: cookies }.to_json,
+      timeout: 40
+    )
+    raise NavegadorRemotoError, "falha ao ler a caixa de entrada: HTTP #{response.code} #{response.body}" unless response.success?
+
+    response.parsed_response['conversations'] || []
+  rescue HTTParty::Error, Errno::ECONNREFUSED, Net::OpenTimeout => e
+    raise NavegadorRemotoError, "navegador remoto inacessível: #{e.message}"
+  end
+
+  def facebook_send(cookies:, thread_id:, text:)
+    response = HTTParty.post(
+      "#{oauth_browser_url}/facebook/send",
+      headers: { 'Content-Type' => 'application/json', 'Authorization' => "Bearer #{oauth_browser_admin_token}" },
+      body: { cookies: cookies, thread_id: thread_id, text: text }.to_json,
+      timeout: 40
+    )
+    raise NavegadorRemotoError, "falha ao enviar: HTTP #{response.code} #{response.body}" unless response.success?
+
+    true
+  rescue HTTParty::Error, Errno::ECONNREFUSED, Net::OpenTimeout => e
+    raise NavegadorRemotoError, "navegador remoto inacessível: #{e.message}"
+  end
+
   private
 
   attr_reader :provider
