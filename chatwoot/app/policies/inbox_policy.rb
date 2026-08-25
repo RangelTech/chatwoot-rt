@@ -91,6 +91,14 @@ class InboxPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  def iniciar_social_unofficial?
+    @account_user.administrator?
+  end
+
+  def concluir_social_unofficial?
+    @account_user.administrator?
+  end
+
   def enable_whatsapp_calling?
     @account_user.administrator?
   end
