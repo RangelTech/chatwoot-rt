@@ -30,7 +30,16 @@ class Evolution::IncomingMessageService
   def from_me? = key[:fromMe] == true
   def text = message[:conversation] || message.dig(:extendedTextMessage, :text)
   def sender_name = data[:pushName].presence || sender_id
-  def phone_number = sender_id.to_s.end_with?('@s.whatsapp.net') ? sender_id.delete_suffix('@s.whatsapp.net') : nil
+  # Achado real 24/08/2026, testado ao vivo: sem o "+" a validação de
+  # Contact#phone_number falha ("Phone number should be in e164 format")
+  # e o job de webhook nunca cria a conversa -- mesmo bug de E.164 já
+  # corrigido pro WAPI (produto-09), mas nunca replicado aqui.
+  def phone_number
+    return nil unless sender_id.to_s.end_with?('@s.whatsapp.net')
+
+    digitos = sender_id.delete_suffix('@s.whatsapp.net')
+    "+#{digitos}" if digitos.match?(/\A\d+\z/)
+  end
   def duplicate_message? = message_id.present? && inbox.messages.exists?(source_id: message_id)
 
   def existing_conversation(contact_inbox)

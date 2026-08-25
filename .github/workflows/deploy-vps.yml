@@ -124,6 +124,9 @@ jobs:
             echo "whatsapp_configuration_id<<EOF_META"
             fetch_secret WHATSAPP_CONFIGURATION_ID
             echo "EOF_META"
+            echo "bridge_admin_token<<EOF_BAT"
+            fetch_secret BRIDGE_ADMIN_TOKEN
+            echo "EOF_BAT"
           } >> "$GITHUB_OUTPUT"
 
       - name: Render .env.prod.chatwoot on VPS
@@ -144,6 +147,7 @@ jobs:
           WHATSAPP_APP_ID: ${{ steps.infisical.outputs.whatsapp_app_id }}
           WHATSAPP_APP_SECRET: ${{ steps.infisical.outputs.whatsapp_app_secret }}
           WHATSAPP_CONFIGURATION_ID: ${{ steps.infisical.outputs.whatsapp_configuration_id }}
+          BRIDGE_ADMIN_TOKEN: ${{ steps.infisical.outputs.bridge_admin_token }}
         run: |
           # Cloud Run reaches Redis through the VPS public endpoint, but the
           # VPS worker shares Docker's internal network with Redis. Keeping
@@ -190,6 +194,15 @@ jobs:
           WHATSAPP_APP_ID=$WHATSAPP_APP_ID
           WHATSAPP_APP_SECRET=$WHATSAPP_APP_SECRET
           WHATSAPP_CONFIGURATION_ID=$WHATSAPP_CONFIGURATION_ID
+
+          # Achado real 24/08/2026: o worker nunca teve isso -- só o
+          # chatwoot-web (Cloud Run) chamava a ponte. Evolution::
+          # DeprovisioningService roda aqui (before_destroy do canal, via
+          # DeleteObjectJob no Sidekiq), e sem essas duas vars falhava
+          # sempre com "BRIDGE_URL não configurada", silenciosamente --
+          # apagar uma inbox Evolution nunca desligava a instância real.
+          BRIDGE_URL=https://chatwoot-bridge-pujq3pjmca-uc.a.run.app
+          BRIDGE_ADMIN_TOKEN=$BRIDGE_ADMIN_TOKEN
           ENVEOF
 
       - name: Build and restart
