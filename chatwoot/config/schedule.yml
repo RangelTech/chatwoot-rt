@@ -74,3 +74,12 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# produto-10 (25/08/2026): Instagram nao oficial nao tem webhook (credencial
+# e sessao de cookie, nao um app registrado com callback) -- mensagem nova
+# so chega via polling. A cada 2 minutos e suficiente pra nao levantar
+# suspeita de rate limit nem atrasar demais a resposta.
+poll_instagram_unofficial_job:
+  cron: '*/2 * * * *'
+  class: 'SocialUnofficial::PollInstagramUnofficialJob'
+  queue: scheduled_jobs

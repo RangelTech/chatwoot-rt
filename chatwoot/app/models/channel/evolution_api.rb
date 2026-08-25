@@ -13,7 +13,7 @@ class Channel::EvolutionApi < ApplicationRecord
   validates :api_url, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
 
   def name
-    'Evolution API'
+    'Whatsapp Unoficial'
   end
 
   def callback_url

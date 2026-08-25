@@ -380,7 +380,7 @@
         "ERROR_MESSAGE": "Unable to create the WAPI inbox."
       },
       "EVOLUTION_API": {
-        "TITLE": "WhatsApp (QR code)",
+        "TITLE": "Whatsapp Unoficial",
         "DESC": "Connect a WhatsApp number by scanning a QR code. We provision and manage the connection for you.",
         "INBOX_NAME": "Inbox name",
         "INBOX_NAME_PLACEHOLDER": "e.g. WhatsApp Support",
@@ -1372,7 +1372,7 @@
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "WAPI": "WAPI",
-      "EVOLUTION_API": "Evolution API",
+      "EVOLUTION_API": "Whatsapp Unoficial",
       "VOICE": "Voice"
     }
   }

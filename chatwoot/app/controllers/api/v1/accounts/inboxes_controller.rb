@@ -1,6 +1,7 @@
 class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   include Api::V1::InboxesHelper
-  before_action :fetch_inbox, except: [:index, :create, :provision_evolution]
+  before_action :fetch_inbox,
+                except: [:index, :create, :provision_evolution, :iniciar_social_unofficial, :concluir_social_unofficial]
   before_action :fetch_agent_bot, only: [:set_agent_bot]
   # we are already handling the authorization in fetch inbox
   before_action :check_authorization, except: [:show]
@@ -127,6 +128,42 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def destroy
     ::DeleteObjectJob.perform_later(@inbox, Current.user, request.ip) if @inbox.present?
     render status: :ok, json: { message: I18n.t('messages.inbox_deletetion_response') }
+  end
+
+  # Produto-10 (25/08/2026) -- Instagram/Facebook não oficiais. Diferente
+  # de OAuth (produto-08), a credencial aqui é a sessão inteira de cookies,
+  # não um código pra trocar por token: `iniciar` só abre o navegador
+  # remoto, `concluir` recebe os cookies que o front capturou via
+  # WebSocket e cria o canal.
+  SOCIAL_UNOFFICIAL_PROVEDORES = %w[facebook_web instagram_web].freeze
+
+  def iniciar_social_unofficial
+    provider = params[:provider]
+    return render json: { error: "provedor '#{provider}' não suportado" }, status: :bad_request unless SOCIAL_UNOFFICIAL_PROVEDORES.include?(provider)
+
+    dados = SocialUnofficial::NavegadorRemotoService.new(provider: provider).iniciar_sessao
+    render json: dados
+  rescue SocialUnofficial::NavegadorRemotoService::NavegadorRemotoError => e
+    render json: { error: e.message }, status: :bad_gateway
+  end
+
+  def concluir_social_unofficial
+    provider = params[:provider]
+    return render json: { error: "provedor '#{provider}' não suportado" }, status: :bad_request unless SOCIAL_UNOFFICIAL_PROVEDORES.include?(provider)
+    return render json: { error: 'cookies ausentes' }, status: :unprocessable_entity if params[:cookies].blank?
+
+    cookies_recebidos = params[:cookies].map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h.stringify_keys : c }
+
+    klass = provider == 'facebook_web' ? Channel::FacebookUnofficial : Channel::InstagramUnofficial
+    channel = nil
+    ActiveRecord::Base.transaction do
+      channel = klass.create!(account_id: Current.account.id, cookies_jar: cookies_recebidos)
+      @inbox = Current.account.inboxes.create!(name: params[:name].presence || channel.name, channel: channel)
+    end
+    channel.update!(connection_status: { 'state' => 'open' }, connection_status_checked_at: Time.current)
+    render 'api/v1/accounts/inboxes/show'
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private

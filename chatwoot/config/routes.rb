@@ -283,6 +283,8 @@ Rails.application.routes.draw do
           resource :branded_email_layout, only: [:show, :update]
           resources :inboxes, only: [:index, :show, :create, :update, :destroy] do
             post :provision_evolution, on: :collection
+            post :iniciar_social_unofficial, on: :collection
+            post :concluir_social_unofficial, on: :collection
             get :assignable_agents, on: :member
             get :campaigns, on: :member
             get :agent_bot, on: :member
