@@ -30,7 +30,7 @@ deploy_bridge() {
     --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
     --set-env-vars="CHATWOOT_BASE_URL=$(chatwoot_url),AGENT_PLATFORM_URL=$(agent_platform_url)" \
     --allow-unauthenticated \
-    --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
+    --memory=512Mi --cpu=1 --min-instances=1 --max-instances=5 \
     --timeout=600 --port=8100
 
   # BRIDGE_PUBLIC_URL só existe depois do serviço; é ela que o Chatwoot chama

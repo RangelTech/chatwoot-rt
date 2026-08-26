@@ -38,18 +38,12 @@ fi
   --set-secrets=DATABASE_URL=chatwoot-bridge-database-url:latest,ENCRYPTION_KEY=chatwoot-bridge-encryption-key:latest,BRIDGE_ADMIN_TOKEN=chatwoot-bridge-admin-token:latest,CHATWOOT_PLATFORM_TOKEN=chatwoot-platform-token:latest,EVOLUTION_SSH_PRIVATE_KEY=chatwoot-bridge-evolution-ssh-key:latest \
   --set-env-vars="CHATWOOT_BASE_URL=https://chat.rangeltech.net,AGENT_PLATFORM_URL=https://ia.rangeltech.net,ENVIRONMENT=production" \
   --allow-unauthenticated \
-  --memory=512Mi --cpu=1 --min-instances=0 --max-instances=5 \
+  --memory=512Mi --cpu=1 --min-instances=1 --max-instances=5 \
   --timeout=600 --port=8100
-# TEMPORÁRIO (25->26/08/2026, madrugada): min=0 pra economizar custo durante
-# execução autônoma noturna sem tráfego real, pedido explícito do dono.
-# Valor de produção de verdade é min-instances=1 (decisão 24/08/2026, cold
-# start deixa de ser aceitável -- 4,7s medido em GET /health, achado
-# 23/08/2026. Bridge está no caminho de toda mensagem de saída real
-# (Chatwoot -> Agent Bot -> bridge -> provedor)) -- REVERTER pra
-# min-instances=1 antes de qualquer tráfego de cliente voltar. Registrado em
-# memoria.md. Confirmado antes de editar: este é o
-# único workflow que deploya chatwoot-bridge neste repo (sem a armadilha
-# de 2 caminhos competindo achada no kernel-llm).
+# min-instances=1 (decisão 24/08/2026, cold start deixa de ser aceitável --
+# 4,7s medido em GET /health, achado 23/08/2026. Bridge está no caminho de
+# toda mensagem de saída real: Chatwoot -> Agent Bot -> bridge -> provedor).
+# Único workflow que deploya chatwoot-bridge neste repo.
 
 # BRIDGE_PUBLIC_URL vira o outgoing_url de todo Agent Bot (é o webhook que o
 # Chatwoot chama a cada mensagem nova -- sem isso resolver, a IA nunca vê a
