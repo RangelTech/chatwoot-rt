@@ -104,6 +104,10 @@
           "ERROR": "Failed to update audio transcription setting"
         }
       },
+      "UNOFFICIAL_CHANNELS": {
+        "TITLE": "Show unofficial connectors",
+        "NOTE": "Show WhatsApp Web, Instagram Unofficial and Facebook Unofficial as channel options when adding an inbox. These connectors use a browser session instead of the official API and carry extra risk (disconnects, CAPTCHA, account limits)."
+      },
       "AUTO_RESOLVE_DURATION": {
         "LABEL": "Inactivity duration for resolution",
         "HELP": "Duration after a conversation should auto resolve if there is no activity",

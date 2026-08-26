@@ -104,6 +104,10 @@
           "ERROR": "Falha ao atualizar configuração de transcrição de áudio"
         }
       },
+      "UNOFFICIAL_CHANNELS": {
+        "TITLE": "Mostrar conectores não oficiais",
+        "NOTE": "Mostra WhatsApp Web, Instagram Unoficial e Facebook Unoficial como opções de canal ao adicionar uma caixa de entrada. Esses conectores usam sessão de navegador em vez da API oficial e têm risco extra (desconexões, CAPTCHA, limitação de conta)."
+      },
       "AUTO_RESOLVE_DURATION": {
         "LABEL": "Tempo de inatividade para resolução",
         "HELP": "Tempo de inatividade após o qual a conversa deve ser encerrada automaticamente",

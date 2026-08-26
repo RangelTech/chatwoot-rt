@@ -7,11 +7,10 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 
 import ChannelItem from 'dashboard/components/widgets/ChannelItem.vue';
-import Switch from 'next/switch/Switch.vue';
 
 const { t } = useI18n();
 const router = useRouter();
-const { accountId, currentAccount, updateAccount } = useAccount();
+const { accountId, currentAccount } = useAccount();
 
 const globalConfig = useMapGetter('globalConfig/get');
 
@@ -21,28 +20,26 @@ const enabledFeatures = computed(() => currentAccount.value?.features || {});
 // sessão de navegador, não API oficial -- alguns tenants preferem nem ver
 // essa opção na tela. Config por tenant (account.settings), não global --
 // pedido do dono: quem decide é cada empresa, não uma flag de instalação.
+// O toggle em si mora em Configurações -> Conta agora (UnofficialChannels.vue,
+// produto-05) -- aqui só lê o valor pra filtrar a lista. Motivos da mudança:
+// (1) homologação Meta, o botão não pode aparecer gravando a tela do
+// Chatwoot pro App Review; (2) controle de acesso, Configurações -> Conta já
+// é área só de administrador. Default mudou de true pra false.
 const UNOFFICIAL_CHANNEL_KEYS = [
   'evolution_api',
   'instagram_unofficial',
   'facebook_unofficial',
 ];
 
-const showUnofficialChannels = ref(true);
+const showUnofficialChannels = ref(false);
 watch(
   currentAccount,
   () => {
     const stored = currentAccount.value?.settings?.show_unofficial_channels;
-    showUnofficialChannels.value = stored ?? true;
+    showUnofficialChannels.value = stored ?? false;
   },
   { deep: true, immediate: true }
 );
-
-const toggleUnofficialChannels = async () => {
-  await updateAccount(
-    { show_unofficial_channels: showUnofficialChannels.value },
-    { silent: true }
-  );
-};
 
 const hasTiktokConfigured = computed(() => {
   return window.chatwootConfig?.tiktokAppId;
@@ -175,15 +172,6 @@ const initChannelAuth = channel => {
 
 <template>
   <div class="max-w-3xl">
-    <div
-      class="flex items-center justify-between gap-4 px-8 pt-6 -mb-2 text-sm text-n-slate-11"
-    >
-      <span>{{ t('INBOX_MGMT.ADD.UNOFFICIAL_TOGGLE.LABEL') }}</span>
-      <Switch
-        v-model="showUnofficialChannels"
-        @change="toggleUnofficialChannels"
-      />
-    </div>
     <div
       class="grid max-w-3xl grid-cols-1 xs:grid-cols-2 mx-0 gap-6 sm:grid-cols-3 p-8"
     >
