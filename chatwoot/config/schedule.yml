@@ -83,3 +83,13 @@ poll_instagram_unofficial_job:
   cron: '*/2 * * * *'
   class: 'SocialUnofficial::PollInstagramUnofficialJob'
   queue: scheduled_jobs
+
+# 25-26/08/2026: mesmo motivo do Instagram (sem webhook, credencial é
+# cookie de sessão). Facebook não tem API HTTP -- cada poll navega de
+# verdade (Playwright) pra ler a lista de conversas, então o intervalo
+# fica igual ao Instagram (2min) por ora; se o custo/latência do
+# navegador remoto pesar, revisar pra um intervalo maior.
+poll_facebook_unofficial_job:
+  cron: '*/2 * * * *'
+  class: 'SocialUnofficial::PollFacebookUnofficialJob'
+  queue: scheduled_jobs

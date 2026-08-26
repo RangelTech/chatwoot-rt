@@ -10,11 +10,11 @@ class SendReplyJob < ApplicationJob
     'Channel::Sms' => ::Sms::SendOnSmsService,
     'Channel::Wapi' => ::Wapi::SendOnWapiService,
     'Channel::EvolutionApi' => ::Evolution::SendOnEvolutionService,
-    # Channel::FacebookUnofficial fica de fora daqui até o serviço de envio
-    # existir (produto-10: facebook.com é SPA JS-only, precisa de
-    # automação de navegador pra enviar/ler, não HTTP puro como Instagram
-    # -- ver produto-10 seção 6a. Pendente, próxima fatia da madrugada).
     'Channel::InstagramUnofficial' => ::SocialUnofficial::SendOnInstagramUnofficialService,
+    # 25-26/08/2026: via automação de navegador (oauth-browser), não HTTP
+    # puro como Instagram -- ver SendOnFacebookUnofficialService. Nunca
+    # testado com contato real ainda.
+    'Channel::FacebookUnofficial' => ::SocialUnofficial::SendOnFacebookUnofficialService,
     'Channel::Instagram' => ::Instagram::SendOnInstagramService,
     'Channel::Tiktok' => ::Tiktok::SendOnTiktokService,
     'Channel::Email' => ::Email::SendOnEmailService,
