@@ -288,11 +288,13 @@ resource "google_cloud_run_v2_service" "chatwoot_web" {
     }
 
     scaling {
-      # min=1 restaurado por decisão do dono (24/08/2026): entrou em
-      # produção, cold start deixa de ser aceitável. Não remedido
-      # isoladamente (ver skill `agentllm`, personal-skills) -- mantido
-      # min=1 por precaução, mesma classe dos outros 3 serviços web-facing.
-      min_instance_count = 1
+      # TEMPORÁRIO (25→26/08/2026, madrugada): min=0 pra economizar custo
+      # durante execução autônoma noturna sem tráfego real, pedido explícito
+      # do dono. Valor de produção de verdade é min=1 (decisão 24/08/2026,
+      # cold start deixa de ser aceitável com cliente real) -- REVERTER pra
+      # min_instance_count = 1 antes de qualquer tráfego de cliente voltar.
+      # Registrado em memoria.md pra não esquecer.
+      min_instance_count = 0
       max_instance_count = 5
     }
 
