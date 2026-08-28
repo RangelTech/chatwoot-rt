@@ -77,19 +77,22 @@ remove_orphan_conversations_job:
 
 # produto-10 (25/08/2026): Instagram nao oficial nao tem webhook (credencial
 # e sessao de cookie, nao um app registrado com callback) -- mensagem nova
-# so chega via polling. A cada 2 minutos e suficiente pra nao levantar
-# suspeita de rate limit nem atrasar demais a resposta.
+# so chega via polling.
+# 27/08/2026, achado real: Meta marcou a conta do dono como invadida --
+# polling 24h/dia todo 2min de IP de datacenter e sinal forte de account
+# takeover pro sistema deles. Aumentado pra 5min (ainda responsivo, bem
+# menos agressivo) como parte da mitigacao, junto com o fix de proxy do
+# Facebook (oauth-browser/app.py).
 poll_instagram_unofficial_job:
-  cron: '*/2 * * * *'
+  cron: '*/5 * * * *'
   class: 'SocialUnofficial::PollInstagramUnofficialJob'
   queue: scheduled_jobs
 
 # 25-26/08/2026: mesmo motivo do Instagram (sem webhook, credencial é
 # cookie de sessão). Facebook não tem API HTTP -- cada poll navega de
-# verdade (Playwright) pra ler a lista de conversas, então o intervalo
-# fica igual ao Instagram (2min) por ora; se o custo/latência do
-# navegador remoto pesar, revisar pra um intervalo maior.
+# verdade (Playwright) pra ler a lista de conversas. Mesmo ajuste de
+# cadência que o Instagram, mesmo motivo (27/08/2026, ver acima).
 poll_facebook_unofficial_job:
-  cron: '*/2 * * * *'
+  cron: '*/5 * * * *'
   class: 'SocialUnofficial::PollFacebookUnofficialJob'
   queue: scheduled_jobs
