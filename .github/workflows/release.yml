@@ -124,6 +124,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
+          pattern: "{rails,bridge}"
           merge-multiple: true
       - name: GitHub Release
         env:
