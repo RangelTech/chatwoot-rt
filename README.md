@@ -14,7 +14,7 @@ SSO, gateway de canais, idempotência e handoff IA ↔ humano.
 |---|---|
 | [`chatwoot/`](chatwoot/) | Empacotamento da imagem oficial + branding externo. Sem fork profundo. |
 | [`bridge/`](bridge/) | Aplicação própria (FastAPI): provisioning, SSO, gateway W-API, Agent Bot. |
-| [`infra/`](infra/) | Cloud Build por workload + `deploy.sh`, espelhando o padrão do agent-platform. |
+| [`infra/`](infra/) | Exemplos de env e nota de release/deploy (deploy so pelo vps_rt_infra). |
 | [`scripts/`](scripts/) | Smoke tests e utilitários operacionais. |
 | [`docs/`](docs/) | Decisões, runbooks e arquitetura local. |
 
@@ -30,7 +30,7 @@ canal (W-API / Meta) ─▶ bridge (gateway) ─▶ Chatwoot (API Inbox)
                                     resposta ou handoff para humano
 ```
 
-- **Compute**: Cloud Run (`chatwoot-web`, `chatwoot-worker`, `chatwoot-bridge`).
+- **Compute**: VPS (stack `chatwoot`: chatwoot-web, chatwoot-worker, bridge), implantado pelo vps_rt_infra a partir dos releases.
 - **Persistência**: VPS da Rangel Tech (PostgreSQL `chatwoot_prod`, Redis dedicado
   com TLS, storage MinIO). Nada de estado no Cloud Run.
 
@@ -49,10 +49,9 @@ cp ../infra/env/bridge.env.example .env
 uvicorn app.main:app --reload --port 8100
 ```
 
-## Deploy
+## Release
 
-```bash
-./infra/deploy.sh bridge     # só a ponte
-./infra/deploy.sh chatwoot   # web + worker
-./infra/deploy.sh all
-```
+Tag `v*` dispara `.github/workflows/release.yml`: gate da ponte (ruff + pytest), build das duas imagens
+e GitHub Release com `chatwoot-rails.image.tar.gz`, `chatwoot-bridge.image.tar.gz` e um
+`release-manifest.<servico>.json` por servico. O deploy e feito so pelo vps_rt_infra. Detalhes (healthcheck do
+worker, papeis da imagem Rails) em [`infra/README.md`](infra/README.md).

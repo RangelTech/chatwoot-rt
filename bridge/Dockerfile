@@ -13,6 +13,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bridge/app ./app
 COPY bridge/migrations ./migrations
 
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
+RUN useradd --system --uid 10001 --create-home app && chown -R app:app /srv
+USER app
+
 ENV PORT=8100
 EXPOSE 8100
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["python", "-c", "import os,urllib.request;urllib.request.urlopen('http://127.0.0.1:%s/health' % os.environ.get('PORT','8100'), timeout=4)"]
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

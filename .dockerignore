@@ -1,0 +1,11 @@
+.git
+.github
+docs
+infra
+**/__pycache__
+bridge/tests
+chatwoot/node_modules
+chatwoot/.bundle
+chatwoot/vendor/bundle
+chatwoot/public/packs
+chatwoot/storage

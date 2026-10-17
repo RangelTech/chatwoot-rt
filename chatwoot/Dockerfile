@@ -92,7 +92,8 @@ COPY chatwoot/ /app
 COPY chatwoot/branding/ /app/public/brand-assets/
 COPY chatwoot/entrypoints/web.sh /app/rt-web.sh
 COPY chatwoot/entrypoints/worker.sh /app/rt-worker.sh
-RUN chmod +x /app/rt-web.sh /app/rt-worker.sh
+COPY chatwoot/entrypoints/healthcheck.sh /app/rt-healthcheck.sh
+RUN chmod +x /app/rt-web.sh /app/rt-worker.sh /app/rt-healthcheck.sh
 COPY scripts/ops/ /app/scripts/ops/
 
 RUN mkdir -p /app/log
@@ -141,13 +142,25 @@ RUN apk update && apk add --no-cache \
 COPY --from=node /usr/local/bin/node /usr/local/bin/
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
+# Usuario nao-root (uid 10001). /gems fica legivel; /app pertence ao app.
+RUN addgroup -g 10001 app && adduser -D -u 10001 -G app app
 COPY --from=pre-builder /gems/ /gems/
-COPY --from=pre-builder /app /app
+COPY --from=pre-builder --chown=app:app /app /app
 
 WORKDIR /app
 
-# Cloud Run injeta PORT; o Chatwoot escuta em 3000 por padrão.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
+USER app
+
+# Porta do web (override por env). O worker reutiliza esta imagem com
+# `command: ./rt-worker.sh` (ver rt-healthcheck.sh).
 ENV PORT=3000
 EXPOSE 3000
+
+# Web: GET /health. Worker (sidekiq, sem HTTP): checa o processo.
+HEALTHCHECK --interval=30s --timeout=8s --start-period=120s --retries=3 \
+  CMD ["/app/rt-healthcheck.sh"]
 
 CMD ["./rt-web.sh"]
