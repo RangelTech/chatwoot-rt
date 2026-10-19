@@ -59,6 +59,108 @@
         "ACTIVE": "Ativa",
         "PAUSED": "Pausada"
       }
+    },
+    "MENU": {
+      "TITLE": "IA",
+      "CHAT": "Chat com IA",
+      "AGENTS": "Agentes",
+      "SKILLS": "Skills e rotinas",
+      "KNOWLEDGE": "Conhecimento",
+      "PROVIDERS": "Provedores",
+      "CREDENTIALS": "Credenciais",
+      "INBOXES": "Caixas de entrada",
+      "INTEGRATIONS": "Integrações",
+      "RUNS": "Execuções",
+      "ENVIRONMENT": "Ambiente",
+      "USAGE": "Uso"
+    },
+    "RES": {
+      "NEW": "Novo",
+      "SAVE": "Salvar",
+      "SAVED": "Salvo",
+      "ERROR": "Não foi possível concluir a ação.",
+      "DELETE": "Apagar",
+      "CONFIRM_DELETE": "Apagar este item?",
+      "EMPTY": "Nada por aqui ainda.",
+      "ACTIONS": {
+        "START": "Ligar",
+        "STOP": "Parar",
+        "BACKUP": "Fazer backup"
+      },
+      "PROVIDERS": {
+        "TITLE": "Provedores de IA",
+        "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
+      },
+      "CREDENTIALS": {
+        "TITLE": "Credenciais",
+        "HELP": "Segredos que os agentes usam pelo nome (tokens, senhas). Os valores só entram, nunca saem."
+      },
+      "SOURCES": {
+        "TITLE": "Fontes de dados",
+        "HELP": "Bancos e APIs que os agentes podem consultar."
+      },
+      "FILES": {
+        "TITLE": "Arquivos",
+        "HELP": "Documentos indexados para os agentes."
+      },
+      "MEMORIES": {
+        "TITLE": "Memórias",
+        "HELP": "O que os agentes lembraram. Remova o que não quiser manter."
+      },
+      "USAGE": {
+        "TITLE": "Uso de IA",
+        "HELP": "Uso estimado; não é cobrança."
+      },
+      "RUNS": {
+        "TITLE": "Execuções",
+        "HELP": "Execuções recentes dos agentes."
+      },
+      "ENVIRONMENT": {
+        "TITLE": "Ambiente",
+        "HELP": "O espaço de trabalho da sua empresa: estado, aplicativos e domínios."
+      },
+      "INTEGRATIONS": {
+        "TITLE": "Integrações",
+        "HELP": "Chaves de API para sistemas externos."
+      },
+      "PAYMENTS": {
+        "TITLE": "Pagamentos",
+        "HELP": "Credencial do Mercado Pago que os agentes usam para cobrar."
+      },
+      "FIELDS": {
+        "NAME": "Nome",
+        "PROVIDER": "Provedor",
+        "MODEL": "Modelo",
+        "API_KEY": "Chave de API",
+        "API_BASE": "URL base da API (opcional)",
+        "VALUE": "Valor",
+        "KIND": "Tipo",
+        "CONFIG_JSON": "Conexão (JSON)",
+        "SECRET": "Segredo",
+        "ACCESS_TOKEN": "Token de acesso",
+        "WEBHOOK_SECRET": "Segredo do webhook"
+      },
+      "COLUMNS": {
+        "NAME": "Nome",
+        "PROVIDER": "Provedor",
+        "MODEL": "Modelo",
+        "IS_ACTIVE": "Ativo",
+        "UPDATED_AT": "Atualizado",
+        "KIND": "Tipo",
+        "STATUS": "Situação",
+        "SIZE_BYTES": "Tamanho",
+        "CONTENT": "Memória",
+        "CREATED_AT": "Criado",
+        "TITLE": "Título",
+        "SANDBOX": "Modo de teste",
+        "HAS_TOKEN": "Token definido"
+      }
+    },
+    "INBOXES": {
+      "TITLE": "Caixas de entrada e agentes",
+      "HELP": "Escolha qual agente atende cada caixa de entrada. Sem agente, a caixa é só humana.",
+      "HUMAN_ONLY": "Só humano (sem agente)",
+      "AUTOPILOT": "Responder automaticamente"
     }
   }
 }

@@ -59,6 +59,108 @@
         "ACTIVE": "Active",
         "PAUSED": "Paused"
       }
+    },
+    "MENU": {
+      "TITLE": "AI",
+      "CHAT": "AI Chat",
+      "AGENTS": "Agents",
+      "SKILLS": "Skills and routines",
+      "KNOWLEDGE": "Knowledge",
+      "PROVIDERS": "Providers",
+      "CREDENTIALS": "Credentials",
+      "INBOXES": "Inboxes",
+      "INTEGRATIONS": "Integrations",
+      "RUNS": "Runs",
+      "ENVIRONMENT": "Environment",
+      "USAGE": "Usage"
+    },
+    "RES": {
+      "NEW": "New",
+      "SAVE": "Save",
+      "SAVED": "Saved",
+      "ERROR": "Could not complete the action.",
+      "DELETE": "Delete",
+      "CONFIRM_DELETE": "Delete this item?",
+      "EMPTY": "Nothing here yet.",
+      "ACTIONS": {
+        "START": "Start",
+        "STOP": "Stop",
+        "BACKUP": "Backup now"
+      },
+      "PROVIDERS": {
+        "TITLE": "AI providers",
+        "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."
+      },
+      "CREDENTIALS": {
+        "TITLE": "Credentials",
+        "HELP": "Secrets agents use by name (API tokens, passwords). Values are write-only."
+      },
+      "SOURCES": {
+        "TITLE": "Data sources",
+        "HELP": "Databases and APIs agents can read."
+      },
+      "FILES": {
+        "TITLE": "Files",
+        "HELP": "Documents indexed for the agents."
+      },
+      "MEMORIES": {
+        "TITLE": "Memories",
+        "HELP": "What agents remembered. Remove anything you do not want kept."
+      },
+      "USAGE": {
+        "TITLE": "AI usage",
+        "HELP": "Estimated usage; not a bill."
+      },
+      "RUNS": {
+        "TITLE": "Runs",
+        "HELP": "Recent agent executions."
+      },
+      "ENVIRONMENT": {
+        "TITLE": "Environment",
+        "HELP": "Your company workspace: state, apps and domains."
+      },
+      "INTEGRATIONS": {
+        "TITLE": "Integrations",
+        "HELP": "API keys for external systems."
+      },
+      "PAYMENTS": {
+        "TITLE": "Payments",
+        "HELP": "Mercado Pago credential used by agents to charge."
+      },
+      "FIELDS": {
+        "NAME": "Name",
+        "PROVIDER": "Provider",
+        "MODEL": "Model",
+        "API_KEY": "API key",
+        "API_BASE": "API base URL (optional)",
+        "VALUE": "Value",
+        "KIND": "Type",
+        "CONFIG_JSON": "Connection (JSON)",
+        "SECRET": "Secret",
+        "ACCESS_TOKEN": "Access token",
+        "WEBHOOK_SECRET": "Webhook secret"
+      },
+      "COLUMNS": {
+        "NAME": "Name",
+        "PROVIDER": "Provider",
+        "MODEL": "Model",
+        "IS_ACTIVE": "Active",
+        "UPDATED_AT": "Updated",
+        "KIND": "Type",
+        "STATUS": "Status",
+        "SIZE_BYTES": "Size",
+        "CONTENT": "Memory",
+        "CREATED_AT": "Created",
+        "TITLE": "Title",
+        "SANDBOX": "Test mode",
+        "HAS_TOKEN": "Token set"
+      }
+    },
+    "INBOXES": {
+      "TITLE": "Inboxes and agents",
+      "HELP": "Choose which agent answers each inbox. Without an agent, the inbox is human-only.",
+      "HUMAN_ONLY": "Human only (no agent)",
+      "AUTOPILOT": "Answer automatically"
     }
   }
 }

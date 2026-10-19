@@ -2,6 +2,9 @@ import { frontendURL } from '../../../helper/URLHelper';
 import ChatIndex from './chat/ChatIndex.vue';
 import AgentsIndex from './agents/AgentsIndex.vue';
 import SkillsIndex from './skills/SkillsIndex.vue';
+import ResourcePage from './resources/ResourcePage.vue';
+import InboxesPage from './inboxes/InboxesPage.vue';
+import { ROUTES } from './resources/resourceConfig';
 
 const meta = { permissions: ['ai.chat.view'] };
 
@@ -30,4 +33,16 @@ export const routes = [
     meta: { permissions: ['ai.skills.view'] },
     component: SkillsIndex,
   },
+  {
+    path: frontendURL('accounts/:accountId/ragent/inboxes'),
+    name: 'ragent_inboxes',
+    meta: { permissions: ['ai.inbox_routing.view'] },
+    component: InboxesPage,
+  },
+  ...ROUTES.map(([key, permission]) => ({
+    path: frontendURL(`accounts/:accountId/ragent/${key}`),
+    name: `ragent_${key}`,
+    meta: { permissions: [permission], resource: key },
+    component: ResourcePage,
+  })),
 ];

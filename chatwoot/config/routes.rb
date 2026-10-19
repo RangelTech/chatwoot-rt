@@ -88,6 +88,11 @@ Rails.application.routes.draw do
             post 'routines/:id/:do', to: 'skills#routine_act'
             delete 'routines/:id', to: 'skills#routine_destroy'
             post 'memory_proposals/:id/:do', to: 'skills#memory_act'
+            get 'resources/:key', to: 'resources#index'
+            post 'resources/:key', to: 'resources#create'
+            put 'resources/:key/:id', to: 'resources#update'
+            delete 'resources/:key/:id', to: 'resources#destroy'
+            post 'resources/:key/actions/:name', to: 'resources#action'
             resources :agents, only: [:index, :create, :destroy] do
               member do
                 get :draft
