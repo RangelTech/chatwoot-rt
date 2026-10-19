@@ -34,7 +34,18 @@
       "SAVED": "Rascunho salvo",
       "PUBLISHED": "Agente publicado",
       "ERROR": "Não foi possível concluir a ação.",
-      "CONFIRM_ARCHIVE": "Arquivar este agente?"
+      "CONFIRM_ARCHIVE": "Arquivar este agente?",
+      "FILES": {
+        "TITLE": "Arquivos do agente",
+        "HELP": "Cardápios, tabelas de preço, planilhas, imagens: qualquer arquivo de até 10 MB. O agente lê estes arquivos ao responder. A troca só vale para as conversas depois de publicar.",
+        "EMPTY": "Nenhum arquivo ainda.",
+        "UPLOAD": "Enviar arquivo",
+        "REPLACE": "Substituir",
+        "REMOVE": "Remover",
+        "SAVED": "Arquivo salvo no rascunho",
+        "ERROR": "Não foi possível enviar o arquivo.",
+        "CONFIRM_REMOVE": "Remover este arquivo do agente?"
+      }
     },
     "SKILLS": {
       "TITLE": "Skills e rotinas",

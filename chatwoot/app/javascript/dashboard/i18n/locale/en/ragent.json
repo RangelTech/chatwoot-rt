@@ -34,7 +34,18 @@
       "SAVED": "Draft saved",
       "PUBLISHED": "Agent published",
       "ERROR": "Could not complete the action.",
-      "CONFIRM_ARCHIVE": "Archive this agent?"
+      "CONFIRM_ARCHIVE": "Archive this agent?",
+      "FILES": {
+        "TITLE": "Agent files",
+        "HELP": "Menus, price lists, spreadsheets, images: any file up to 10 MB. The agent reads these files when answering. A change only applies to conversations after you publish.",
+        "EMPTY": "No files yet.",
+        "UPLOAD": "Upload file",
+        "REPLACE": "Replace",
+        "REMOVE": "Remove",
+        "SAVED": "File saved to the draft",
+        "ERROR": "Could not upload the file.",
+        "CONFIRM_REMOVE": "Remove this file from the agent?"
+      }
     },
     "SKILLS": {
       "TITLE": "Skills and routines",

@@ -3,14 +3,19 @@ require 'net/http'
 # Cliente do motor de IA (rede interna). Autentica com o contexto assinado
 # (mesmo formato do `app/ui_context.py` do motor): base64url(claims).base64url(hmac).
 class Rt::EngineClient
-  # `status` é o HTTP devolvido pelo motor (nil em falha de rede); `detail` a mensagem de negócio dele.
   class Error < StandardError
-    attr_reader :status, :detail
+    # `status` é o HTTP do motor (nil em falha de rede); `body` é o JSON de erro, quando houver;
+    # `detail` a mensagem de negócio dele (string).
+    attr_reader :status, :body
 
-    def initialize(message = nil, status: nil, detail: nil)
+    def initialize(message = nil, status: nil, body: nil)
       super(message)
       @status = status
-      @detail = detail
+      @body = body
+    end
+
+    def detail
+      body.is_a?(Hash) && body['detail'].is_a?(String) ? body['detail'] : nil
     end
   end
 
@@ -64,15 +69,14 @@ class Rt::EngineClient
     end
     unless response.is_a?(Net::HTTPSuccess)
       raise Error.new("#{response.code} #{response.body.to_s.truncate(300)}",
-                      status: response.code.to_i, detail: error_detail(response.body))
+                      status: response.code.to_i, body: parse_error_body(response.body))
     end
 
     JSON.parse(response.body)
   end
 
-  def self.error_detail(body)
-    detail = JSON.parse(body.to_s)['detail']
-    detail.is_a?(String) ? detail : nil
+  def self.parse_error_body(raw)
+    JSON.parse(raw.to_s)
   rescue JSON::ParserError
     nil
   end

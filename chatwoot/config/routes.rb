@@ -100,6 +100,8 @@ Rails.application.routes.draw do
               member do
                 get :draft
                 put :update_draft
+                post :upload_file
+                delete :delete_file
                 post :validate
                 get :versions
                 post :create_version
