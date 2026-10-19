@@ -60,14 +60,14 @@ export const ONGOING_CAMPAIGN_EMPTY_STATE_CONTENT = [
     },
     sender: {
       id: 1,
-      name: 'Chatwoot',
+      name: 'LUAR',
     },
-    message: 'Hi! Chatwoot here. Need help setting up? Let me know!',
+    message: 'Hi! LUAR here. Need help setting up? Let me know!',
     campaign_status: 'active',
     enabled: false,
     campaign_type: 'ongoing',
     trigger_rules: {
-      url: 'https://{*.}?chatwoot.com/apps/account/*/settings/inboxes/new/',
+      url: 'https://example.com/app/accounts/*/settings/inboxes/new/',
       time_on_page: 10,
     },
     trigger_only_during_business_hours: false,
