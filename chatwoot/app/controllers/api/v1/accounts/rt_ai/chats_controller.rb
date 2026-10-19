@@ -37,8 +37,11 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
     render json: data unless performed?
   end
 
+  # O motor exige `message_id` (a mensagem avaliada) e `rating` inteiro (-1 ou 1).
   def feedback
-    data = engine_post("/api/chats/#{params[:id]}/feedback", params.permit(:rating, :comment).to_h)
+    payload = params.permit(:message_id, :comment).to_h
+    payload['rating'] = params[:rating].to_i
+    data = engine_post("/api/chats/#{params[:id]}/feedback", payload)
     render json: data unless performed?
   end
 

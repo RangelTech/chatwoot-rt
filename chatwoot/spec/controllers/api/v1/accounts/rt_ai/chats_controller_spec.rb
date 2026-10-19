@@ -49,4 +49,29 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Chats', type: :request do
     post "/api/v1/accounts/#{account.id}/rt_ai/chats/stream_ticket", headers: reader.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)
   end
+
+  it 'forwards feedback with the rated message id and an integer rating' do
+    chat_id = SecureRandom.uuid
+    allow(Rt::EngineClient).to receive(:post).and_return({ 'status' => 'ok' })
+    post "/api/v1/accounts/#{account.id}/rt_ai/chats/#{chat_id}/feedback",
+         params: { message_id: 'm-1', rating: '1', comment: 'ótimo' }, headers: headers, as: :json
+    expect(response).to have_http_status(:success)
+    expect(Rt::EngineClient).to have_received(:post)
+      .with("/api/chats/#{chat_id}/feedback", { 'message_id' => 'm-1', 'comment' => 'ótimo', 'rating' => 1 }, claims: anything)
+  end
+
+  it 'passes a business rejection from the engine through instead of a generic 502' do
+    allow(Rt::EngineClient).to receive(:get)
+      .and_raise(Rt::EngineClient::Error.new('404 x', status: 404, detail: 'Conversa não encontrada'))
+    get "/api/v1/accounts/#{account.id}/rt_ai/chats/#{SecureRandom.uuid}/messages", headers: headers, as: :json
+    expect(response).to have_http_status(:not_found)
+    expect(response.parsed_body['message']).to eq('Conversa não encontrada')
+  end
+
+  it 'keeps a generic 502 when the engine is unreachable' do
+    allow(Rt::EngineClient).to receive(:get).and_raise(Rt::EngineClient::Error, 'timeout')
+    get "/api/v1/accounts/#{account.id}/rt_ai/chats", headers: headers, as: :json
+    expect(response).to have_http_status(:bad_gateway)
+    expect(response.parsed_body['code']).to eq('engine_error')
+  end
 end
