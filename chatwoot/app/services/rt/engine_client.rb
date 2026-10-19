@@ -80,20 +80,30 @@ class Rt::EngineClient
     uri = URI.join(ENV.fetch('RT_ENGINE_URL'), path)
     headers = { 'X-UI-Context' => sign(claims) }
     (MAX_REDIRECTS + 1).times do
-      response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 60) do |http|
-        http.request(Net::HTTP::Get.new(uri, headers))
-      end
+      response = fetch(uri, headers)
       if response.is_a?(Net::HTTPRedirection) && response['location'].present?
         uri = URI.join(uri.to_s, response['location'])
         headers = {}
         next
       end
-      raise Error.new("#{response.code} download", status: response.code.to_i, body: parse_error_body(response.body)) unless response.is_a?(Net::HTTPSuccess)
-      raise Error.new('413 download', status: 413) if response.body.to_s.bytesize > MAX_DOWNLOAD_BYTES
-
-      return { body: response.body.to_s, content_type: response['content-type'].to_s.split(';').first.presence || 'application/octet-stream' }
+      return download_result(response)
     end
     raise Error, 'redirecionamentos demais'
+  end
+
+  def self.fetch(uri, headers)
+    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 60) do |http|
+      http.request(Net::HTTP::Get.new(uri, headers))
+    end
+  end
+
+  def self.download_result(response)
+    unless response.is_a?(Net::HTTPSuccess)
+      raise Error.new("#{response.code} download", status: response.code.to_i, body: parse_error_body(response.body))
+    end
+    raise Error.new('413 download', status: 413) if response.body.to_s.bytesize > MAX_DOWNLOAD_BYTES
+
+    { body: response.body.to_s, content_type: response['content-type'].to_s.split(';').first.presence || 'application/octet-stream' }
   end
 
   def self.parse_error_body(raw)

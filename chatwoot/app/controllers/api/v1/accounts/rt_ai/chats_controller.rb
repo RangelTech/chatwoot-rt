@@ -55,16 +55,11 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
   # Download pela URL curta do BFF: o arquivo precisa estar na lista do chat do usuário (cobre a
   # checagem de dono que a rota de artefato do motor, sozinha, não faz). `inline=1` só para imagem.
   def artifact_download
-    items = chat_artifacts
+    item = chat_artifacts.find { |a| a['artifact_id'].to_s == params[:artifact_id] }
     return if performed?
-
-    item = items.find { |a| a['artifact_id'].to_s == params[:artifact_id] }
     return head :not_found unless item
 
-    file = Rt::EngineClient.download("/api/artifacts/#{item['artifact_id']}/download", claims: engine_context)
-    inline = params[:inline].present? && SAFE_INLINE.include?(file[:content_type])
-    response.set_header('X-Content-Type-Options', 'nosniff')
-    send_data file[:body], filename: download_name(item), type: file[:content_type], disposition: inline ? 'inline' : 'attachment'
+    send_artifact(item)
   rescue Rt::EngineClient::Error => e
     e.status == 404 ? head(:not_found) : engine_failed(e)
   end
@@ -81,8 +76,15 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
     []
   end
 
+  def send_artifact(item)
+    file = Rt::EngineClient.download("/api/artifacts/#{item['artifact_id']}/download", claims: engine_context)
+    inline = params[:inline].present? && SAFE_INLINE.include?(file[:content_type])
+    response.set_header('X-Content-Type-Options', 'nosniff')
+    send_data file[:body], filename: download_name(item), type: file[:content_type], disposition: inline ? 'inline' : 'attachment'
+  end
+
   def download_name(item)
-    name = File.basename(item['title'].to_s.tr('\', '/')).gsub(/[[:cntrl:]]/, '').strip
+    name = File.basename(item['title'].to_s.tr('\\', '/')).gsub(/[[:cntrl:]]/, '').strip
     name.presence || "arquivo-#{item['artifact_id']}"
   end
 

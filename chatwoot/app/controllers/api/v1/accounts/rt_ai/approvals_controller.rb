@@ -14,7 +14,9 @@ class Api::V1::Accounts::RtAi::ApprovalsController < Api::V1::Accounts::RtAi::Ba
   end
 
   def decide
-    return render json: { code: 'invalid_decision', message: 'Decisão inválida' }, status: :unprocessable_entity unless DECISIONS.include?(params[:decision].to_s)
+    unless DECISIONS.include?(params[:decision].to_s)
+      return render json: { code: 'invalid_decision', message: 'Decisão inválida' }, status: :unprocessable_entity
+    end
 
     render_engine { Rt::EngineClient.post("/api/approvals/#{params[:id]}", { decision: params[:decision].to_s }, claims: engine_context) }
   end
