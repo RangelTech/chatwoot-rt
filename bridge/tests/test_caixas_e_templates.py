@@ -270,3 +270,66 @@ def test_falha_ao_associar_o_bot_nao_perde_a_config(
     from app.services import tenants
 
     assert tenants.ai_config_for(tenant_id, 55)["template_id"]
+
+
+def test_vinculo_nao_vira_500_quando_o_chatwoot_falha_de_forma_inesperada(
+    client, admin_auth, tenant_id, monkeypatch
+):
+    """Antes só `ChatwootError` era tratado: qualquer outro erro (resposta fora do
+    formato, token da conta ausente) derrubava o salvamento com 500, que o motor e a
+    tela viam como 502 mesmo ao desvincular. A configuração já está gravada; a
+    associação do bot é estado devolvido (`degraded`), nunca exceção."""
+    from app.services import chatwoot
+
+    async def token_quebrado(_user_id):
+        raise KeyError("access_token")
+
+    monkeypatch.setattr(chatwoot, "user_access_token", token_quebrado)
+    _tenant_com_usuario(tenant_id)
+
+    resposta = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={
+            "tenant_id": tenant_id,
+            "chatwoot_inbox_id": 22,
+            "template_id": "11111111-1111-1111-1111-111111111111",
+        },
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["degraded"] is True
+    assert resposta.json()["agent_bot"].startswith("erro")
+
+    from app.services import tenants
+
+    assert str(tenants.ai_config_for(tenant_id, 22)["template_id"]) == (
+        "11111111-1111-1111-1111-111111111111"
+    )
+
+    # Desvincular (template nulo) segue o mesmo caminho e também não explode.
+    resposta = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={"tenant_id": tenant_id, "chatwoot_inbox_id": 22, "template_id": None},
+    )
+    assert resposta.status_code == 200
+
+
+def test_chave_herdada_ilegivel_nao_trava_o_vinculo(client, admin_auth, tenant_id, chatwoot_falso):
+    """Se a ENCRYPTION_KEY mudou, a chave herdada não abre. O vínculo ainda tem de gravar."""
+    from app.db import get_connection
+
+    _tenant_com_usuario(tenant_id)
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO tenant_ai_config (tenant_id, chatwoot_inbox_id,
+                                              integration_key_encrypted)
+               VALUES (%s, NULL, 'lixo-que-nao-decifra')""",
+            (tenant_id,),
+        )
+    resposta = client.post(
+        "/admin/ai-config",
+        headers=admin_auth,
+        json={"tenant_id": tenant_id, "chatwoot_inbox_id": 11, "template_id": None},
+    )
+    assert resposta.status_code == 200, resposta.text

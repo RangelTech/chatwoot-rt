@@ -443,6 +443,7 @@ async def set_ai_config(payload: AiConfigIn):
     )
     return {
         "status": "ok",
+        "degraded": bot.startswith("erro"),
         "autopilot": config["autopilot"],
         "has_integration_key": bool(config["integration_key_encrypted"]),
         "agent_bot": bot,
@@ -494,7 +495,9 @@ async def _garante_bot_na_caixa(tenant_id: str, inbox_id: int | None, *, ligado:
             await chatwoot.set_agent_bot(account_id, token, inbox_id, None)
             return "desligado"
         return "sem bot"
-    except chatwoot.ChatwootError as exc:
+    except Exception as exc:  # noqa: BLE001
+        # Qualquer falha aqui (Chatwoot fora, resposta inesperada, token inválido) vira
+        # estado devolvido: a configuração já foi gravada e não pode virar 500.
         logger.warning("falha ao associar o Agent Bot na inbox %s: %s", inbox_id, exc)
         return f"erro: {exc}"
 
