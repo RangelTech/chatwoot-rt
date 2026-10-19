@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   get 'termos-de-servico', to: 'legal#terms'
   get 'exclusao-de-dados', to: 'legal#data_deletion'
 
+  # Proxy Luar (H-6): o agente de IA opera a API do Chatwoot como o usuário do chat.
+  match '/rt_luar/api/v1/accounts/:account_id(/*path)', to: 'rt_luar/proxy#handle', via: :all, format: false
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',

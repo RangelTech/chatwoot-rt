@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_000200) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_19_000300) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1465,6 +1465,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000200) do
     t.index ["board_id"], name: "index_rt_kanban_stages_one_initial", unique: true, where: "initial"
   end
 
+  create_table "rt_luar_audits", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id", null: false
+    t.string "run_id"
+    t.string "http_method", null: false
+    t.string "path", null: false
+    t.integer "status", null: false
+    t.datetime "created_at", null: false
+    t.index ["account_id", "created_at"], name: "index_rt_luar_audits_on_account_id_and_created_at"
+    t.index ["user_id", "created_at"], name: "index_rt_luar_audits_on_user_id_and_created_at"
+  end
+
   create_table "rt_outbox_events", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "kind", null: false
@@ -1658,3 +1670,4 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000200) do
   add_foreign_key "rt_kanban_cards", "rt_kanban_stages", column: "stage_id"
   add_foreign_key "rt_kanban_stages", "rt_kanban_boards", column: "board_id", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
+end
