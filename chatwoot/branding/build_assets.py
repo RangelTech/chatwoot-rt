@@ -25,42 +25,63 @@ WHITE = '#FFFFFF'
 RED = '#FF3B30'
 
 # --- simbolo -----------------------------------------------------------------
-R_OUT = 43.5           # raio do arco externo do recorte (concentrico ao disco; sobra aro de 5.5)
-A1, A2 = -105.0, 30.0  # angulos (graus) onde o recorte comeca (topo) e termina (direita)
-THICK = 12.0           # espessura maxima do recorte, em unidades do disco (100)
-
-
-def _pt(angle):
-    a = math.radians(angle)
-    return 50 + R_OUT * math.cos(a), 50 + R_OUT * math.sin(a)
+# Geometria extraida (ajuste por minimos quadrados) da arte aprovada pelo dono
+# (specs/anexos/10/luar-referencia-aprovada.png): disco com UM recorte em crescente, de pontas
+# no topo-esquerda e na direita, dois arcos do mesmo lado (externo mais curvo, interno mais plano).
+P1 = (40.60, 10.99)    # ponta superior do recorte
+P2 = (84.85, 67.99)    # ponta direita do recorte
+SAG_OUT = 23.28        # flecha do arco externo (unidades do disco = 100)
+SAG_IN = 15.00         # flecha do arco interno
 
 
 def _f(v):
     return f'{v:.2f}'.rstrip('0').rstrip('.')
 
 
+def _radius(sag):
+    half = math.dist(P1, P2) / 2
+    return (half**2 + sag**2) / (2 * sag)
+
+
 def moon_path():
-    p1, p2 = _pt(A1), _pt(A2)
-    half = math.dist(p1, p2) / 2
-    sag_out = R_OUT - math.sqrt(R_OUT**2 - half**2)
-    sag_in = sag_out - THICK
-    r_in = (half**2 + sag_in**2) / (2 * sag_in)
+    r_out, r_in = _radius(SAG_OUT), _radius(SAG_IN)
     return (
         'M50 0A50 50 0 1 1 50 100A50 50 0 1 1 50 0Z'
-        f'M{_f(p1[0])} {_f(p1[1])}A{_f(R_OUT)} {_f(R_OUT)} 0 0 1 {_f(p2[0])} {_f(p2[1])}'
-        f'A{_f(r_in)} {_f(r_in)} 0 0 0 {_f(p1[0])} {_f(p1[1])}Z'
+        f'M{_f(P1[0])} {_f(P1[1])}A{_f(r_out)} {_f(r_out)} 0 0 1 {_f(P2[0])} {_f(P2[1])}'
+        f'A{_f(r_in)} {_f(r_in)} 0 0 0 {_f(P1[0])} {_f(P1[1])}Z'
     )
 
 
 MOON = moon_path()
 
-# Letras L U A R (coordenadas locais, altura 52); copiadas do kit aprovado.
-WORD_PATHS = [
-    (0, 'M0 0H8.5V43.5H30V52H0Z'),
-    (41, 'M0 0V32.0A20 20 0 0 0 40 32.0V0H31.5V32.0A11.5 11.5 0 0 1 8.5 32.0V0Z'),
-    (92, 'M0 52L18 0H28L10.5 52ZM18 0H28L46 52H35.5ZM11 36H35V43.5H11Z'),
-    (149, 'M0 0H19A15 15 0 0 1 19 30H8.5V52H0ZM8.5 8.5V21.5H19A6.5 6.5 0 0 0 19 8.5ZM16 22.5H27L38 52H27.5Z'),
+# Wordmark LUAR: fios finos e espacados, medidos da arte aprovada (disco = 100 de diametro; a
+# altura das letras e ~45% do disco e o conjunto fica ~6 abaixo do centro do disco).
+STROKE = 5.5
+TOP, BOT = 33.9, 78.6
+_t, _b = TOP + STROKE / 2, BOT - STROKE / 2
+_ax, _ay, _bx = 246.9, 41.5, 287.1   # perna esquerda, vertice e perna direita do A
+
+
+def _leg_x(y):
+    return _ax + (BOT - y) / (BOT - _ay) * (267 - _ax)
+
+
+WORD_FILL = ['M132.1 33.9H137.6V73.1H160.7V78.6H132.1Z']          # L
+WORD_STROKE = [
+    f'M186.75 {TOP}V59.9A15.95 15.95 0 0 0 218.65 59.9V{TOP}',     # U
+    f'M{_ax} {BOT}L267 {_ay}L{_bx} {BOT}',                          # A (pernas)
+    f'M{_f(_leg_x(63))} 63H{_f(534 - _leg_x(63))}',                 # A (travessa)
+    f'M317.05 {TOP}V{BOT}',                                         # R (haste)
+    f'M317.05 {_t}H334A11.1 11.1 0 0 1 334 58.85H317.05',          # R (barriga)
+    'M331 58.85L347.8 78.6',                                        # R (perna)
 ]
+
+
+def word_svg(color):
+    fill = ''.join(f'<path d="{d}"/>' for d in WORD_FILL)
+    stroke = ''.join(f'<path d="{d}"/>' for d in WORD_STROKE)
+    return (f'<g fill="{color}">{fill}</g><g fill="none" stroke="{color}" stroke-width="{STROKE}" '
+            f'stroke-linejoin="miter" stroke-miterlimit="6">{stroke}</g>')
 
 
 def symbol_svg(color=BLUE, size=100):
@@ -72,12 +93,11 @@ def symbol_svg(color=BLUE, size=100):
 
 
 def lockup_svg(moon_color, word_color):
-    word = ''.join(f'<path fill="{word_color}" transform="translate({x} 0)" d="{d}"/>' for x, d in WORD_PATHS)
     return (
-        '<svg xmlns="http://www.w3.org/2000/svg" width="352.04" height="150" viewBox="0 0 352.04 150" '
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="150" viewBox="0 0 400 150" '
         'role="img" aria-label="Luar"><title>LUAR</title>'
-        f'<g transform="translate(25 25)"><path fill="{moon_color}" fill-rule="evenodd" d="{MOON}"/></g>'
-        f'<g transform="translate(155 51.08) scale(0.92)">{word}</g></svg>\n'
+        f'<g transform="translate(25 25)"><path fill="{moon_color}" fill-rule="evenodd" d="{MOON}"/>'
+        f'{word_svg(word_color)}</g></svg>' + chr(10)
     )
 
 
@@ -140,8 +160,8 @@ def jobs():
     for n in (192, 512):
         out.append((PUBLIC / f'maskable-icon-{n}x{n}.png', n, n, icon_svg(n, bg=NIGHT, fill=0.56), NIGHT))
     # logo horizontal em PNG para e-mail (clientes de e-mail nao renderizam SVG)
-    out.append((ASSETS / 'logo-email.png', 704, 300, lockup_svg(BLUE, NIGHT), WHITE))
-    out.append((ASSETS / 'logo-email-dark.png', 704, 300, lockup_svg(BLUE, WHITE), NIGHT))
+    out.append((ASSETS / 'logo-email.png', 704, 264, lockup_svg(BLUE, NIGHT), WHITE))
+    out.append((ASSETS / 'logo-email-dark.png', 704, 264, lockup_svg(BLUE, WHITE), NIGHT))
     return out
 
 
