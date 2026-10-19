@@ -34,6 +34,9 @@ export default {
       });
     },
     shouldShowBanner() {
+      // Fork LUAR: as versões são publicadas por nós, não pelo Chatwoot upstream. Avisar o cliente de uma
+      // "atualização 4.x" do projeto original é vazar a origem e pedir uma ação que ele não pode fazer.
+      if (!this.globalConfig.showUpstreamUpdateBanner) return false;
       return (
         !this.userDismissedBanner &&
         this.globalConfig.displayManifest &&
