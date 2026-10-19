@@ -113,9 +113,14 @@ Rails.application.routes.draw do
                 get :messages
                 post :cancel
                 post :feedback
+                get :artifacts
+                get 'artifacts/:artifact_id/download', action: :artifact_download, as: :artifact_download
               end
               post :stream_ticket, on: :collection
               get :templates, on: :collection
+            end
+            resources :approvals, only: [:index] do
+              post :decide, on: :member
             end
           end
           namespace :captain do
