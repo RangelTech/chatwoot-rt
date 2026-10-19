@@ -47,7 +47,8 @@ export const getLoginRedirectURL = ({
     if (ssoConversationId) {
       return frontendURL(`${accountPath}/conversations/${ssoConversationId}`);
     }
-    return frontendURL(`${accountPath}/dashboard`);
+    // Raiz da Account: o roteador decide o destino (Chat com IA quando a landing está ligada, senão o dashboard).
+    return frontendURL(accountPath);
   }
   return DEFAULT_REDIRECT_URL;
 };
