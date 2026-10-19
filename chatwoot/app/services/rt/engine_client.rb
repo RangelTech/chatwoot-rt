@@ -34,6 +34,14 @@ class Rt::EngineClient
     request(Net::HTTP::Post, path, payload, claims)
   end
 
+  def self.put(path, payload, claims:)
+    request(Net::HTTP::Put, path, payload, claims)
+  end
+
+  def self.delete(path, claims:)
+    request(Net::HTTP::Delete, path, nil, claims)
+  end
+
   def self.get(path, claims:)
     request(Net::HTTP::Get, path, nil, claims)
   end
