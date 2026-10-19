@@ -1,0 +1,60 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "LOADING": "Carregando o quadro...",
+    "ERROR": "Não foi possível carregar o quadro.",
+    "RETRY": "Tentar novamente",
+    "EMPTY_COLUMN": "Nenhuma conversa",
+    "NO_STAGES": "Este quadro ainda não tem etapas.",
+    "LOAD_MORE": "Carregar mais",
+    "DISABLED": {
+      "TITLE": "O quadro Kanban está desligado",
+      "DESCRIPTION": "Um administrador pode ligá-lo para esta conta.",
+      "ENABLE": "Ligar o Kanban"
+    },
+    "ENABLED_OK": "Quadro Kanban ligado.",
+    "FILTERS": {
+      "INBOX": "Caixa de entrada",
+      "ALL_INBOXES": "Todas as caixas",
+      "STATUS": "Status",
+      "STATUS_ACTIVE": "Abertas, pendentes e adiadas",
+      "STATUS_ALL": "Todas",
+      "ASSIGNEE": "Responsável",
+      "ALL_ASSIGNEES": "Todos os responsáveis",
+      "SEARCH": "Número da conversa",
+      "SEARCH_PLACEHOLDER": "Buscar por #número"
+    },
+    "STATUS": {
+      "open": "Aberta",
+      "pending": "Pendente",
+      "snoozed": "Adiada",
+      "resolved": "Resolvida"
+    },
+    "CARD": {
+      "ARIA": "Conversa #{id} com {contact}",
+      "NO_CONTACT": "Sem contato",
+      "UNASSIGNED": "Sem responsável"
+    },
+    "MOVE": {
+      "LABEL": "Mover para",
+      "ARIA": "Mover a conversa #{id} para outra etapa",
+      "DONE": "Conversa #{id} movida para {stage}.",
+      "ERROR_CONFLICT": "Este cartão foi alterado por outra pessoa. O quadro foi atualizado.",
+      "ERROR_INVALID": "Este movimento não é válido. O quadro foi atualizado.",
+      "ERROR_FORBIDDEN": "Você não tem permissão para mover este cartão.",
+      "ERROR_NOT_FOUND": "Este cartão não está mais disponível.",
+      "ERROR_GENERIC": "Não foi possível mover o cartão. O quadro foi atualizado."
+    },
+    "STAGE": {
+      "COUNT": "{count} conversas",
+      "RENAME": "Renomear etapa",
+      "NAME": "Nome da etapa",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "ADD": "Adicionar etapa",
+      "NEW_PLACEHOLDER": "Nome da nova etapa",
+      "SAVED": "Etapa salva.",
+      "ERROR": "Não foi possível salvar a etapa."
+    }
+  }
+}

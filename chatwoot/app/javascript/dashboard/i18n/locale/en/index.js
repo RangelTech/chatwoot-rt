@@ -2,6 +2,7 @@ import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
 import ragent from './ragent.json';
+import kanban from './kanban.json';
 import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
@@ -50,6 +51,7 @@ export default {
   ...agentBots,
   ...agentMgmt,
   ...ragent,
+  ...kanban,
   ...attributesMgmt,
   ...auditLogs,
   ...automation,

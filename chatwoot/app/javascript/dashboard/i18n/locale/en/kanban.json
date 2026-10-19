@@ -1,0 +1,60 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "LOADING": "Loading board...",
+    "ERROR": "Could not load the board.",
+    "RETRY": "Try again",
+    "EMPTY_COLUMN": "No conversations",
+    "NO_STAGES": "This board has no stages yet.",
+    "LOAD_MORE": "Load more",
+    "DISABLED": {
+      "TITLE": "The Kanban board is turned off",
+      "DESCRIPTION": "An administrator can turn it on for this account.",
+      "ENABLE": "Turn on Kanban"
+    },
+    "ENABLED_OK": "Kanban board turned on.",
+    "FILTERS": {
+      "INBOX": "Inbox",
+      "ALL_INBOXES": "All inboxes",
+      "STATUS": "Status",
+      "STATUS_ACTIVE": "Open, pending and snoozed",
+      "STATUS_ALL": "All",
+      "ASSIGNEE": "Assignee",
+      "ALL_ASSIGNEES": "All assignees",
+      "SEARCH": "Conversation number",
+      "SEARCH_PLACEHOLDER": "Search by #number"
+    },
+    "STATUS": {
+      "open": "Open",
+      "pending": "Pending",
+      "snoozed": "Snoozed",
+      "resolved": "Resolved"
+    },
+    "CARD": {
+      "ARIA": "Conversation #{id} with {contact}",
+      "NO_CONTACT": "No contact",
+      "UNASSIGNED": "Unassigned"
+    },
+    "MOVE": {
+      "LABEL": "Move to",
+      "ARIA": "Move conversation #{id} to another stage",
+      "DONE": "Conversation #{id} moved to {stage}.",
+      "ERROR_CONFLICT": "This card was changed by someone else. The board was refreshed.",
+      "ERROR_INVALID": "This move is not valid. The board was refreshed.",
+      "ERROR_FORBIDDEN": "You do not have permission to move this card.",
+      "ERROR_NOT_FOUND": "This card is no longer available.",
+      "ERROR_GENERIC": "Could not move the card. The board was refreshed."
+    },
+    "STAGE": {
+      "COUNT": "{count} conversations",
+      "RENAME": "Rename stage",
+      "NAME": "Stage name",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "ADD": "Add stage",
+      "NEW_PLACEHOLDER": "New stage name",
+      "SAVED": "Stage saved.",
+      "ERROR": "Could not save the stage."
+    }
+  }
+}

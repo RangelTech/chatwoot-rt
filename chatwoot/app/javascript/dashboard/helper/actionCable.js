@@ -64,6 +64,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'voice_call.outbound_connected': this.onVoiceCallOutboundConnected,
       'voice_call.outbound_accepted': this.onVoiceCallOutboundAccepted,
       'voice_call.ended': this.onVoiceCallEnded,
+      'rt_kanban.changed': this.onRtKanbanChanged,
     };
   }
 
@@ -400,6 +401,11 @@ class ActionCableConnector extends BaseActionCableConnector {
     if (!store.calls.some(c => c.callSid === data.call_id)) return;
     store.setCallActive(data.call_id);
     armOutboundRecorder();
+  };
+
+  // eslint-disable-next-line class-methods-use-this
+  onRtKanbanChanged = data => {
+    emitter.emit(BUS_EVENTS.RT_KANBAN_CHANGED, data);
   };
 
   // eslint-disable-next-line class-methods-use-this
