@@ -6,6 +6,7 @@ import store from 'dashboard/store';
 import { validateLoggedInRoutes } from '../helper/routeHelpers';
 import { isOnOnboardingView } from 'v3/helpers/RouteHelper';
 import AnalyticsHelper from '../helper/AnalyticsHelper';
+import { ragentLandingPath } from '../helper/ragentLanding';
 
 const ONBOARDING_STEPS = ['account_details', 'enrichment', 'inbox_setup'];
 const routes = [...dashboard.routes];
@@ -44,7 +45,7 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
   if (to.name === 'no_accounts' || !to.name) {
     const target = needsOnboarding
       ? onboardingPath(userAccount?.onboarding_step)
-      : 'dashboard';
+      : await ragentLandingPath(routeAccountId);
     return next(frontendURL(`accounts/${routeAccountId}/${target}`));
   }
 
