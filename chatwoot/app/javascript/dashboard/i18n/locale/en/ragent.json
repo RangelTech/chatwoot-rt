@@ -14,6 +14,27 @@
       "ERROR": "Could not complete the request. Try again.",
       "FORBIDDEN": "AI is not available for your account.",
       "NO_AGENTS": "No published agents yet. Create one in Agents."
+    },
+    "AGENTS": {
+      "TITLE": "Agents",
+      "NEW": "New agent",
+      "NAME": "Agent name",
+      "DESCRIPTION": "Short description",
+      "CREATE": "Create",
+      "EDIT": "Edit",
+      "ARCHIVE": "Archive",
+      "VERSION": "Version {n}",
+      "DRAFT": "Draft",
+      "EMPTY": "No agents yet.",
+      "INSTRUCTIONS": "Instructions (AGENTE.md)",
+      "TOOLS": "Tools (comma separated)",
+      "SAVE": "Save draft",
+      "PUBLISH": "Publish",
+      "BACK": "Back",
+      "SAVED": "Draft saved",
+      "PUBLISHED": "Agent published",
+      "ERROR": "Could not complete the action.",
+      "CONFIRM_ARCHIVE": "Archive this agent?"
     }
   }
 }

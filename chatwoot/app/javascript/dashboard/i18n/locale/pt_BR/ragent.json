@@ -14,6 +14,27 @@
       "ERROR": "Não foi possível concluir. Tente novamente.",
       "FORBIDDEN": "A IA não está disponível para a sua conta.",
       "NO_AGENTS": "Nenhum agente publicado ainda. Crie um em Agentes."
+    },
+    "AGENTS": {
+      "TITLE": "Agentes",
+      "NEW": "Novo agente",
+      "NAME": "Nome do agente",
+      "DESCRIPTION": "Descrição curta",
+      "CREATE": "Criar",
+      "EDIT": "Editar",
+      "ARCHIVE": "Arquivar",
+      "VERSION": "Versão {n}",
+      "DRAFT": "Rascunho",
+      "EMPTY": "Nenhum agente ainda.",
+      "INSTRUCTIONS": "Instruções (AGENTE.md)",
+      "TOOLS": "Ferramentas (separadas por vírgula)",
+      "SAVE": "Salvar rascunho",
+      "PUBLISH": "Publicar",
+      "BACK": "Voltar",
+      "SAVED": "Rascunho salvo",
+      "PUBLISHED": "Agente publicado",
+      "ERROR": "Não foi possível concluir a ação.",
+      "CONFIRM_ARCHIVE": "Arquivar este agente?"
     }
   }
 }

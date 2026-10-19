@@ -369,6 +369,13 @@ const menuItems = computed(() => {
       activeOn: ['ragent_chat', 'ragent_chat_detail'],
     },
     {
+      name: 'RagentAgents',
+      label: t('RAGENT.AGENTS.TITLE'),
+      icon: 'i-lucide-bot',
+      to: accountScopedRoute('ragent_agents'),
+      activeOn: ['ragent_agents'],
+    },
+    {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
       icon: 'i-lucide-inbox',
