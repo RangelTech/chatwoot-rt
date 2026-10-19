@@ -19,6 +19,9 @@ const manifest = ref({ tools: [] });
 const toolsText = ref('');
 const problems = ref([]);
 const busy = ref(false);
+const fileError = ref('');
+const fileInput = ref(null);
+const replaceTarget = ref(null);
 
 const visibleAgents = computed(() =>
   agents.value.filter(a => !a.system_key && a.agent_kind === 'skills')
@@ -63,14 +66,20 @@ const edit = async agent => {
   manifest.value = data.manifest || { tools: [] };
   toolsText.value = (manifest.value.tools || []).join(', ');
   problems.value = [];
+  fileError.value = '';
 };
 
 const mainFile = computed(
   () => files.value.find(f => f.path === 'AGENTE.md') || files.value[0]
 );
 
+// Arquivos da pasta arquivos/ (binários) têm rotas próprias; o rascunho de texto não os leva.
+const assets = computed(() => files.value.filter(f => f.kind === 'asset'));
+
 const payload = () => ({
-  files: files.value.map(f => ({ path: f.path, content: f.content })),
+  files: files.value
+    .filter(f => f.kind !== 'asset')
+    .map(f => ({ path: f.path, content: f.content })),
   manifest: {
     ...manifest.value,
     tools: toolsText.value
@@ -88,6 +97,64 @@ const save = async () => {
     useAlert(t('RAGENT.AGENTS.SAVED'));
   } catch (error) {
     useAlert(t('RAGENT.AGENTS.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const fileName = path => path.split('/').slice(1).join('/');
+
+const fileSize = bytes => {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+};
+
+const pickFile = path => {
+  replaceTarget.value = path;
+  fileInput.value?.click();
+};
+
+const upsertAsset = asset => {
+  const index = files.value.findIndex(f => f.path === asset.path);
+  if (index >= 0) files.value.splice(index, 1, asset);
+  else files.value.push(asset);
+};
+
+const onFilePicked = async event => {
+  const [file] = event.target.files || [];
+  event.target.value = '';
+  if (!file) return;
+  fileError.value = '';
+  busy.value = true;
+  try {
+    const { data } = await rtAiAgents.uploadFile(
+      editing.value.id,
+      file,
+      replaceTarget.value
+    );
+    upsertAsset({ ...data, kind: 'asset' });
+    useAlert(t('RAGENT.AGENTS.FILES.SAVED'));
+  } catch (error) {
+    fileError.value =
+      error.response?.data?.message || t('RAGENT.AGENTS.FILES.ERROR');
+  } finally {
+    replaceTarget.value = null;
+    busy.value = false;
+  }
+};
+
+const removeFile = async asset => {
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(t('RAGENT.AGENTS.FILES.CONFIRM_REMOVE'))) return;
+  fileError.value = '';
+  busy.value = true;
+  try {
+    await rtAiAgents.deleteFile(editing.value.id, asset.path);
+    files.value = files.value.filter(f => f.path !== asset.path);
+  } catch (error) {
+    fileError.value =
+      error.response?.data?.message || t('RAGENT.AGENTS.FILES.ERROR');
   } finally {
     busy.value = false;
   }
@@ -196,6 +263,70 @@ const archive = async agent => {
         {{ t('RAGENT.AGENTS.TOOLS') }}
         <input v-model="toolsText" type="text" class="!mb-0 w-full" />
       </label>
+      <section class="flex flex-col gap-2 rounded-xl border border-n-weak p-3">
+        <h3 class="text-heading-3 text-n-slate-12">
+          {{ t('RAGENT.AGENTS.FILES.TITLE') }}
+        </h3>
+        <p class="text-body-main text-n-slate-11">
+          {{ t('RAGENT.AGENTS.FILES.HELP') }}
+        </p>
+        <ul
+          v-if="assets.length"
+          class="divide-y divide-n-weak rounded-lg border border-n-weak"
+        >
+          <li
+            v-for="f in assets"
+            :key="f.path"
+            class="flex items-center gap-3 px-3 py-2"
+          >
+            <span class="min-w-0 flex-1 truncate text-body-main text-n-slate-12">
+              {{ fileName(f.path) }}
+            </span>
+            <span class="text-body-main text-n-slate-11">
+              {{ fileSize(f.size_bytes) }} · {{ f.mime }}
+            </span>
+            <Button
+              size="sm"
+              variant="faded"
+              :disabled="busy"
+              :label="t('RAGENT.AGENTS.FILES.REPLACE')"
+              @click="pickFile(f.path)"
+            />
+            <Button
+              size="sm"
+              color="ruby"
+              :disabled="busy"
+              :label="t('RAGENT.AGENTS.FILES.REMOVE')"
+              @click="removeFile(f)"
+            />
+          </li>
+        </ul>
+        <p v-else class="text-body-main text-n-slate-11">
+          {{ t('RAGENT.AGENTS.FILES.EMPTY') }}
+        </p>
+        <p
+          v-if="fileError"
+          role="alert"
+          class="rounded-lg border border-n-ruby-9 p-2 text-body-main text-n-ruby-11"
+        >
+          {{ fileError }}
+        </p>
+        <input
+          ref="fileInput"
+          type="file"
+          class="hidden"
+          data-testid="package-file-input"
+          @change="onFilePicked"
+        />
+        <div>
+          <Button
+            size="sm"
+            :disabled="busy"
+            :label="t('RAGENT.AGENTS.FILES.UPLOAD')"
+            @click="pickFile(null)"
+          />
+        </div>
+      </section>
       <ul v-if="problems.length" class="rounded-lg border border-n-ruby-9 p-3 text-body-main text-n-ruby-11">
         <li v-for="(p, i) in problems" :key="i">
           {{ p.file ? `${p.file}: ` : '' }}{{ p.message }}

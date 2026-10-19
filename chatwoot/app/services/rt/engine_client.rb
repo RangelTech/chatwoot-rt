@@ -3,7 +3,16 @@ require 'net/http'
 # Cliente do motor de IA (rede interna). Autentica com o contexto assinado
 # (mesmo formato do `app/ui_context.py` do motor): base64url(claims).base64url(hmac).
 class Rt::EngineClient
-  class Error < StandardError; end
+  class Error < StandardError
+    # `status` e `body` (já em JSON, quando der) permitem repassar erro de validação ao usuário.
+    attr_reader :status, :body
+
+    def initialize(message = nil, status: nil, body: nil)
+      super(message)
+      @status = status
+      @body = body
+    end
+  end
 
   TTL = 30
 
@@ -53,8 +62,17 @@ class Rt::EngineClient
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 30) do |http|
       http.request(req)
     end
-    raise Error, "#{response.code} #{response.body.to_s.truncate(300)}" unless response.is_a?(Net::HTTPSuccess)
+    unless response.is_a?(Net::HTTPSuccess)
+      raise Error.new("#{response.code} #{response.body.to_s.truncate(300)}",
+                      status: response.code.to_i, body: parse_error_body(response.body))
+    end
 
     JSON.parse(response.body)
+  end
+
+  def self.parse_error_body(raw)
+    JSON.parse(raw.to_s)
+  rescue JSON::ParserError
+    nil
   end
 end
