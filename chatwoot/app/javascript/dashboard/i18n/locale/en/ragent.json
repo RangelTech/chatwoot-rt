@@ -13,7 +13,50 @@
       "LOADING": "Loading...",
       "ERROR": "Could not complete the request. Try again.",
       "FORBIDDEN": "AI is not available for your account.",
-      "NO_AGENTS": "No published agents yet. Create one in Agents."
+      "NO_AGENTS": "No published agents yet. Create one in Agents.",
+      "ATTACH": "Attach file",
+      "ATTACH_REMOVE": "Remove {name}",
+      "ATTACH_TOO_BIG": "{name} is over 25 MB and was not attached.",
+      "ATTACH_LIMIT": "You can attach up to {n} files per message.",
+      "ARTIFACTS": {
+        "TITLE": "Generated files",
+        "EMPTY": "No files generated in this chat.",
+        "DOWNLOAD": "Download",
+        "DOWNLOAD_ERROR": "Could not download the file.",
+        "PREVIEW_ALT": "Preview of {name}",
+        "KIND": {
+          "dataset": "Table",
+          "chart": "Chart",
+          "document": "Document",
+          "file": "File"
+        }
+      },
+      "APPROVAL": {
+        "TITLE": "Confirmation required",
+        "APPROVE": "Approve",
+        "DENY": "Deny",
+        "EXPIRES_IN": "Expires in {time}",
+        "EXPIRED": "This confirmation has expired.",
+        "APPROVED": "You approved this action.",
+        "DENIED": "You denied this action.",
+        "ALREADY": "This confirmation was already answered.",
+        "ERROR": "Could not record the decision.",
+        "NO_PERMISSION": "You are not allowed to decide.",
+        "RISK": {
+          "low": "Low risk",
+          "medium": "Medium risk",
+          "high": "High risk"
+        }
+      },
+      "FEEDBACK": {
+        "GOOD": "Good answer",
+        "BAD": "Bad answer",
+        "COMMENT": "Comment (optional)",
+        "SEND": "Send",
+        "THANKS": "Thanks for the feedback.",
+        "ERROR": "Could not send the feedback."
+      },
+      "READ_ONLY": "Your profile only allows reading chats."
     },
     "AGENTS": {
       "TITLE": "Agents",

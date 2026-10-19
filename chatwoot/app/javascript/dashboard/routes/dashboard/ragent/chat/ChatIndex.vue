@@ -3,20 +3,31 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
+import { usePolicy } from 'dashboard/composables/usePolicy';
 import rtAiChat from 'dashboard/api/rtAiChat';
 import Button from 'dashboard/components-next/button/Button.vue';
+import { AI_PERMISSIONS } from 'dashboard/constants/permissions';
 import { streamChat } from './useChatStream';
+import ChatComposer from './ChatComposer.vue';
+import ApprovalCard from './ApprovalCard.vue';
+import ArtifactPanel from './ArtifactPanel.vue';
+import MessageFeedback from './MessageFeedback.vue';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const { checkPermissions } = usePolicy();
+const canRun = computed(() => checkPermissions([AI_PERMISSIONS.CHAT_RUN]));
+const canDecide = computed(() => checkPermissions(['ai.approvals.decide']));
 
 const chats = ref([]);
 const templates = ref([]);
 const templateId = ref('');
 const messages = ref([]);
 const chatId = ref(route.params.chatId || '');
-const draft = ref('');
+const artifacts = ref([]);
+const approvals = ref([]);
+const runId = ref('');
 const sending = ref(false);
 const steps = ref([]);
 const loading = ref(true);
@@ -25,10 +36,6 @@ const scroller = ref(null);
 let controller = null;
 
 const hasTemplates = computed(() => templates.value.length > 0);
-const canSend = computed(
-  () => draft.value.trim() && !sending.value && (chatId.value || templateId.value)
-);
-
 const scrollDown = async () => {
   await nextTick();
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
@@ -39,13 +46,41 @@ const loadChats = async () => {
   chats.value = (data.chats || data || []).filter(c => c.source !== 'channel');
 };
 
-const openChat = async id => {
-  chatId.value = id;
-  const { data } = await rtAiChat.messages(id);
-  messages.value = (data.messages || data || []).map(m => ({
+const mapMessages = data =>
+  (data.messages || data || []).map(m => ({
+    id: m.id,
     role: m.role,
     content: m.content,
+    attachments: m.attachments || [],
   }));
+
+const loadArtifacts = async id => {
+  try {
+    const { data } = await rtAiChat.artifacts(id);
+    artifacts.value = data || [];
+  } catch (error) {
+    artifacts.value = [];
+  }
+};
+
+// Aprovações que ficaram pendentes (ex.: recarregou a página no meio do pedido).
+const loadPendingApprovals = async id => {
+  try {
+    const { data } = await rtAiChat.pendingApprovals();
+    approvals.value = (data || []).filter(a => a.chat_id === id);
+  } catch (error) {
+    approvals.value = [];
+  }
+};
+
+const openChat = async id => {
+  chatId.value = id;
+  artifacts.value = [];
+  approvals.value = [];
+  const { data } = await rtAiChat.messages(id);
+  messages.value = mapMessages(data);
+  loadArtifacts(id);
+  loadPendingApprovals(id);
   const chat = chats.value.find(c => c.id === id);
   if (chat?.template_id) templateId.value = chat.template_id;
   router.replace({ name: 'ragent_chat_detail', params: { chatId: id } });
@@ -55,6 +90,8 @@ const openChat = async id => {
 const newChat = () => {
   chatId.value = '';
   messages.value = [];
+  artifacts.value = [];
+  approvals.value = [];
   router.replace({ name: 'ragent_chat' });
 };
 
@@ -77,6 +114,19 @@ const handleEvent = (event, data) => {
   const last = messages.value[messages.value.length - 1];
   if (event === 'chat' && data.chat_id) {
     chatId.value = data.chat_id;
+    runId.value = data.run_id || '';
+  } else if (event === 'artifact' && data.artifact_id) {
+    if (!artifacts.value.some(a => a.id === data.artifact_id)) {
+      artifacts.value.push({
+        id: data.artifact_id,
+        kind: data.kind,
+        title: data.title,
+      });
+    }
+  } else if (event === 'approval_required' && data.approval_id) {
+    if (!approvals.value.some(a => a.approval_id === data.approval_id)) {
+      approvals.value.push({ ...data, chat_id: chatId.value });
+    }
   } else if (event === 'token') {
     last.content += data.text || '';
   } else if (event === 'step') {
@@ -90,20 +140,24 @@ const handleEvent = (event, data) => {
   scrollDown();
 };
 
-const send = async () => {
-  if (!canSend.value) return;
-  const text = draft.value.trim();
-  draft.value = '';
-  messages.value.push({ role: 'user', content: text });
+const send = async ({ text, files }) => {
+  if (sending.value) return;
+  messages.value.push({
+    role: 'user',
+    content: text,
+    attachments: files.map(f => ({ name: f.name, kind: 'file' })),
+  });
   messages.value.push({ role: 'assistant', content: '' });
   sending.value = true;
   steps.value = [];
+  runId.value = '';
   controller = new AbortController();
   try {
     await streamChat({
       message: text,
       chatId: chatId.value,
       templateId: templateId.value,
+      files,
       signal: controller.signal,
       onEvent: handleEvent,
     });
@@ -119,10 +173,37 @@ const send = async () => {
   } finally {
     sending.value = false;
     steps.value = [];
+    await syncAfterRun();
   }
 };
 
-const stop = () => controller?.abort();
+// Recarrega do servidor para trazer os ids das respostas (necessários ao feedback) e os arquivos.
+const syncAfterRun = async () => {
+  const id = chatId.value;
+  if (!id) return;
+  const last = messages.value[messages.value.length - 1];
+  if (!last?.error) {
+    try {
+      const { data } = await rtAiChat.messages(id);
+      messages.value = mapMessages(data);
+    } catch (error) {
+      // mantém o que já está na tela
+    }
+  }
+  loadArtifacts(id);
+};
+
+const stop = async () => {
+  const id = runId.value;
+  controller?.abort();
+  if (id) {
+    try {
+      await rtAiChat.cancel(id);
+    } catch (error) {
+      // a conexão já foi encerrada; o servidor também expira a execução
+    }
+  }
+};
 </script>
 
 <template>
@@ -206,36 +287,52 @@ const stop = () => controller?.abort();
               m.error ? 'border border-n-ruby-9' : '',
             ]"
           >
-            {{ m.content || (sending && i === messages.length - 1 ? '...' : '') }}
+            <ul
+              v-if="m.attachments && m.attachments.length"
+              class="mb-1 flex flex-wrap gap-1"
+            >
+              <li
+                v-for="(att, j) in m.attachments"
+                :key="j"
+                class="flex items-center gap-1 rounded-md bg-n-alpha-2 px-2 py-0.5 text-body-main"
+              >
+                <span class="i-lucide-paperclip size-3" aria-hidden="true" />
+                {{ att.name }}
+              </li>
+            </ul>
+            {{
+              m.content || (sending && i === messages.length - 1 ? '...' : '')
+            }}
+            <MessageFeedback
+              v-if="
+                m.role === 'assistant' && m.id && m.content && canRun && chatId
+              "
+              :key="m.id"
+              :chat-id="chatId"
+              :message-id="m.id"
+            />
           </div>
         </div>
+        <ApprovalCard
+          v-for="ap in approvals"
+          :key="ap.approval_id"
+          :approval="ap"
+          :can-decide="canDecide"
+        />
         <p v-if="steps.length" class="text-body-main text-n-slate-11">
           {{ steps[0] }}...
         </p>
       </div>
 
-      <footer class="flex items-end gap-2 border-t border-n-weak p-3">
-        <textarea
-          v-model="draft"
-          rows="2"
-          class="!mb-0 flex-1 resize-none"
-          :placeholder="t('RAGENT.CHAT.PLACEHOLDER')"
-          :disabled="sending"
-          @keydown.enter.exact.prevent="send"
-        />
-        <Button
-          v-if="!sending"
-          :label="t('RAGENT.CHAT.SEND')"
-          :disabled="!canSend"
-          @click="send"
-        />
-        <Button
-          v-else
-          :label="t('RAGENT.CHAT.STOP')"
-          color="ruby"
-          @click="stop"
-        />
-      </footer>
+      <ArtifactPanel v-if="chatId" :chat-id="chatId" :artifacts="artifacts" />
+
+      <ChatComposer
+        :sending="sending"
+        :disabled="!chatId && !templateId"
+        :read-only="!canRun"
+        @send="send"
+        @stop="stop"
+      />
     </section>
   </div>
 </template>
