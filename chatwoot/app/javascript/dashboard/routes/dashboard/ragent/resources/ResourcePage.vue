@@ -7,7 +7,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import { RESOURCES } from './resourceConfig';
 
 const { axios } = window;
-const { t } = useI18n();
+const { t, te } = useI18n();
 const route = useRoute();
 
 const key = computed(() => route.meta.resource);
@@ -27,9 +27,36 @@ const busy = ref(false);
 
 const cell = value => {
   if (value === null || value === undefined) return '';
+  if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 };
+
+// Resposta sem lista (Uso, Ambiente): vira linhas "rótulo: valor", nunca JSON cru para o cliente.
+const humanize = key => {
+  const upper = String(key).toUpperCase();
+  if (te(`RAGENT.RES.KEYS.${upper}`)) return t(`RAGENT.RES.KEYS.${upper}`);
+  const text = String(key).replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+const flatten = (value, prefix = '') => {
+  if (value === null || value === undefined) return [{ label: prefix, value: '—' }];
+  if (Array.isArray(value)) {
+    if (!value.length) return [{ label: prefix, value: '—' }];
+    return value.flatMap((v, i) =>
+      typeof v === 'object' && v !== null
+        ? flatten(v, `${prefix} ${i + 1}`.trim())
+        : [{ label: prefix, value: cell(v) }]
+    );
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value).flatMap(([k, v]) =>
+      flatten(v, prefix ? `${prefix} · ${humanize(k)}` : humanize(k))
+    );
+  }
+  return [{ label: prefix, value: cell(value) }];
+};
+const rawRows = computed(() => (raw.value ? flatten(raw.value) : []));
 
 const load = async () => {
   loading.value = true;
@@ -174,7 +201,15 @@ const runAction = async name => {
         </tbody>
       </table>
     </div>
-    <pre v-else-if="raw" class="overflow-x-auto rounded-xl border border-n-weak p-4 text-body-main text-n-slate-12">{{ JSON.stringify(raw, null, 2) }}</pre>
+    <dl
+      v-else-if="raw"
+      class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-xl border border-n-weak p-4 text-body-main sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+    >
+      <template v-for="(row, i) in rawRows" :key="i">
+        <dt class="text-n-slate-11">{{ row.label }}</dt>
+        <dd class="text-n-slate-12">{{ row.value }}</dd>
+      </template>
+    </dl>
     <p v-else-if="!loading && !forbidden" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
   </div>
 </template>
