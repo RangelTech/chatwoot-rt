@@ -375,27 +375,6 @@ const reportRoutes = computed(() => newReportRoutes());
 const menuItems = computed(() => {
   return [
     {
-      name: 'RagentChat',
-      label: t('RAGENT.CHAT.TITLE'),
-      icon: 'i-lucide-sparkles',
-      to: accountScopedRoute('ragent_chat'),
-      activeOn: ['ragent_chat', 'ragent_chat_detail'],
-    },
-    {
-      name: 'RagentAgents',
-      label: t('RAGENT.AGENTS.TITLE'),
-      icon: 'i-lucide-bot',
-      to: accountScopedRoute('ragent_agents'),
-      activeOn: ['ragent_agents'],
-    },
-    {
-      name: 'RagentSkills',
-      label: t('RAGENT.SKILLS.TITLE'),
-      icon: 'i-lucide-wand-sparkles',
-      to: accountScopedRoute('ragent_skills'),
-      activeOn: ['ragent_skills'],
-    },
-    {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
       icon: 'i-lucide-inbox',
@@ -538,81 +517,76 @@ const menuItems = computed(() => {
         ]
       : []),
     {
-      name: 'Captain',
-      icon: 'i-woot-captain',
-      label: t('SIDEBAR.CAPTAIN'),
-      activeOn: ['captain_assistants_create_index'],
+      name: 'Ragent',
+      icon: 'i-lucide-sparkles',
+      label: t('RAGENT.MENU.TITLE'),
+      activeOn: ['ragent_chat'],
       children: [
         {
-          name: 'Overview',
-          label: t('SIDEBAR.CAPTAIN_OVERVIEW'),
-          activeOn: ['captain_assistants_overview_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_overview_index',
-          }),
+          name: 'RagentChat',
+          label: t('RAGENT.MENU.CHAT'),
+          to: accountScopedRoute('ragent_chat'),
+          activeOn: ['ragent_chat', 'ragent_chat_detail'],
         },
         {
-          name: 'FAQs',
-          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
-          activeOn: [
-            'captain_assistants_responses_index',
-            'captain_assistants_faq_suggestions',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_responses_index',
-          }),
+          name: 'RagentAgents',
+          label: t('RAGENT.MENU.AGENTS'),
+          to: accountScopedRoute('ragent_agents'),
+          activeOn: ['ragent_agents'],
         },
         {
-          name: 'Documents',
-          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-          activeOn: ['captain_assistants_documents_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_documents_index',
-          }),
+          name: 'RagentSkills',
+          label: t('RAGENT.MENU.SKILLS'),
+          to: accountScopedRoute('ragent_skills'),
+          activeOn: ['ragent_skills'],
         },
         {
-          name: 'Scenarios',
-          label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
-          activeOn: ['captain_assistants_scenarios_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_scenarios_index',
-          }),
+          name: 'RagentSources',
+          label: t('RAGENT.MENU.KNOWLEDGE'),
+          to: accountScopedRoute('ragent_sources'),
+          activeOn: ['ragent_sources', 'ragent_files', 'ragent_memories'],
         },
         {
-          name: 'Playground',
-          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
-          activeOn: ['captain_assistants_playground_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_playground_index',
-          }),
+          name: 'RagentProviders',
+          label: t('RAGENT.MENU.PROVIDERS'),
+          to: accountScopedRoute('ragent_providers'),
+          activeOn: ['ragent_providers'],
         },
         {
-          name: 'Inboxes',
-          label: t('SIDEBAR.CAPTAIN_INBOXES'),
-          activeOn: ['captain_assistants_inboxes_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_inboxes_index',
-          }),
+          name: 'RagentCredentials',
+          label: t('RAGENT.MENU.CREDENTIALS'),
+          to: accountScopedRoute('ragent_credentials'),
+          activeOn: ['ragent_credentials'],
         },
         {
-          name: 'Tools',
-          label: t('SIDEBAR.CAPTAIN_TOOLS'),
-          activeOn: ['captain_tools_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_tools_index',
-          }),
+          name: 'RagentInboxes',
+          label: t('RAGENT.MENU.INBOXES'),
+          to: accountScopedRoute('ragent_inboxes'),
+          activeOn: ['ragent_inboxes'],
         },
         {
-          name: 'Settings',
-          label: t('SIDEBAR.CAPTAIN_SETTINGS'),
-          activeOn: [
-            'captain_assistants_settings_index',
-            'captain_assistants_guidelines_index',
-            'captain_assistants_guardrails_index',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_settings_index',
-          }),
+          name: 'RagentIntegrations',
+          label: t('RAGENT.MENU.INTEGRATIONS'),
+          to: accountScopedRoute('ragent_integrations'),
+          activeOn: ['ragent_integrations', 'ragent_payments'],
+        },
+        {
+          name: 'RagentRuns',
+          label: t('RAGENT.MENU.RUNS'),
+          to: accountScopedRoute('ragent_runs'),
+          activeOn: ['ragent_runs'],
+        },
+        {
+          name: 'RagentEnvironment',
+          label: t('RAGENT.MENU.ENVIRONMENT'),
+          to: accountScopedRoute('ragent_environment'),
+          activeOn: ['ragent_environment'],
+        },
+        {
+          name: 'RagentUsage',
+          label: t('RAGENT.MENU.USAGE'),
+          to: accountScopedRoute('ragent_usage'),
+          activeOn: ['ragent_usage'],
         },
       ],
     },
