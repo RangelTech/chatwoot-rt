@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import ButtonNext from 'next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
 import Logo from 'next/icon/Logo.vue';
+import { ragentLandingPath } from 'dashboard/helper/ragentLanding';
 
 import {
   DropdownContainer,
@@ -40,8 +41,8 @@ const sortedCurrentUserAccounts = computed(() => {
   );
 });
 
-const onChangeAccount = newId => {
-  const accountUrl = `/app/accounts/${newId}/dashboard`;
+const onChangeAccount = async newId => {
+  const accountUrl = `/app/accounts/${newId}/${await ragentLandingPath(newId)}`;
   window.location.href = accountUrl;
 };
 
