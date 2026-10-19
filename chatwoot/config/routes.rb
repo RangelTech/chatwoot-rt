@@ -67,6 +67,14 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          namespace :rt_kanban do
+            resource :board, only: [:show, :update]
+            resources :cards, only: [:index] do
+              patch :move, on: :member
+            end
+            resources :stages, only: [:create, :update, :destroy]
+            resources :events, only: [:index]
+          end
           namespace :rt_ai do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
