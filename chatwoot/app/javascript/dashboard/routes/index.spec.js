@@ -61,6 +61,20 @@ describe('#validateAuthenticateRoutePermission', () => {
       };
     });
 
+    describe('when the URL belongs to an Account the user is not a member of', () => {
+      it('should send the user to their own Account instead of a blank screen', async () => {
+        const to = {
+          name: 'ragent_chat_detail',
+          params: { accountId: '8' },
+          meta: { permissions: ['agent'] },
+        };
+
+        await validateAuthenticateRoutePermission(to, next);
+
+        expect(next).toHaveBeenCalledWith('/app/accounts/1');
+      });
+    });
+
     describe('when route is not accessible to current user', () => {
       it('should redirect to dashboard', async () => {
         const to = {
