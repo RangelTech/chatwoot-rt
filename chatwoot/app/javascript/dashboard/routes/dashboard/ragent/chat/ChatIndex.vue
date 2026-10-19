@@ -214,7 +214,7 @@ const stop = () => controller?.abort();
         </p>
       </div>
 
-      <footer class="flex items-end gap-2 border-t border-n-weak p-3">
+      <footer class="flex items-end gap-2 border-t border-n-weak p-3 max-md:ps-20">
         <textarea
           v-model="draft"
           rows="2"
