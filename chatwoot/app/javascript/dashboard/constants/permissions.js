@@ -51,3 +51,20 @@ export const ASSIGNEE_TYPE_TAB_PERMISSIONS = {
     ],
   },
 };
+
+// Permissões de IA (spec 10): somam-se a ROLES; o back as devolve em `permissions`.
+export const AI_PERMISSIONS = {
+  CHAT_VIEW: 'ai.chat.view',
+  CHAT_RUN: 'ai.chat.run',
+  AGENTS_VIEW: 'ai.agents.view',
+  AGENTS_EDIT: 'ai.agents.edit',
+  SKILLS_VIEW: 'ai.skills.view',
+  KNOWLEDGE_VIEW: 'ai.knowledge.view',
+  RUNS_VIEW: 'ai.runs.view',
+  USAGE_VIEW: 'ai.usage.view',
+  PROVIDERS_VIEW: 'ai.providers.view',
+  CREDENTIALS_VIEW: 'ai.credentials.view',
+  ENVIRONMENT_VIEW: 'ai.environment.view',
+  INBOX_ROUTING_VIEW: 'ai.inbox_routing.view',
+  MEMBERS_MANAGE_ROLES: 'ai.members.manage_roles',
+};

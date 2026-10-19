@@ -122,6 +122,18 @@
           "INPUT": "Pesquisar por agentes"
         }
       }
+    },
+    "AI_ROLES": {
+      "TITLE": "Acesso à IA",
+      "DESCRIPTION": "Defina o que cada membro pode fazer nos recursos de IA. Administradores têm acesso total por padrão; agentes recebem o perfil de operador.",
+      "SAVED": "Acesso à IA atualizado",
+      "ERROR": "Não foi possível atualizar o acesso à IA",
+      "ROLES": {
+        "ADMINISTRADOR_IA": "Administrador de IA",
+        "GESTOR": "Gestor",
+        "OPERADOR": "Operador",
+        "LEITOR": "Leitor"
+      }
     }
   }
 }

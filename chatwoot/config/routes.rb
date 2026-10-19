@@ -67,6 +67,10 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          namespace :rt_ai do
+            resources :members, only: [:index, :update]
+            resource :me, only: [:show], controller: :me
+          end
           namespace :captain do
             resource :preferences, only: [:show, :update]
             resources :assistants do

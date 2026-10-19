@@ -122,6 +122,18 @@
           "INPUT": "Search for agents"
         }
       }
+    },
+    "AI_ROLES": {
+      "TITLE": "AI access",
+      "DESCRIPTION": "Choose what each member can do with the AI features. Administrators get full access by default; agents get the operator profile.",
+      "SAVED": "AI access updated",
+      "ERROR": "Could not update AI access",
+      "ROLES": {
+        "ADMINISTRADOR_IA": "AI administrator",
+        "GESTOR": "Manager",
+        "OPERADOR": "Operator",
+        "LEITOR": "Reader"
+      }
     }
   }
 }
