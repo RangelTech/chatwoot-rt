@@ -11,6 +11,7 @@ import {
 } from 'dashboard/composables/store';
 
 import AddAgent from './AddAgent.vue';
+import AiRolesPanel from './AiRolesPanel.vue';
 import EditAgent from './EditAgent.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
@@ -275,6 +276,7 @@ const confirmDeletion = () => {
           </div>
         </div>
       </div>
+      <AiRolesPanel />
     </template>
 
     <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">

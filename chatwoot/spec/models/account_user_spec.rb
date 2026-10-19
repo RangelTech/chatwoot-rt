@@ -19,12 +19,12 @@ RSpec.describe AccountUser do
 
   describe 'permissions' do
     it 'returns the right permissions' do
-      expect(account_user.permissions).to eq(['agent'])
+      expect(account_user.permissions - account_user.ai_permissions).to eq(['agent'])
     end
 
     it 'returns the right permissions for administrator' do
       account_user.administrator!
-      expect(account_user.permissions).to eq(['administrator'])
+      expect(account_user.permissions - account_user.ai_permissions).to eq(['administrator'])
     end
   end
 

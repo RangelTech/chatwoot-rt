@@ -96,3 +96,9 @@ poll_facebook_unofficial_job:
   cron: '*/5 * * * *'
   class: 'SocialUnofficial::PollFacebookUnofficialJob'
   queue: scheduled_jobs
+
+# spec 10 (U-1b): reenvia ao motor de IA os eventos de ciclo de vida das Accounts
+rt_outbox_job:
+  cron: '* * * * *'
+  class: 'Rt::OutboxJob'
+  queue: low

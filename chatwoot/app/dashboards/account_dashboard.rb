@@ -36,7 +36,8 @@ class AccountDashboard < Administrate::BaseDashboard
     status: AccountStatusField.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
     suspension_history: SuspensionHistoryField,
     account_users: Field::HasMany,
-    custom_attributes: Field::String
+    custom_attributes: Field::String,
+    ai_state: Field::String
   }.merge(enterprise_attribute_types).freeze
 
   # COLLECTION_ATTRIBUTES
@@ -51,6 +52,7 @@ class AccountDashboard < Administrate::BaseDashboard
     users
     conversations
     status
+    ai_state
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES

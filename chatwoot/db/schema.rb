@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_19_000100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -446,8 +446,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["account_id", "assistant_id", "status", "language"], name: "idx_cap_faq_suggestions_on_account_assistant_status_language"
+    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["assistant_id"], name: "index_captain_faq_suggestions_on_assistant_id"
     t.index ["embedding"], name: "vector_idx_captain_faq_suggestions_embedding", opclass: :vector_cosine_ops, using: :ivfflat
   end
@@ -558,6 +558,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.index ["forward_to_email"], name: "index_channel_email_on_forward_to_email", unique: true
   end
 
+  create_table "channel_evolution_api", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "instance_name", null: false
+    t.string "api_url", null: false
+    t.string "api_key", null: false
+    t.string "webhook_verify_token", null: false
+    t.jsonb "connection_status", default: {}, null: false
+    t.datetime "connection_status_checked_at"
+    t.text "qr_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_evolution_api_on_account_id"
+    t.index ["instance_name"], name: "index_channel_evolution_api_on_instance_name", unique: true
+  end
+
   create_table "channel_facebook_pages", id: :serial, force: :cascade do |t|
     t.string "page_id", null: false
     t.string "user_access_token", null: false
@@ -570,6 +585,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.index ["page_id"], name: "index_channel_facebook_pages_on_page_id"
   end
 
+  create_table "channel_facebook_unofficial", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.text "cookies", null: false
+    t.string "external_label"
+    t.string "webhook_verify_token", null: false
+    t.jsonb "connection_status", default: {}, null: false
+    t.datetime "connection_status_checked_at"
+    t.datetime "last_polled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_facebook_unofficial_on_account_id"
+  end
+
   create_table "channel_instagram", force: :cascade do |t|
     t.string "access_token", null: false
     t.datetime "expires_at", null: false
@@ -578,6 +606,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["instagram_id"], name: "index_channel_instagram_on_instagram_id", unique: true
+  end
+
+  create_table "channel_instagram_unofficial", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.text "cookies", null: false
+    t.string "external_label"
+    t.string "webhook_verify_token", null: false
+    t.jsonb "connection_status", default: {}, null: false
+    t.datetime "connection_status_checked_at"
+    t.datetime "last_polled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_instagram_unofficial_on_account_id"
   end
 
   create_table "channel_line", force: :cascade do |t|
@@ -653,6 +694,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.index ["account_id", "profile_id"], name: "index_channel_twitter_profiles_on_account_id_and_profile_id", unique: true
   end
 
+  create_table "channel_wapi", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "project_id", null: false
+    t.string "token", null: false
+    t.string "webhook_verify_token", null: false
+    t.jsonb "connection_status", default: {}, null: false
+    t.datetime "connection_status_checked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_wapi_on_account_id"
+    t.index ["project_id"], name: "index_channel_wapi_on_project_id", unique: true
+  end
+
   create_table "channel_web_widgets", id: :serial, force: :cascade do |t|
     t.string "website_url"
     t.integer "account_id"
@@ -686,8 +740,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.jsonb "phone_number_health", default: {}, null: false
     t.datetime "phone_number_health_checked_at"
     t.string "phone_number_health_error", limit: 500
-    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
+    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
   end
 
   create_table "companies", force: :cascade do |t|
@@ -992,10 +1046,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "inbox_id"
-    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "(account_id IS NOT NULL) AND (inbox_id IS NULL)"
+    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "((account_id IS NOT NULL) AND (inbox_id IS NULL))"
     t.index ["inbox_id", "name", "template_type", "locale"], name: "index_email_templates_on_inbox_scope", unique: true, where: "(inbox_id IS NOT NULL)"
     t.index ["inbox_id"], name: "index_email_templates_on_inbox_id"
-    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "(account_id IS NULL) AND (inbox_id IS NULL)"
+    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "((account_id IS NULL) AND (inbox_id IS NULL))"
   end
 
   create_table "folders", force: :cascade do |t|
@@ -1330,6 +1384,39 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
     t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
   end
 
+  create_table "rt_ai_accounts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.uuid "engine_tenant_id"
+    t.string "ai_state", default: "pending", null: false
+    t.text "last_error"
+    t.jsonb "flags", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_rt_ai_accounts_on_account_id", unique: true
+    t.index ["engine_tenant_id"], name: "index_rt_ai_accounts_on_engine_tenant_id", unique: true
+  end
+
+  create_table "rt_ai_grants", force: :cascade do |t|
+    t.bigint "account_user_id", null: false
+    t.string "role_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_user_id"], name: "index_rt_ai_grants_on_account_user_id", unique: true
+  end
+
+  create_table "rt_outbox_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "kind", null: false
+    t.string "state", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "run_at", default: -> { "now()" }, null: false
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_rt_outbox_events_on_account_id"
+    t.index ["state", "run_at"], name: "index_rt_outbox_events_on_state_and_run_at"
+  end
+
   create_table "sla_events", force: :cascade do |t|
     t.bigint "applied_sla_id", null: false
     t.bigint "conversation_id", null: false
@@ -1501,6 +1588,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "rt_ai_accounts", "accounts", on_delete: :cascade
+  add_foreign_key "rt_ai_grants", "account_users", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

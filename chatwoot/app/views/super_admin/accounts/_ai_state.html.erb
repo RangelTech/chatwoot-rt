@@ -1,0 +1,20 @@
+<section class="main-content__body">
+  <hr/>
+  <p class="pb-3"><strong>IA desta empresa:</strong> <%= page.resource.ai_state %>
+    <% if page.resource.ai_last_error.present? %><br><span class="text-sm"><%= page.resource.ai_last_error %></span><% end %>
+  </p>
+  <%= form_for([:reprovision, namespace, page.resource], method: :post, html: { class: "form" }) do |f| %>
+    <div class="form-actions"><%= f.submit 'Reprovisionar IA' %></div>
+  <% end %>
+</section>
+<section class="main-content__body">
+  <hr/>
+  <%= form_tag(create_admin_super_admin_account_path(page.resource), method: :post, class: "form") do %>
+    <p class="pb-3">Cria o administrador da empresa com uma senha provisória, exibida uma única vez.</p>
+    <div class="field-unit"><div class="field-unit__label"><%= label_tag :name, 'Nome' %></div>
+      <div class="field-unit__field"><%= text_field_tag :name %></div></div>
+    <div class="field-unit"><div class="field-unit__label"><%= label_tag :email, 'E-mail' %></div>
+      <div class="field-unit__field"><%= email_field_tag :email %></div></div>
+    <div class="form-actions"><%= submit_tag 'Criar administrador' %></div>
+  <% end %>
+</section>

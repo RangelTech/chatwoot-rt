@@ -67,6 +67,10 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          namespace :rt_ai do
+            resources :members, only: [:index, :update]
+            resource :me, only: [:show], controller: :me
+          end
           namespace :captain do
             resource :preferences, only: [:show, :update]
             resources :assistants do
@@ -727,9 +731,12 @@ Rails.application.routes.draw do
       resources :accounts, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         post :seed, on: :member
         post :reset_cache, on: :member
+        post :reprovision, on: :member
+        post :create_admin, on: :member
       end
       resources :users, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         delete :avatar, on: :member, action: :destroy_avatar
+        post :provisional_password, on: :member
       end
 
       resources :access_tokens, only: [:index, :show]
