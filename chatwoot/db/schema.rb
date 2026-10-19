@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_000100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_19_000200) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1404,6 +1404,67 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000100) do
     t.index ["account_user_id"], name: "index_rt_ai_grants_on_account_user_id", unique: true
   end
 
+  create_table "rt_kanban_boards", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", default: "Conversas", null: false
+    t.boolean "enabled", default: false, null: false
+    t.bigint "revision", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_rt_kanban_boards_on_account_id", unique: true
+  end
+
+  create_table "rt_kanban_cards", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "board_id", null: false
+    t.bigint "stage_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "position", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "conversation_id"], name: "index_rt_kanban_cards_on_account_id_and_conversation_id", unique: true
+    t.index ["account_id"], name: "index_rt_kanban_cards_on_account_id"
+    t.index ["board_id", "stage_id", "position", "id"], name: "index_rt_kanban_cards_order"
+    t.index ["board_id"], name: "index_rt_kanban_cards_on_board_id"
+    t.index ["conversation_id"], name: "index_rt_kanban_cards_on_conversation_id", unique: true
+    t.index ["stage_id"], name: "index_rt_kanban_cards_on_stage_id"
+  end
+
+  create_table "rt_kanban_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "board_id"
+    t.bigint "card_id_snapshot"
+    t.bigint "conversation_id_snapshot"
+    t.bigint "from_stage_id_snapshot"
+    t.bigint "to_stage_id_snapshot"
+    t.string "action", null: false
+    t.bigint "actor_user_id"
+    t.string "source", default: "system", null: false
+    t.string "request_id"
+    t.string "idempotency_key"
+    t.string "request_digest"
+    t.bigint "to_position"
+    t.integer "to_lock_version"
+    t.bigint "board_revision_after"
+    t.datetime "created_at", null: false
+    t.index ["account_id", "actor_user_id", "idempotency_key"], name: "index_rt_kanban_events_idempotency", unique: true, where: "(idempotency_key IS NOT NULL)"
+    t.index ["account_id", "conversation_id_snapshot", "created_at", "id"], name: "index_rt_kanban_events_conversation"
+  end
+
+  create_table "rt_kanban_stages", force: :cascade do |t|
+    t.bigint "board_id", null: false
+    t.string "name", null: false
+    t.string "color", default: "#64748b", null: false
+    t.integer "position", null: false
+    t.boolean "initial", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["board_id", "position"], name: "index_rt_kanban_stages_on_board_id_and_position", unique: true
+    t.index ["board_id"], name: "index_rt_kanban_stages_on_board_id"
+    t.index ["board_id"], name: "index_rt_kanban_stages_one_initial", unique: true, where: "initial"
+  end
+
   create_table "rt_outbox_events", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "kind", null: false
@@ -1590,6 +1651,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000100) do
   add_foreign_key "inboxes", "portals"
   add_foreign_key "rt_ai_accounts", "accounts", on_delete: :cascade
   add_foreign_key "rt_ai_grants", "account_users", on_delete: :cascade
+  add_foreign_key "rt_kanban_boards", "accounts", on_delete: :cascade
+  add_foreign_key "rt_kanban_cards", "accounts", on_delete: :cascade
+  add_foreign_key "rt_kanban_cards", "conversations", on_delete: :cascade
+  add_foreign_key "rt_kanban_cards", "rt_kanban_boards", column: "board_id", on_delete: :cascade
+  add_foreign_key "rt_kanban_cards", "rt_kanban_stages", column: "stage_id"
+  add_foreign_key "rt_kanban_stages", "rt_kanban_boards", column: "board_id", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
