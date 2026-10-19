@@ -35,6 +35,30 @@
       "PUBLISHED": "Agent published",
       "ERROR": "Could not complete the action.",
       "CONFIRM_ARCHIVE": "Archive this agent?"
+    },
+    "SKILLS": {
+      "TITLE": "Skills and routines",
+      "LEARNED": "Learned by you",
+      "ROUTINES": "Routines",
+      "MEMORIES": "Memory suggestions",
+      "APPROVE": "Approve",
+      "DISCARD": "Discard",
+      "DISABLE": "Disable",
+      "ENABLE": "Enable",
+      "PAUSE": "Pause",
+      "RESUME": "Resume",
+      "DELETE": "Delete",
+      "EMPTY": "No skills yet. Teach one in the chat.",
+      "EMPTY_ROUTINES": "No routines yet. Ask the agent to create one.",
+      "EMPTY_MEMORIES": "No suggestions to review.",
+      "ERROR": "Could not complete the action.",
+      "STATUS": {
+        "PENDING_REVIEW": "Pending",
+        "APPROVED": "Active",
+        "DISABLED": "Disabled",
+        "ACTIVE": "Active",
+        "PAUSED": "Paused"
+      }
     }
   }
 }

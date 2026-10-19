@@ -70,6 +70,16 @@ Rails.application.routes.draw do
           namespace :rt_ai do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
+            resources :skills, only: [:index, :destroy] do
+              post 'act/:do', action: :act, on: :member
+              collection do
+                get :routines
+                get :memory_proposals
+              end
+            end
+            post 'routines/:id/:do', to: 'skills#routine_act'
+            delete 'routines/:id', to: 'skills#routine_destroy'
+            post 'memory_proposals/:id/:do', to: 'skills#memory_act'
             resources :agents, only: [:index, :create, :destroy] do
               member do
                 get :draft
