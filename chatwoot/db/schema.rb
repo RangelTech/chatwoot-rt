@@ -1658,33 +1658,3 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000200) do
   add_foreign_key "rt_kanban_cards", "rt_kanban_stages", column: "stage_id"
   add_foreign_key "rt_kanban_stages", "rt_kanban_boards", column: "board_id", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
-  create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
-      on("accounts").
-      after(:insert).
-      for_each(:row) do
-    "execute format('create sequence IF NOT EXISTS conv_dpid_seq_%s', NEW.id);"
-  end
-
-  create_trigger("conversations_before_insert_row_tr", :generated => true, :compatibility => 1).
-      on("conversations").
-      before(:insert).
-      for_each(:row) do
-    "NEW.display_id := nextval('conv_dpid_seq_' || NEW.account_id);"
-  end
-
-  create_trigger("camp_dpid_before_insert", :generated => true, :compatibility => 1).
-      on("accounts").
-      name("camp_dpid_before_insert").
-      after(:insert).
-      for_each(:row) do
-    "execute format('create sequence IF NOT EXISTS camp_dpid_seq_%s', NEW.id);"
-  end
-
-  create_trigger("campaigns_before_insert_row_tr", :generated => true, :compatibility => 1).
-      on("campaigns").
-      before(:insert).
-      for_each(:row) do
-    "NEW.display_id := nextval('camp_dpid_seq_' || NEW.account_id);"
-  end
-
-end
