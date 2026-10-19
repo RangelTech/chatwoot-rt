@@ -11,6 +11,7 @@ import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useWindowSize, useEventListener } from '@vueuse/core';
+import RtKanbanAPI from 'dashboard/api/rtKanban';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
@@ -245,7 +246,19 @@ const getSidebarSectionSort = useMapGetter(
   'sidebarSortPreferences/getSectionSort'
 );
 
+const kanbanAvailable = ref(false);
+const checkKanban = async () => {
+  try {
+    await RtKanbanAPI.getBoard();
+    kanbanAvailable.value = true;
+  } catch (error) {
+    // 404 (quadro desligado/nao provisionado) ou qualquer erro: sem item
+    kanbanAvailable.value = false;
+  }
+};
+
 onMounted(() => {
+  checkKanban();
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
   store.dispatch('notifications/unReadCount');
@@ -513,6 +526,17 @@ const menuItems = computed(() => {
         },
       ],
     },
+    ...(kanbanAvailable.value
+      ? [
+          {
+            name: 'Kanban',
+            label: t('KANBAN.TITLE'),
+            icon: 'i-lucide-kanban',
+            to: accountScopedRoute('rt_kanban'),
+            activeOn: ['rt_kanban'],
+          },
+        ]
+      : []),
     {
       name: 'Captain',
       icon: 'i-woot-captain',
