@@ -25,7 +25,17 @@ class Api::V1::Accounts::RtAi::BaseController < Api::V1::Accounts::BaseControlle
   def engine_get(path)
     Rt::EngineClient.get(path, claims: engine_context)
   rescue Rt::EngineClient::Error => e
-    Rails.logger.warn("rt_ai engine error: #{e.message}")
+    engine_failed(e)
+  end
+
+  def engine_post(path, payload = {})
+    Rt::EngineClient.post(path, payload, claims: engine_context)
+  rescue Rt::EngineClient::Error => e
+    engine_failed(e)
+  end
+
+  def engine_failed(error)
+    Rails.logger.warn("rt_ai engine error: #{error.message}")
     render json: { code: 'engine_error', message: 'Serviço de IA indisponível no momento' }, status: :bad_gateway
     nil
   end

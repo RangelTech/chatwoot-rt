@@ -70,6 +70,15 @@ Rails.application.routes.draw do
           namespace :rt_ai do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
+            resources :chats, only: [:index] do
+              member do
+                get :messages
+                post :cancel
+                post :feedback
+              end
+              post :stream_ticket, on: :collection
+              get :templates, on: :collection
+            end
           end
           namespace :captain do
             resource :preferences, only: [:show, :update]

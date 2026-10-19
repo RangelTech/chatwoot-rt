@@ -1,0 +1,19 @@
+{
+  "RAGENT": {
+    "CHAT": {
+      "TITLE": "AI Chat",
+      "NEW": "New chat",
+      "UNTITLED": "Untitled chat",
+      "NOT_SENT_TO_CUSTOMER": "Test chat - not sent to the customer",
+      "AGENT": "Agent",
+      "PICK_AGENT": "Choose an agent",
+      "PLACEHOLDER": "Type your message",
+      "SEND": "Send",
+      "STOP": "Stop",
+      "LOADING": "Loading...",
+      "ERROR": "Could not complete the request. Try again.",
+      "FORBIDDEN": "AI is not available for your account.",
+      "NO_AGENTS": "No published agents yet. Create one in Agents."
+    }
+  }
+}

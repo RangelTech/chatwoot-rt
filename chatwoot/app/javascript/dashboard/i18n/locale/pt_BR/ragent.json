@@ -1,0 +1,19 @@
+{
+  "RAGENT": {
+    "CHAT": {
+      "TITLE": "Chat com IA",
+      "NEW": "Novo chat",
+      "UNTITLED": "Chat sem título",
+      "NOT_SENT_TO_CUSTOMER": "Chat de teste — não envia ao cliente",
+      "AGENT": "Agente",
+      "PICK_AGENT": "Escolha um agente",
+      "PLACEHOLDER": "Digite sua mensagem",
+      "SEND": "Enviar",
+      "STOP": "Parar",
+      "LOADING": "Carregando...",
+      "ERROR": "Não foi possível concluir. Tente novamente.",
+      "FORBIDDEN": "A IA não está disponível para a sua conta.",
+      "NO_AGENTS": "Nenhum agente publicado ainda. Crie um em Agentes."
+    }
+  }
+}
