@@ -97,3 +97,42 @@ extensions:
       Dockerfile: "COPY chatwoot/entrypoints/web.sh /app/rt-web.sh"
       entrypoints/web.sh: "bundle exec rails server"
       entrypoints/worker.sh: "bundle exec sidekiq"
+
+  - id: rt_ai_unification
+    status: active
+    strategy: additive_with_upstream_touchpoints
+    purpose: Spec 10 -- AI permissions (ai.*) on AccountUser, Account lifecycle outbox to the AI engine, provisional password, Super Admin AI actions.
+    required_paths:
+      - app/models/rt/ai_roles.rb
+      - app/models/rt/ai_grant.rb
+      - app/models/rt/ai_account.rb
+      - app/models/rt/outbox_event.rb
+      - app/models/concerns/rt/account_user_permissions.rb
+      - app/models/concerns/rt/account_lifecycle.rb
+      - app/models/concerns/rt/user_provisional_password.rb
+      - app/services/rt/engine_client.rb
+      - app/services/rt/provisional_password.rb
+      - app/jobs/rt/outbox_job.rb
+      - app/policies/rt/ai_policy.rb
+      - app/controllers/api/v1/accounts/rt_ai/members_controller.rb
+      - db/migrate/20261019000000_create_rt_ai_grants.rb
+      - db/migrate/20261019000100_create_rt_ai_accounts_and_outbox.rb
+      - spec/models/rt/ai_roles_spec.rb
+    touchpoints:
+      - app/models/account.rb
+      - app/models/account_user.rb
+      - app/models/user.rb
+      - app/controllers/api/base_controller.rb
+      - app/controllers/super_admin/accounts_controller.rb
+      - app/controllers/super_admin/users_controller.rb
+      - app/dashboards/account_dashboard.rb
+      - config/routes.rb
+      - config/schedule.yml
+    markers:
+      app/models/account.rb: "Account.prepend(Rt::AccountLifecycle)"
+      app/models/account_user.rb: "AccountUser.prepend(Rt::AccountUserPermissions)"
+      app/models/user.rb: "User.prepend(Rt::UserProvisionalPassword)"
+      app/controllers/api/base_controller.rb: "block_until_password_changed"
+      config/routes.rb: "namespace :rt_ai"
+      config/schedule.yml: "rt_outbox_job"
+
