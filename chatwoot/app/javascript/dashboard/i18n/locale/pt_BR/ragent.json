@@ -35,6 +35,30 @@
       "PUBLISHED": "Agente publicado",
       "ERROR": "Não foi possível concluir a ação.",
       "CONFIRM_ARCHIVE": "Arquivar este agente?"
+    },
+    "SKILLS": {
+      "TITLE": "Skills e rotinas",
+      "LEARNED": "Aprendidas por você",
+      "ROUTINES": "Rotinas",
+      "MEMORIES": "Sugestões de memória",
+      "APPROVE": "Aprovar",
+      "DISCARD": "Descartar",
+      "DISABLE": "Desativar",
+      "ENABLE": "Ativar",
+      "PAUSE": "Pausar",
+      "RESUME": "Retomar",
+      "DELETE": "Apagar",
+      "EMPTY": "Nenhuma skill ainda. Ensine uma no chat.",
+      "EMPTY_ROUTINES": "Nenhuma rotina ainda. Peça ao agente para criar.",
+      "EMPTY_MEMORIES": "Nenhuma sugestão para revisar.",
+      "ERROR": "Não foi possível concluir a ação.",
+      "STATUS": {
+        "PENDING_REVIEW": "Pendente",
+        "APPROVED": "Ativa",
+        "DISABLED": "Desativada",
+        "ACTIVE": "Ativa",
+        "PAUSED": "Pausada"
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 import { frontendURL } from '../../../helper/URLHelper';
 import ChatIndex from './chat/ChatIndex.vue';
 import AgentsIndex from './agents/AgentsIndex.vue';
+import SkillsIndex from './skills/SkillsIndex.vue';
 
 const meta = { permissions: ['ai.chat.view'] };
 
@@ -22,5 +23,11 @@ export const routes = [
     name: 'ragent_agents',
     meta: { permissions: ['ai.agents.view'] },
     component: AgentsIndex,
+  },
+  {
+    path: frontendURL('accounts/:accountId/ragent/skills'),
+    name: 'ragent_skills',
+    meta: { permissions: ['ai.skills.view'] },
+    component: SkillsIndex,
   },
 ];

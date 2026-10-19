@@ -376,6 +376,13 @@ const menuItems = computed(() => {
       activeOn: ['ragent_agents'],
     },
     {
+      name: 'RagentSkills',
+      label: t('RAGENT.SKILLS.TITLE'),
+      icon: 'i-lucide-wand-sparkles',
+      to: accountScopedRoute('ragent_skills'),
+      activeOn: ['ragent_skills'],
+    },
+    {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
       icon: 'i-lucide-inbox',
