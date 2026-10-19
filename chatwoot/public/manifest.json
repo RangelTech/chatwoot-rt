@@ -36,7 +36,11 @@
     "sizes": "192x192",
     "type": "image\/png",
     "density": "4.0"
-   }],
+   },
+   {"src": "\/maskable-icon-192x192.png", "sizes": "192x192", "type": "image\/png", "purpose": "maskable"},
+   {"src": "\/maskable-icon-512x512.png", "sizes": "512x512", "type": "image\/png", "purpose": "maskable"},
+   {"src": "\/favicon-512x512.png", "sizes": "512x512", "type": "image\/png", "purpose": "any"}],
+  "description": "LUAR: atendimento e agentes de IA da Rangel Tech",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",

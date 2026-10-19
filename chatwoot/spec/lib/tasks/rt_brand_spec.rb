@@ -46,11 +46,12 @@ RSpec.describe Rake::Task, 'rt:brand' do # rubocop:disable RSpec/DescribeMethod,
       expect(InstallationConfig.where(name: RtBrand::VALUES.keys).count).to eq(RtBrand::VALUES.size)
     end
 
-    it 'nao toca em URLs de marca' do
+    it 'aponta URLs de marca e legais para o dominio LUAR' do
       InstallationConfig.create!(name: 'BRAND_URL', value: 'https://www.chatwoot.com')
 
       expect { apply.invoke }.to output.to_stdout
-      expect(config_value('BRAND_URL')).to eq('https://www.chatwoot.com')
+      expect(config_value('BRAND_URL')).to eq('https://chat.rangeltech.net')
+      expect(config_value('TERMS_URL')).to end_with('/termos-de-servico')
     end
 
     it 'limpa o cache de GlobalConfig' do
@@ -58,6 +59,24 @@ RSpec.describe Rake::Task, 'rt:brand' do # rubocop:disable RSpec/DescribeMethod,
 
       expect { apply.invoke }.to output.to_stdout
       expect(GlobalConfig).to have_received(:clear_cache).at_least(:once)
+    end
+  end
+
+  describe 'rt:brand:verify' do
+    let(:verify) { described_class['rt:brand:verify'] }
+
+    before { verify.reenable }
+
+    it 'nao encontra "Chatwoot" em texto visivel nem ativo ausente' do
+      expect(RtBrand.visible_offenses).to eq([])
+      expect(RtBrand.missing_assets).to eq([])
+    end
+
+    it 'passa depois do apply e falha antes dele' do
+      expect { verify.invoke }.to raise_error(SystemExit)
+      verify.reenable
+      expect { apply.invoke }.to output.to_stdout
+      expect { verify.invoke }.to output(/verify ok/).to_stdout
     end
   end
 

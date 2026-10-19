@@ -51,3 +51,31 @@ A troca efetiva em producao so acontece em U6, com `rails rt:brand:snapshot` ant
 | `LICENSE`, copyrights, `enterprise/`, `disable_branding`, `IS_ENTERPRISE` | Licenca e creditos obrigatorios |
 | `Chatwoot.config[:version]` no Super Admin | Versao do motor, area tecnica |
 | Nome/logo de Account, inbox, portal, conversas | Dado de cliente, fora do rebrand global |
+
+
+## Rodada 2 (U-6, resto do rebrand)
+
+Verificacao automatica: `bundle exec rails rt:brand:verify` (e o spec `chatwoot/spec/lib/tasks/rt_brand_spec.rb`) falha se achar "Chatwoot" em texto visivel pt-BR/en (locales do dashboard, widget, survey, `config/locales`, mailers liquid, manifest), se faltar algum ativo ou se `InstallationConfig` divergir. `rails rt:brand:apply` agora tambem grava `BRAND_URL`/`WIDGET_BRAND_URL` (`https://chat.rangeltech.net`, dominio operacional atual) e `TERMS_URL`/`PRIVACY_URL` (rotas `/termos-de-servico` e `/politica-de-privacidade`, ja existentes em `config/routes.rb`). Rollback: `rt:brand:snapshot` antes do apply.
+
+| Superficie | Mudanca |
+|---|---|
+| Ativos | `chatwoot/branding/build_assets.py` gera tudo de uma geometria unica: SVGs claro/escuro/miniatura, 4 SVGs monocromaticos, favicon 16/32/96/512 + `favicon.ico`, badge 16/32/96, android 36-192, apple 57-180 (+ `apple-touch-icon*.png`, antes vazios), ms-icon, `maskable-icon-192/512` (fundo noite, simbolo na zona segura), `logo-email*.png`. Recorte do simbolo engrossado (raio 43,5, espessura 12) para ler a 16 px. |
+| PWA | `manifest.json`: icones maskable 192/512 e 512 `any`, `description`; name/short_name LUAR, theme `#0A1733` |
+| E-mails | Remetente padrao `LUAR <no-reply@rangeltech.net>` (application/conversation mailers, devise, `.env.example`; producao deve definir `MAILER_SENDER_EMAIL`), assuntos de exclusao de conta, fallback de marca no `base.liquid` e confirmacao (inclusive o override em `enterprise/`, so copy), assinaturas e contato dos liquid de exclusao, cor de acento `#75C8F2`/`#0A1733` |
+| MFA | Emissor TOTP = `INSTALLATION_NAME` (LUAR) para novos cadastros; arquivo de codigos de backup com cabecalho LUAR. Autenticadores ja cadastrados mantem o rotulo antigo ate novo enrollment |
+| Push, CRM | Titulo padrao do teste de push e rotulo de fallback do LeadSquared = LUAR |
+| i18n | Todos os `Chatwoot` visiveis em `dashboard/i18n/locale/{en,pt_BR}`, `widget`, `survey` e `config/locales` trocados (inclui "Powered by"/"Desenvolvido por", rodape do widget e CSAT). Exemplos de URL de portal apontam para `chat.rangeltech.net` |
+| Diversos | Super Admin: aviso de premium sem e-mail de vendas do upstream; empty state de campanhas; titulo de codepen do widget; alt da assinatura do Year in Review; cor padrao do portal |
+| Paginas de erro | `public/404|422|500.html` ja nao tinham marca |
+
+### Nao trocado (tecnico, licenca ou dependente de terceiro)
+
+| Item | Motivo |
+|---|---|
+| Chave i18n `UPDATE_CHATWOOT`, placeholder `{latestChatwootVersion}` | Identificadores de codigo |
+| `window.chatwootSettings` (scripts de exemplo), `chatwoot.help` (CNAME do portal) | Contrato do SDK / DNS do fornecedor |
+| `signup.json` TERMS_ACCEPT (`www.chatwoot.com/terms`) | O front substitui pelos `TERMS_URL`/`PRIVACY_URL` da instalacao em tempo de execucao |
+| Tooltip SAML "Unique identifier for Chatwoot..." | Identificador funcional do SP |
+| Dados de Account, `ragentes_branding`, `ChatwootHub`, `X-Chatwoot-*`, `LICENSE`, `enterprise/` | Ver secao anterior |
+| Links de ajuda/changelog (`SidebarProfileMenu`) | Ja ocultos em instalacao com marca propria (`showOnCustomBrandedInstance: false`) |
+| Pendente de decisao do dono | Remetente `no-reply@rangeltech.net` e `suporte@rangeltech.net` sao suposicoes: confirmar dominio com SPF/DKIM/DMARC (X3); `legal/*.erb` (revisao juridica); demais idiomas dos locales; avatar do bot (`chatwoot_bot.png`) |
