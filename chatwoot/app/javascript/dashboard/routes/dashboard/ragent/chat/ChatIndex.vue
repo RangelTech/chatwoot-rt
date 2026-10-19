@@ -141,7 +141,11 @@ const stop = () => controller?.abort();
           <button
             type="button"
             class="w-full truncate rounded-lg px-3 py-2 text-start text-body-main hover:bg-n-alpha-2"
-            :class="c.id === chatId ? 'bg-n-alpha-2 text-n-slate-12' : 'text-n-slate-11'"
+            :class="
+              c.id === chatId
+                ? 'bg-n-alpha-2 text-n-slate-12'
+                : 'text-n-slate-11'
+            "
             @click="openChat(c.id)"
           >
             {{ c.title || t('RAGENT.CHAT.UNTITLED') }}
@@ -151,9 +155,87 @@ const stop = () => controller?.abort();
     </aside>
 
     <section class="flex min-w-0 flex-1 flex-col">
-      <header class="flex flex-wrap items-center gap-3 border-b border-n-weak px-4 py-3">
+      <header
+        class="flex flex-wrap items-center gap-3 border-b border-n-weak px-4 py-3"
+      >
         <h1 class="text-heading-2 text-n-slate-12">
           {{ t('RAGENT.CHAT.TITLE') }}
         </h1>
-        <span class="rounded-md bg-n-alpha-2 px-2 py-0.5 text-body-main text-n-slate-11">
-          {{ t('RAGENT.CHAT.NOT_SENT_TO_CUSTOMER'
+        <span
+          class="rounded-md bg-n-alpha-2 px-2 py-0.5 text-body-main text-n-slate-11"
+        >
+          {{ t('RAGENT.CHAT.NOT_SENT_TO_CUSTOMER') }}
+        </span>
+        <select
+          v-if="hasTemplates"
+          v-model="templateId"
+          class="!mb-0 ms-auto w-64"
+          :disabled="Boolean(chatId)"
+          :aria-label="t('RAGENT.CHAT.AGENT')"
+        >
+          <option value="" disabled>{{ t('RAGENT.CHAT.PICK_AGENT') }}</option>
+          <option v-for="tp in templates" :key="tp.id" :value="tp.id">
+            {{ tp.name }}
+          </option>
+        </select>
+      </header>
+
+      <p v-if="loading" class="p-6 text-n-slate-11">
+        {{ t('RAGENT.CHAT.LOADING') }}
+      </p>
+      <p v-else-if="forbidden" class="p-6 text-n-slate-11">
+        {{ t('RAGENT.CHAT.FORBIDDEN') }}
+      </p>
+      <p v-else-if="!hasTemplates && !chatId" class="p-6 text-n-slate-11">
+        {{ t('RAGENT.CHAT.NO_AGENTS') }}
+      </p>
+
+      <div ref="scroller" class="flex-1 space-y-3 overflow-y-auto p-4">
+        <div
+          v-for="(m, i) in messages"
+          :key="i"
+          class="flex"
+          :class="m.role === 'user' ? 'justify-end' : 'justify-start'"
+        >
+          <div
+            class="max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-body-main"
+            :class="[
+              m.role === 'user'
+                ? 'bg-n-brand text-white'
+                : 'bg-n-alpha-2 text-n-slate-12',
+              m.error ? 'border border-n-ruby-9' : '',
+            ]"
+          >
+            {{ m.content || (sending && i === messages.length - 1 ? '...' : '') }}
+          </div>
+        </div>
+        <p v-if="steps.length" class="text-body-main text-n-slate-11">
+          {{ steps[0] }}...
+        </p>
+      </div>
+
+      <footer class="flex items-end gap-2 border-t border-n-weak p-3">
+        <textarea
+          v-model="draft"
+          rows="2"
+          class="!mb-0 flex-1 resize-none"
+          :placeholder="t('RAGENT.CHAT.PLACEHOLDER')"
+          :disabled="sending"
+          @keydown.enter.exact.prevent="send"
+        />
+        <Button
+          v-if="!sending"
+          :label="t('RAGENT.CHAT.SEND')"
+          :disabled="!canSend"
+          @click="send"
+        />
+        <Button
+          v-else
+          :label="t('RAGENT.CHAT.STOP')"
+          color="ruby"
+          @click="stop"
+        />
+      </footer>
+    </section>
+  </div>
+</template>
