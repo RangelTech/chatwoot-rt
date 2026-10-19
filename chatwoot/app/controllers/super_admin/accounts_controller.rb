@@ -54,7 +54,9 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
 
   def reprovision
     Rt::AccountLifecycle.enqueue(requested_resource.id, 'provision')
+    # rubocop:disable Rails/I18nLocaleTexts
     redirect_back(fallback_location: [namespace, requested_resource], notice: 'Reprovisionamento da IA enfileirado')
+    # rubocop:enable Rails/I18nLocaleTexts
   end
 
   def create_admin
