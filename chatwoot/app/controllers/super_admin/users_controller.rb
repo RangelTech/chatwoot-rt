@@ -14,6 +14,11 @@ class SuperAdmin::UsersController < SuperAdmin::ApplicationController
     end
   end
 
+  def provisional_password
+    password = Rt::ProvisionalPassword.issue!(requested_resource)
+    redirect_to [namespace, requested_resource], notice: "Senha provisória (exibida só agora): #{password}"
+  end
+
   def update
     requested_resource.skip_reconfirmation! if resource_params[:confirmed_at].present?
     super

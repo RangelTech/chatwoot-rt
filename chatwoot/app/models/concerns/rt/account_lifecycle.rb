@@ -17,6 +17,14 @@ module Rt::AccountLifecycle
     Rt::OutboxJob.perform_later
   end
 
+  def ai_state
+    Rt::AiAccount.find_by(account_id: id)&.ai_state || 'pending'
+  end
+
+  def ai_last_error
+    Rt::AiAccount.find_by(account_id: id)&.last_error
+  end
+
   private
 
   def enqueue_status_change

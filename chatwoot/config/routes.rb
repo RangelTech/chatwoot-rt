@@ -731,9 +731,12 @@ Rails.application.routes.draw do
       resources :accounts, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         post :seed, on: :member
         post :reset_cache, on: :member
+        post :reprovision, on: :member
+        post :create_admin, on: :member
       end
       resources :users, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         delete :avatar, on: :member, action: :destroy_avatar
+        post :provisional_password, on: :member
       end
 
       resources :access_tokens, only: [:index, :show]

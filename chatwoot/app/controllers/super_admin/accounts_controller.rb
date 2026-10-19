@@ -52,6 +52,21 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   # See https://administrate-prototype.herokuapp.com/customizing_controller_actions
   # for more information
 
+  def reprovision
+    Rt::AccountLifecycle.enqueue(requested_resource.id, 'provision')
+    redirect_back(fallback_location: [namespace, requested_resource], notice: 'Reprovisionamento da IA enfileirado')
+  end
+
+  def create_admin
+    user = AgentBuilder.new(email: params.require(:email), name: params[:name].to_s, inviter: current_super_admin,
+                            account: requested_resource, role: :administrator).perform
+    user.confirm
+    password = Rt::ProvisionalPassword.issue!(user)
+    redirect_to [namespace, requested_resource], notice: "Administrador #{user.email} criado. Senha provisória (exibida só agora): #{password}"
+  rescue AgentBuilder::LimitExceededError, ActiveRecord::RecordInvalid => e
+    redirect_to [namespace, requested_resource], alert: e.message
+  end
+
   def seed
     Internal::SeedAccountJob.perform_later(requested_resource)
     # rubocop:disable Rails/I18nLocaleTexts
