@@ -362,6 +362,13 @@ const reportRoutes = computed(() => newReportRoutes());
 const menuItems = computed(() => {
   return [
     {
+      name: 'RagentChat',
+      label: t('RAGENT.CHAT.TITLE'),
+      icon: 'i-lucide-sparkles',
+      to: accountScopedRoute('ragent_chat'),
+      activeOn: ['ragent_chat', 'ragent_chat_detail'],
+    },
+    {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
       icon: 'i-lucide-inbox',
