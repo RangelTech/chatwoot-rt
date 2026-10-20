@@ -29,7 +29,7 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 HERE="$ROOT/scripts/upgrade"
 PY="${PYTHON:-python3}"
-command -v "$PY" >/dev/null 2>&1 || PY=python
+"$PY" -c "import sys" >/dev/null 2>&1 || PY=python
 
 git rev-parse --verify -q upstream-import >/dev/null || { echo "branch upstream-import ausente (rode import_upstream.sh)" >&2; exit 3; }
 git log -1 --format=%s upstream-import | grep -q "Chatwoot ${VERSION}\$" || { echo "upstream-import nao esta em ${VERSION}" >&2; exit 3; }
