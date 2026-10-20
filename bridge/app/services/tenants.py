@@ -5,10 +5,13 @@ resolvido**. Toda função aqui recebe ou devolve o tenant explicitamente — é
 que impede uma mensagem de um cliente aparecer na conta de outro.
 """
 
+import logging
 import secrets
 
 from app.crypto import decrypt, encrypt
 from app.db import get_connection
+
+logger = logging.getLogger(__name__)
 
 
 def upsert_tenant_link(*, tenant_id: str, tenant_key: str, tenant_name: str) -> dict:
@@ -109,7 +112,11 @@ def upsert_ai_config(
                 (tenant_id,),
             ).fetchone()
             if herdada:
-                integration_key = decrypt(herdada["integration_key_encrypted"])
+                try:
+                    integration_key = decrypt(herdada["integration_key_encrypted"])
+                except Exception:  # noqa: BLE001 - chave antiga ilegível não pode travar o vínculo
+                    logger.warning("chave de integração herdada ilegível; vínculo sem herança")
+                    integration_key = None
         return conn.execute(
             """INSERT INTO tenant_ai_config (tenant_id, chatwoot_inbox_id, template_id,
                                              integration_key_encrypted, autopilot, handoff_team_id)

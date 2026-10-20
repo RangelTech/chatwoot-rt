@@ -81,13 +81,23 @@ Rails.application.routes.draw do
           namespace :rt_ai do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
-            resources :skills, only: [:index, :destroy] do
+            # Da empresa (compartilhadas pelo tenant); declaradas antes de :skills para não cair em :id.
+            get 'skills/company', to: 'skills#company'
+            post 'skills/company', to: 'skills#company_create'
+            get 'skills/company/:id', to: 'skills#company_show'
+            put 'skills/company/:id', to: 'skills#company_update'
+            delete 'skills/company/:id', to: 'skills#company_destroy'
+            post 'skills/company/:id/act/:do', to: 'skills#company_act'
+            resources :skills, only: [:index, :show, :create, :update, :destroy] do
               post 'act/:do', action: :act, on: :member
               collection do
                 get :routines
                 get :memory_proposals
               end
             end
+            post 'routines', to: 'skills#routine_create'
+            put 'routines/:id', to: 'skills#routine_update'
+            get 'routines/:id/runs', to: 'skills#routine_runs'
             post 'routines/:id/:do', to: 'skills#routine_act'
             delete 'routines/:id', to: 'skills#routine_destroy'
             post 'memory_proposals/:id/:do', to: 'skills#memory_act'

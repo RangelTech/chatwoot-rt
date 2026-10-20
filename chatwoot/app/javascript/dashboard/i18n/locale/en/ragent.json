@@ -104,8 +104,8 @@
       "PAUSE": "Pause",
       "RESUME": "Resume",
       "DELETE": "Delete",
-      "EMPTY": "No skills yet. Teach one in the chat.",
-      "EMPTY_ROUTINES": "No routines yet. Ask the agent to create one.",
+      "EMPTY": "None of your own skills yet. Create one or teach it in the chat.",
+      "EMPTY_ROUTINES": "No routines yet.",
       "EMPTY_MEMORIES": "No suggestions to review.",
       "ERROR": "Could not complete the action.",
       "STATUS": {
@@ -114,7 +114,30 @@
         "DISABLED": "Disabled",
         "ACTIVE": "Active",
         "PAUSED": "Paused"
-      }
+      },
+      "COMPANY": "Company",
+      "MINE": "Mine",
+      "SAVED": "Skill saved",
+      "CANCEL": "Cancel",
+      "EDIT": "Edit",
+      "EDIT_TITLE": "Edit skill",
+      "NEW_COMPANY": "New company skill",
+      "NEW_MINE": "New skill of mine",
+      "COMPANY_HELP": "Company skills apply to every agent and every person. Only people who manage agents can create and edit them.",
+      "MINE_HELP": "Skills only you can see. The ones the agent suggests show as Pending until you approve them.",
+      "FIELD_NAME": "Name",
+      "FIELD_NAME_HINT": "E.g. Meeting summary",
+      "NAME_PREVIEW": "Identifier: {name}",
+      "FIELD_WHEN": "When to use",
+      "FIELD_WHEN_HINT": "E.g. When someone asks for a meeting summary",
+      "FIELD_STEPS": "How to do it",
+      "FIELD_STEPS_HINT": "Step by step the agent should follow.",
+      "DELETE_ITEM": "Delete",
+      "CONFIRM_DELETE": "Delete this skill?",
+      "CONFIRM_DELETE_COMPANY": "Delete this skill for the whole company?",
+      "EMPTY_COMPANY": "No company skills yet.",
+      "FROM_AGENT": "From agent {agent}",
+      "PACKAGE_HINT": "Skills tagged with an agent name are part of that agent; edit them on the agent screen."
     },
     "MENU": {
       "TITLE": "AI",
@@ -245,7 +268,53 @@
       "TITLE": "Inboxes and agents",
       "HELP": "Choose which agent answers each inbox. Without an agent, the inbox is human-only.",
       "HUMAN_ONLY": "Human only (no agent)",
-      "AUTOPILOT": "Answer automatically"
+      "AUTOPILOT": "Answer automatically",
+      "DEGRADED": "Link saved, but automatic replies were not updated on this inbox yet. Save again in a moment."
+    },
+    "ROUTINE": {
+      "HELP": "Routines wake the agent at a set time and run the instruction you wrote. The result lands in the history and becomes a conversation.",
+      "NEW": "New routine",
+      "NEW_TITLE": "New routine",
+      "EDIT_TITLE": "Edit routine",
+      "NO_AGENT": "Publish an agent to be able to create routines.",
+      "NAME": "Name",
+      "INSTRUCTION": "What the agent should do",
+      "INSTRUCTION_HINT": "E.g. Summarize yesterday's sales and list open orders.",
+      "AGENT": "Agent",
+      "FREQUENCY": "Repeat",
+      "KIND": {
+        "HOURLY": "Every hour",
+        "DAILY": "Every day",
+        "WEEKLY": "Days of the week",
+        "MONTHLY": "Once a month",
+        "CUSTOM": "Advanced (cron)"
+      },
+      "MINUTE": "At minute",
+      "TIME": "Time",
+      "DAY_OF_MONTH": "Day of the month",
+      "CRON": "Cron expression",
+      "TIMEZONE": "Time zone",
+      "DAYS": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+      "MIN_INTERVAL": "The minimum interval between runs is 15 minutes.",
+      "CRON_PREVIEW": "Expression: {cron}",
+      "ACTIVE": "Routine active",
+      "SAVED": "Routine saved",
+      "CONFIRM_DELETE": "Delete this routine?",
+      "DESC_HOURLY": "Every hour, at minute {minute}",
+      "DESC_DAILY": "Every day at {time}",
+      "DESC_WEEKLY": "{days} at {time}",
+      "DESC_MONTHLY": "Day {day} of every month at {time}",
+      "NEXT": "Next run: {when}",
+      "NOT_SCHEDULED": "No run scheduled",
+      "LAST": "last: {when} ({status})",
+      "HISTORY": "History",
+      "NO_RUNS": "No runs yet.",
+      "OPEN_CHAT": "Open conversation",
+      "RUN": {
+        "RUNNING": "Running",
+        "OK": "Done",
+        "ERROR": "Failed"
+      }
     }
   }
 }

@@ -104,8 +104,8 @@
       "PAUSE": "Pausar",
       "RESUME": "Retomar",
       "DELETE": "Apagar",
-      "EMPTY": "Nenhuma skill ainda. Ensine uma no chat.",
-      "EMPTY_ROUTINES": "Nenhuma rotina ainda. Peça ao agente para criar.",
+      "EMPTY": "Nenhuma skill sua ainda. Crie uma ou ensine no chat.",
+      "EMPTY_ROUTINES": "Nenhuma rotina ainda.",
       "EMPTY_MEMORIES": "Nenhuma sugestão para revisar.",
       "ERROR": "Não foi possível concluir a ação.",
       "STATUS": {
@@ -114,7 +114,30 @@
         "DISABLED": "Desativada",
         "ACTIVE": "Ativa",
         "PAUSED": "Pausada"
-      }
+      },
+      "COMPANY": "Da empresa",
+      "MINE": "Minhas",
+      "SAVED": "Skill salva",
+      "CANCEL": "Cancelar",
+      "EDIT": "Editar",
+      "EDIT_TITLE": "Editar skill",
+      "NEW_COMPANY": "Nova skill da empresa",
+      "NEW_MINE": "Nova skill minha",
+      "COMPANY_HELP": "Skills da empresa valem para todos os agentes e para todas as pessoas. Só quem gerencia os agentes cria e edita.",
+      "MINE_HELP": "Skills só suas: ninguém mais as vê. As que o agente sugere aparecem como Pendente até você aprovar.",
+      "FIELD_NAME": "Nome",
+      "FIELD_NAME_HINT": "Ex.: Resumo de reunião",
+      "NAME_PREVIEW": "Identificador: {name}",
+      "FIELD_WHEN": "Quando usar",
+      "FIELD_WHEN_HINT": "Ex.: Quando pedirem o resumo de uma reunião",
+      "FIELD_STEPS": "Como fazer",
+      "FIELD_STEPS_HINT": "Passo a passo que o agente deve seguir.",
+      "DELETE_ITEM": "Apagar",
+      "CONFIRM_DELETE": "Apagar esta skill?",
+      "CONFIRM_DELETE_COMPANY": "Apagar esta skill para toda a empresa?",
+      "EMPTY_COMPANY": "Nenhuma skill da empresa ainda.",
+      "FROM_AGENT": "Do agente {agent}",
+      "PACKAGE_HINT": "As skills marcadas com o nome de um agente fazem parte dele; edite-as na tela do agente."
     },
     "MENU": {
       "TITLE": "IA",
@@ -245,7 +268,53 @@
       "TITLE": "Caixas de entrada e agentes",
       "HELP": "Escolha qual agente atende cada caixa de entrada. Sem agente, a caixa é só humana.",
       "HUMAN_ONLY": "Só humano (sem agente)",
-      "AUTOPILOT": "Responder automaticamente"
+      "AUTOPILOT": "Responder automaticamente",
+      "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes."
+    },
+    "ROUTINE": {
+      "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",
+      "NEW": "Nova rotina",
+      "NEW_TITLE": "Nova rotina",
+      "EDIT_TITLE": "Editar rotina",
+      "NO_AGENT": "Publique um agente para poder criar rotinas.",
+      "NAME": "Nome",
+      "INSTRUCTION": "O que o agente deve fazer",
+      "INSTRUCTION_HINT": "Ex.: Resuma as vendas de ontem e liste os pedidos em aberto.",
+      "AGENT": "Agente",
+      "FREQUENCY": "Repetir",
+      "KIND": {
+        "HOURLY": "Toda hora",
+        "DAILY": "Todo dia",
+        "WEEKLY": "Dias da semana",
+        "MONTHLY": "Uma vez por mês",
+        "CUSTOM": "Avançado (cron)"
+      },
+      "MINUTE": "No minuto",
+      "TIME": "Horário",
+      "DAY_OF_MONTH": "Dia do mês",
+      "CRON": "Expressão cron",
+      "TIMEZONE": "Fuso horário",
+      "DAYS": "dom,seg,ter,qua,qui,sex,sáb",
+      "MIN_INTERVAL": "O intervalo mínimo entre execuções é de 15 minutos.",
+      "CRON_PREVIEW": "Expressão: {cron}",
+      "ACTIVE": "Rotina ativa",
+      "SAVED": "Rotina salva",
+      "CONFIRM_DELETE": "Apagar esta rotina?",
+      "DESC_HOURLY": "Toda hora, no minuto {minute}",
+      "DESC_DAILY": "Todo dia às {time}",
+      "DESC_WEEKLY": "{days} às {time}",
+      "DESC_MONTHLY": "Todo dia {day} do mês às {time}",
+      "NEXT": "Próxima execução: {when}",
+      "NOT_SCHEDULED": "Sem execução agendada",
+      "LAST": "última: {when} ({status})",
+      "HISTORY": "Histórico",
+      "NO_RUNS": "Nenhuma execução ainda.",
+      "OPEN_CHAT": "Abrir conversa",
+      "RUN": {
+        "RUNNING": "Em andamento",
+        "OK": "Concluída",
+        "ERROR": "Com erro"
+      }
     }
   }
 }

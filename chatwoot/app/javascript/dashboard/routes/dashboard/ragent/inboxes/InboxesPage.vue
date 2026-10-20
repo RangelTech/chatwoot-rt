@@ -28,6 +28,7 @@ const load = async () => {
       id: x.id ?? x.chatwoot_inbox_id,
       template_id: x.template_id || x.ai?.template_id || '',
       autopilot: x.autopilot ?? x.ai?.autopilot ?? true,
+      degraded: !!x.ai?.degraded,
     }));
     templates.value = tp.data || [];
   } catch (error) {
@@ -41,11 +42,13 @@ onMounted(load);
 const save = async inbox => {
   busy.value = String(inbox.id);
   try {
-    await axios.put(`${base}/resources/inboxes/${inbox.id}`, {
+    const { data } = await axios.put(`${base}/resources/inboxes/${inbox.id}`, {
       template_id: inbox.template_id || null,
       autopilot: inbox.autopilot,
     });
-    useAlert(t('RAGENT.RES.SAVED'));
+    // Vínculo salvo, mas o aviso ao atendimento automático falhou: nunca mostrar sucesso silencioso.
+    inbox.degraded = data?.status === 'degraded';
+    useAlert(t(inbox.degraded ? 'RAGENT.INBOXES.DEGRADED' : 'RAGENT.RES.SAVED'));
   } catch (error) {
     useAlert(t('RAGENT.RES.ERROR'));
   } finally {
@@ -65,6 +68,9 @@ const save = async inbox => {
         <div class="min-w-0 flex-1">
           <p class="truncate text-body-main text-n-slate-12">{{ i.name }}</p>
           <p class="truncate text-body-main text-n-slate-11">{{ i.channel_type }}</p>
+          <p v-if="i.degraded" class="text-body-main text-n-ruby-11">
+            {{ t('RAGENT.INBOXES.DEGRADED') }}
+          </p>
         </div>
         <select v-model="i.template_id" class="!mb-0 w-64">
           <option value="">{{ t('RAGENT.INBOXES.HUMAN_ONLY') }}</option>
