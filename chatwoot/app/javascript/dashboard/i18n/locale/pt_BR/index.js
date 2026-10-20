@@ -7,6 +7,7 @@ import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
 import bulkActions from './bulkActions.json';
+import calls from './calls.json';
 import campaign from './campaign.json';
 import cannedMgmt from './cannedMgmt.json';
 import chatlist from './chatlist.json';
@@ -44,6 +45,7 @@ import snooze from './snooze.json';
 import teamsSettings from './teamsSettings.json';
 import webhooks from './webhooks.json';
 import whatsappTemplates from './whatsappTemplates.json';
+import whatsappTemplateMgmt from './whatsappTemplateMgmt.json';
 import yearInReview from './yearInReview.json';
 
 export default {
@@ -56,6 +58,7 @@ export default {
   ...auditLogs,
   ...automation,
   ...bulkActions,
+  ...calls,
   ...campaign,
   ...cannedMgmt,
   ...chatlist,
@@ -93,5 +96,6 @@ export default {
   ...teamsSettings,
   ...webhooks,
   ...whatsappTemplates,
+  ...whatsappTemplateMgmt,
   ...yearInReview,
 };
