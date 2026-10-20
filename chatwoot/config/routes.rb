@@ -102,6 +102,12 @@ Rails.application.routes.draw do
             post 'routines/:id/:do', to: 'skills#routine_act'
             delete 'routines/:id', to: 'skills#routine_destroy'
             post 'memory_proposals/:id/:do', to: 'skills#memory_act'
+            # Credenciais: lista única e formulário por tipo (declaradas antes de resources/:key).
+            get 'credentials', to: 'credentials#index'
+            post 'credentials', to: 'credentials#create'
+            post 'credentials/oauth/:provider', to: 'credentials#oauth_start'
+            put 'credentials/:type/:id', to: 'credentials#update'
+            delete 'credentials/:type/:id', to: 'credentials#destroy'
             get 'resources/:key', to: 'resources#index'
             post 'resources/:key', to: 'resources#create'
             put 'resources/:key/:id', to: 'resources#update'

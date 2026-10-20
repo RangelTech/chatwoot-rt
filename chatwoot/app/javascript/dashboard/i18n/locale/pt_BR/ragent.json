@@ -150,7 +150,6 @@
       "CHAT": "Chat com IA",
       "AGENTS": "Agentes",
       "SKILLS": "Skills e rotinas",
-      "KNOWLEDGE": "Conhecimento",
       "PROVIDERS": "Provedores",
       "CREDENTIALS": "Credenciais",
       "INBOXES": "Caixas de entrada",
@@ -176,22 +175,6 @@
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
       },
-      "CREDENTIALS": {
-        "TITLE": "Credenciais",
-        "HELP": "Segredos que os agentes usam pelo nome (tokens, senhas). Os valores só entram, nunca saem."
-      },
-      "SOURCES": {
-        "TITLE": "Fontes de dados",
-        "HELP": "Bancos e APIs que os agentes podem consultar."
-      },
-      "FILES": {
-        "TITLE": "Arquivos",
-        "HELP": "Documentos indexados para os agentes."
-      },
-      "MEMORIES": {
-        "TITLE": "Memórias",
-        "HELP": "O que os agentes lembraram. Remova o que não quiser manter."
-      },
       "USAGE": {
         "TITLE": "Uso de IA",
         "HELP": "Uso estimado; não é cobrança."
@@ -206,11 +189,7 @@
       },
       "INTEGRATIONS": {
         "TITLE": "Integrações",
-        "HELP": "Chaves de API para sistemas externos."
-      },
-      "PAYMENTS": {
-        "TITLE": "Pagamentos",
-        "HELP": "Credencial do Mercado Pago que os agentes usam para cobrar."
+        "HELP": "Chaves para sistemas externos conversarem com um agente. A chave só aparece uma vez, na criação."
       },
       "YES": "Sim",
       "NO": "Não",
@@ -246,13 +225,7 @@
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
         "API_KEY": "Chave de API",
-        "API_BASE": "URL base da API (opcional)",
-        "VALUE": "Valor",
-        "KIND": "Tipo",
-        "CONFIG_JSON": "Conexão (JSON)",
-        "SECRET": "Segredo",
-        "ACCESS_TOKEN": "Token de acesso",
-        "WEBHOOK_SECRET": "Segredo do webhook"
+        "API_BASE": "URL base da API (opcional)"
       },
       "COLUMNS": {
         "NAME": "Nome",
@@ -260,16 +233,12 @@
         "MODEL": "Modelo",
         "IS_ACTIVE": "Ativo",
         "UPDATED_AT": "Atualizado",
-        "KIND": "Tipo",
         "STATUS": "Situação",
-        "SIZE_BYTES": "Tamanho",
-        "CONTENT": "Memória",
         "CREATED_AT": "Criado",
         "TITLE": "Título",
-        "SANDBOX": "Modo de teste",
-        "HAS_TOKEN": "Token definido",
         "DEVICE_NAME": "Dispositivo",
-        "LAST_ACTIVITY_AT": "Última atividade"
+        "LAST_ACTIVITY_AT": "Última atividade",
+        "KEY_PREFIX": "Chave"
       },
       "LOAD_ERROR": "Não foi possível carregar esta tela agora. Tente novamente em instantes.",
       "RETRY": "Tentar de novo",
@@ -342,7 +311,94 @@
         "DOMAINS": "Domínios",
         "NO_DOMAINS": "Nenhum domínio conectado.",
         "DOMAIN": "Domínio"
-      }
+      },
+      "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo."
+    },
+    "CRED": {
+      "TITLE": "Credenciais",
+      "HELP": "Tudo o que os agentes usam para entrar em outros sistemas: tokens, bancos de dados, servidores, e-mail, pagamento e contas Google ou Outlook. Os valores só entram: depois de salvos nunca mais aparecem, só dá para substituir ou remover.",
+      "NEW": "Nova credencial",
+      "TYPE": "Tipo de credencial",
+      "TYPES": {
+        "SECRET": "Segredo, API key ou token",
+        "DATABASE": "Banco de dados",
+        "SSH": "SSH do servidor",
+        "GCP": "Service account do Google Cloud",
+        "EMAIL": "E-mail (IMAP/SMTP)",
+        "PAYMENT": "Pagamento (Mercado Pago)",
+        "GOOGLE": "Google (conectar conta)",
+        "MICROSOFT": "Outlook / Microsoft (conectar conta)"
+      },
+      "TYPE_HELP": {
+        "SECRET": "Um valor com nome, como uma chave de API. O agente o recebe como variável de ambiente com o mesmo nome.",
+        "DATABASE": "Login e senha de um banco. O agente recebe a variável DB_<NOME>_URL com o endereço completo de conexão.",
+        "SSH": "Acesso a um servidor seu. O agente recebe a chave privada e o endereço, usuário e porta em variáveis SSH_<NOME>.",
+        "GCP": "Arquivo JSON de uma service account. O agente o recebe na variável GCP_<NOME>_JSON.",
+        "EMAIL": "Uma caixa de e-mail por IMAP e SMTP. O agente recebe servidor, usuário e senha em variáveis EMAIL_<NOME>_*.",
+        "PAYMENT": "Token de acesso do Mercado Pago, usado para cobrar por Pix. Vale para toda a empresa.",
+        "GOOGLE": "Abre a página do Google para você autorizar o acesso a agenda e planilhas. O agente recebe o token em GOOGLE_<NOME>_TOKEN.",
+        "MICROSOFT": "Abre a página da Microsoft para você autorizar o acesso a agenda e reuniões. O agente recebe o token em MICROSOFT_<NOME>_TOKEN."
+      },
+      "FIELDS": {
+        "NAME": "Nome",
+        "VALUE": "Valor",
+        "DB_KIND": "Tipo de banco",
+        "HOST": "Servidor (host)",
+        "PORT": "Porta",
+        "DATABASE": "Nome do banco",
+        "PATH": "Caminho do arquivo",
+        "USER": "Usuário",
+        "PASSWORD": "Senha",
+        "SSL": "Exigir conexão segura (SSL)",
+        "LABEL": "Nome",
+        "EMAIL_ADDRESS": "Endereço de e-mail",
+        "SMTP_HOST": "Servidor SMTP (envio)",
+        "SMTP_PORT": "Porta SMTP",
+        "IMAP_HOST": "Servidor IMAP (leitura)",
+        "IMAP_PORT": "Porta IMAP",
+        "USERNAME": "Usuário do e-mail",
+        "USE_TLS": "Usar conexão segura (TLS)",
+        "ACCESS_TOKEN": "Token de acesso",
+        "WEBHOOK_SECRET": "Segredo do webhook",
+        "SANDBOX": "Modo de teste",
+        "ACCOUNT_NAME": "Nome da conta (opcional)"
+      },
+      "DB_KINDS": {
+        "POSTGRES": "PostgreSQL",
+        "MYSQL": "MySQL",
+        "MONGO": "MongoDB",
+        "SQLITE": "SQLite"
+      },
+      "COLUMNS": {
+        "NAME": "Nome",
+        "TYPE": "Tipo",
+        "DETAILS": "Detalhes",
+        "VARS": "Variáveis no agente",
+        "UPDATED": "Atualizado"
+      },
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "REPLACE": "Substituir",
+      "REPLACE_TITLE": "Substituir {name}",
+      "REMOVE": "Remover",
+      "CONNECT": "Conectar",
+      "RECONNECT": "Conectar de novo",
+      "KEEP_BLANK": "Campos secretos em branco mantêm o valor atual.",
+      "OPTIONAL": "opcional",
+      "PASTE_JSON": "ou cole o conteúdo do arquivo JSON aqui",
+      "INVALID_JSON": "Este arquivo não é um JSON válido.",
+      "REQUIRED": "Preencha os campos obrigatórios.",
+      "SAVED": "Credencial salva",
+      "CONNECTED": "Conta conectada",
+      "OAUTH_ERROR": "Não foi possível iniciar a conexão. Tente novamente.",
+      "WAITING_OAUTH": "Autorize o acesso na aba que abriu. Esta lista atualiza sozinha quando a conta for conectada.",
+      "CONFIRM_REMOVE": "Remover a credencial {name}? Os agentes deixam de poder usá-la.",
+      "STORED": "Valor guardado",
+      "STORED_JSON": "Arquivo JSON guardado",
+      "SANDBOX": "Modo de teste",
+      "PRODUCTION": "Produção",
+      "EMPTY": "Nenhuma credencial ainda. Clique em Nova credencial.",
+      "VARS_HELP": "A coluna Variáveis mostra os nomes que a skill do agente usa para ler cada credencial no terminal. O valor nunca é exibido."
     },
     "INBOXES": {
       "TITLE": "Caixas de entrada e agentes",

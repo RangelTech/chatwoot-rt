@@ -150,7 +150,6 @@
       "CHAT": "AI Chat",
       "AGENTS": "Agents",
       "SKILLS": "Skills and routines",
-      "KNOWLEDGE": "Knowledge",
       "PROVIDERS": "Providers",
       "CREDENTIALS": "Credentials",
       "INBOXES": "Inboxes",
@@ -176,22 +175,6 @@
         "TITLE": "AI providers",
         "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."
       },
-      "CREDENTIALS": {
-        "TITLE": "Credentials",
-        "HELP": "Secrets agents use by name (API tokens, passwords). Values are write-only."
-      },
-      "SOURCES": {
-        "TITLE": "Data sources",
-        "HELP": "Databases and APIs agents can read."
-      },
-      "FILES": {
-        "TITLE": "Files",
-        "HELP": "Documents indexed for the agents."
-      },
-      "MEMORIES": {
-        "TITLE": "Memories",
-        "HELP": "What agents remembered. Remove anything you do not want kept."
-      },
       "USAGE": {
         "TITLE": "AI usage",
         "HELP": "Estimated usage; not a bill."
@@ -206,11 +189,7 @@
       },
       "INTEGRATIONS": {
         "TITLE": "Integrations",
-        "HELP": "API keys for external systems."
-      },
-      "PAYMENTS": {
-        "TITLE": "Payments",
-        "HELP": "Mercado Pago credential used by agents to charge."
+        "HELP": "Keys that let external systems talk to an agent. The key is only shown once, when created."
       },
       "YES": "Yes",
       "NO": "No",
@@ -246,13 +225,7 @@
         "PROVIDER": "Provider",
         "MODEL": "Model",
         "API_KEY": "API key",
-        "API_BASE": "API base URL (optional)",
-        "VALUE": "Value",
-        "KIND": "Type",
-        "CONFIG_JSON": "Connection (JSON)",
-        "SECRET": "Secret",
-        "ACCESS_TOKEN": "Access token",
-        "WEBHOOK_SECRET": "Webhook secret"
+        "API_BASE": "API base URL (optional)"
       },
       "COLUMNS": {
         "NAME": "Name",
@@ -260,16 +233,12 @@
         "MODEL": "Model",
         "IS_ACTIVE": "Active",
         "UPDATED_AT": "Updated",
-        "KIND": "Type",
         "STATUS": "Status",
-        "SIZE_BYTES": "Size",
-        "CONTENT": "Memory",
         "CREATED_AT": "Created",
         "TITLE": "Title",
-        "SANDBOX": "Test mode",
-        "HAS_TOKEN": "Token set",
         "DEVICE_NAME": "Device",
-        "LAST_ACTIVITY_AT": "Last activity"
+        "LAST_ACTIVITY_AT": "Last activity",
+        "KEY_PREFIX": "Key"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
       "RETRY": "Try again",
@@ -342,7 +311,94 @@
         "DOMAINS": "Domains",
         "NO_DOMAINS": "No connected domains.",
         "DOMAIN": "Domain"
-      }
+      },
+      "NEW_KEY": "Key created. Copy it now: it will not be shown again."
+    },
+    "CRED": {
+      "TITLE": "Credentials",
+      "HELP": "Everything agents use to sign in to other systems: tokens, databases, servers, email, payments, and Google or Outlook accounts. Values are write-only: once saved they never show again, you can only replace or remove them.",
+      "NEW": "New credential",
+      "TYPE": "Credential type",
+      "TYPES": {
+        "SECRET": "Secret, API key or token",
+        "DATABASE": "Database",
+        "SSH": "Server SSH",
+        "GCP": "Google Cloud service account",
+        "EMAIL": "Email (IMAP/SMTP)",
+        "PAYMENT": "Payment (Mercado Pago)",
+        "GOOGLE": "Google (connect account)",
+        "MICROSOFT": "Outlook / Microsoft (connect account)"
+      },
+      "TYPE_HELP": {
+        "SECRET": "A named value, such as an API key. The agent receives it as an environment variable with the same name.",
+        "DATABASE": "Database login and password. The agent receives the DB_<NAME>_URL variable with the full connection address.",
+        "SSH": "Access to a server of yours. The agent receives the private key plus host, user and port in SSH_<NAME> variables.",
+        "GCP": "A service account JSON file. The agent receives it in the GCP_<NAME>_JSON variable.",
+        "EMAIL": "A mailbox over IMAP and SMTP. The agent receives host, user and password in EMAIL_<NAME>_* variables.",
+        "PAYMENT": "Mercado Pago access token, used to charge via Pix. Applies to the whole company.",
+        "GOOGLE": "Opens the Google page so you can authorize calendar and spreadsheet access. The agent receives the token in GOOGLE_<NAME>_TOKEN.",
+        "MICROSOFT": "Opens the Microsoft page so you can authorize calendar and meeting access. The agent receives the token in MICROSOFT_<NAME>_TOKEN."
+      },
+      "FIELDS": {
+        "NAME": "Name",
+        "VALUE": "Value",
+        "DB_KIND": "Database type",
+        "HOST": "Host",
+        "PORT": "Port",
+        "DATABASE": "Database name",
+        "PATH": "File path",
+        "USER": "User",
+        "PASSWORD": "Password",
+        "SSL": "Require secure connection (SSL)",
+        "LABEL": "Name",
+        "EMAIL_ADDRESS": "Email address",
+        "SMTP_HOST": "SMTP server (sending)",
+        "SMTP_PORT": "SMTP port",
+        "IMAP_HOST": "IMAP server (reading)",
+        "IMAP_PORT": "IMAP port",
+        "USERNAME": "Email username",
+        "USE_TLS": "Use secure connection (TLS)",
+        "ACCESS_TOKEN": "Access token",
+        "WEBHOOK_SECRET": "Webhook secret",
+        "SANDBOX": "Test mode",
+        "ACCOUNT_NAME": "Account name (optional)"
+      },
+      "DB_KINDS": {
+        "POSTGRES": "PostgreSQL",
+        "MYSQL": "MySQL",
+        "MONGO": "MongoDB",
+        "SQLITE": "SQLite"
+      },
+      "COLUMNS": {
+        "NAME": "Name",
+        "TYPE": "Type",
+        "DETAILS": "Details",
+        "VARS": "Agent variables",
+        "UPDATED": "Updated"
+      },
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "REPLACE": "Replace",
+      "REPLACE_TITLE": "Replace {name}",
+      "REMOVE": "Remove",
+      "CONNECT": "Connect",
+      "RECONNECT": "Connect again",
+      "KEEP_BLANK": "Secret fields left blank keep the current value.",
+      "OPTIONAL": "optional",
+      "PASTE_JSON": "or paste the JSON file contents here",
+      "INVALID_JSON": "This file is not valid JSON.",
+      "REQUIRED": "Fill in the required fields.",
+      "SAVED": "Credential saved",
+      "CONNECTED": "Account connected",
+      "OAUTH_ERROR": "Could not start the connection. Try again.",
+      "WAITING_OAUTH": "Authorize access in the tab that opened. This list refreshes by itself once the account is connected.",
+      "CONFIRM_REMOVE": "Remove credential {name}? Agents will no longer be able to use it.",
+      "STORED": "Value stored",
+      "STORED_JSON": "JSON file stored",
+      "SANDBOX": "Test mode",
+      "PRODUCTION": "Production",
+      "EMPTY": "No credentials yet. Click New credential.",
+      "VARS_HELP": "The Variables column shows the names the agent skill uses to read each credential in the terminal. The value is never shown."
     },
     "INBOXES": {
       "TITLE": "Inboxes and agents",
