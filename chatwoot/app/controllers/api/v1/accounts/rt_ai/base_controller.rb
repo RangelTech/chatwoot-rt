@@ -46,9 +46,17 @@ class Api::V1::Accounts::RtAi::BaseController < Api::V1::Accounts::BaseControlle
     engine_failed(e)
   end
 
+  # Erro de negócio do motor (400-499, exceto 401/403 de credencial do BFF) chega ao usuário com o status
+  # e a mensagem dele; o resto (rede, 5xx, contexto recusado) vira 502 genérico.
+  PASSTHROUGH_STATUSES = [400, 404, 409, 422].freeze
+
   def engine_failed(error)
     Rails.logger.warn("rt_ai engine error: #{error.message}")
-    render json: { code: 'engine_error', message: 'Serviço de IA indisponível no momento' }, status: :bad_gateway
+    if PASSTHROUGH_STATUSES.include?(error.status) && error.detail.present?
+      render json: { code: 'engine_rejected', message: error.detail }, status: error.status
+    else
+      render json: { code: 'engine_error', message: 'Serviço de IA indisponível no momento' }, status: :bad_gateway
+    end
     nil
   end
 end

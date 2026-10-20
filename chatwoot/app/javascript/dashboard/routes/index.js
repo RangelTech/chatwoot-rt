@@ -35,6 +35,11 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
 
   const routeAccountId = Number(to.params?.accountId || accountId);
   const userAccount = accounts.find(a => a.id === routeAccountId);
+  // URL de uma Account da qual o usuário não faz parte: volta para a dele em vez de abrir uma tela em branco.
+  if (to.params?.accountId && !userAccount) {
+    const home = accounts.find(a => a.id === accountId) || accounts[0];
+    return next(frontendURL(`accounts/${home.id}`));
+  }
   const isAdmin = userAccount?.role === 'administrator';
   const isActive = userAccount?.status === 'active';
   const needsOnboarding =

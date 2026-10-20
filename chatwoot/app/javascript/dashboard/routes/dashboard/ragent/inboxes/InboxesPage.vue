@@ -24,6 +24,8 @@ const load = async () => {
     ]);
     inboxes.value = (i.data.items || i.data.inboxes || i.data || []).map(x => ({
       ...x,
+      // O motor identifica a caixa por `chatwoot_inbox_id`; sem `id` o PUT ia para /inboxes/undefined (404).
+      id: x.id ?? x.chatwoot_inbox_id,
       template_id: x.template_id || x.ai?.template_id || '',
       autopilot: x.autopilot ?? x.ai?.autopilot ?? true,
     }));

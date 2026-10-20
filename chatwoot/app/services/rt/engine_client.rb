@@ -4,13 +4,18 @@ require 'net/http'
 # (mesmo formato do `app/ui_context.py` do motor): base64url(claims).base64url(hmac).
 class Rt::EngineClient
   class Error < StandardError
-    # `status` e `body` (já em JSON, quando der) permitem repassar erro de validação ao usuário.
+    # `status` é o HTTP do motor (nil em falha de rede); `body` é o JSON de erro, quando houver;
+    # `detail` a mensagem de negócio dele (string).
     attr_reader :status, :body
 
     def initialize(message = nil, status: nil, body: nil)
       super(message)
       @status = status
       @body = body
+    end
+
+    def detail
+      body.is_a?(Hash) && body['detail'].is_a?(String) ? body['detail'] : nil
     end
   end
 
