@@ -56,7 +56,20 @@
         "THANKS": "Thanks for the feedback.",
         "ERROR": "Could not send the feedback."
       },
-      "READ_ONLY": "Your profile only allows reading chats."
+      "READ_ONLY": "Your profile only allows reading chats.",
+      "MARKDOWN": {
+        "COPY": "Copy",
+        "COPIED": "Copied"
+      },
+      "THINKING": {
+        "TITLE": "Thinking…",
+        "WORKING": "Working on your request…",
+        "SHOW": "Show details",
+        "HIDE": "Hide details",
+        "STEPS": "Steps",
+        "SUBAGENTS": "{n} subagent working | {n} subagents working",
+        "SUBAGENTS_PROGRESS": "{done} of {total} finished"
+      }
     },
     "AGENTS": {
       "TITLE": "Agents",
@@ -90,6 +103,13 @@
         "SAVED": "File saved to the draft",
         "ERROR": "Could not upload the file.",
         "CONFIRM_REMOVE": "Remove this file from the agent?"
+      },
+      "OUTPUT_FORMAT": "Reply format",
+      "OUTPUT_FORMAT_HELP": "Sets how the agent writes and how the reply is shown: full Markdown on the web or WhatsApp text.",
+      "OUTPUT_FORMATS": {
+        "MARKDOWN": "Markdown (headings, lists, tables, code)",
+        "WHATSAPP": "WhatsApp (*bold*, _italic_, no tables)",
+        "TEXT": "Plain text"
       }
     },
     "SKILLS": {
@@ -349,7 +369,9 @@
       "HELP": "Choose which agent answers each inbox. Without an agent, the inbox is human-only.",
       "HUMAN_ONLY": "Human only (no agent)",
       "AUTOPILOT": "Answer automatically",
-      "DEGRADED": "Link saved, but automatic replies were not updated on this inbox yet. Save again in a moment."
+      "DEGRADED": "Link saved, but automatic replies were not updated on this inbox yet. Save again in a moment.",
+      "SHOW_PROGRESS": "Notify that it is working",
+      "SHOW_PROGRESS_HELP": "Sends a single short message (\"Thinking…\") before the reply. When off, the customer only receives the final reply."
     },
     "ROUTINE": {
       "HELP": "Routines wake the agent at a set time and run the instruction you wrote. The result lands in the history and becomes a conversation.",

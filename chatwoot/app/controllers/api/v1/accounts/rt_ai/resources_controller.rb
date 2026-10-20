@@ -17,7 +17,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
                        actions: %w[start stop backup] },
     'inboxes' => { path: '/api/omnichannel/inboxes', view: 'ai.inbox_routing.view', manage: 'ai.inbox_routing.manage',
-                   fields: [], update_suffix: '/ia', update_fields: %w[template_id autopilot handoff_team_id] },
+                   fields: [], update_suffix: '/ia', update_fields: %w[template_id autopilot handoff_team_id show_progress] },
     'integrations' => { path: '/api/integrations', view: 'ai.integrations.view', manage: 'ai.integrations.manage',
                         fields: %w[name] },
     'payments' => { path: '/api/payments/credentials', view: 'ai.payments.view', manage: 'ai.payments.manage',

@@ -260,6 +260,8 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
             content = "(o cliente enviou um áudio, mas não foi possível baixá-lo)"
 
     session_id = (state_row or {}).get("session_id") or tenants.new_session_id()
+    if config.get("show_progress"):
+        await _send_progress(tenant_id, account_id, conversation_id)
     try:
         result = await kernel.ask(
             integration_key=decrypt(config["integration_key_encrypted"]),
@@ -340,6 +342,28 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
                 logger.warning(
                     "falha ao atribuir a Fila IA na conversa %s: %s", conversation_id, exc
                 )
+
+
+PROGRESS_MESSAGE = "Pensando… já te respondo."
+
+
+async def _send_progress(tenant_id: str, account_id: int, conversation_id: int) -> None:
+    """UMA mensagem curta de progresso, só nas caixas com `show_progress` ligado.
+
+    Canal externo não tem stream: o padrão é cortar tudo e entregar só a resposta final. Falhar
+    aqui nunca atrapalha a resposta.
+    """
+    try:
+        admin = _account_admin(tenant_id)
+        if admin is None:
+            return
+        token = await chatwoot.user_access_token(int(admin["chatwoot_user_id"]))
+        await chatwoot.create_message(
+            account_id, token, conversation_id, PROGRESS_MESSAGE, message_type="outgoing"
+        )
+    except Exception as exc:  # noqa: BLE001 - progresso é cortesia
+        logger.warning("mensagem de progresso não enviada na conversa %s: %s",
+                       conversation_id, type(exc).__name__)
 
 
 async def _deliver_artifacts(

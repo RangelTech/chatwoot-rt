@@ -97,6 +97,7 @@ def upsert_ai_config(
     integration_key: str | None,
     autopilot: bool = True,
     handoff_team_id: int | None = None,
+    show_progress: bool | None = None,
 ) -> dict:
     with get_connection() as conn:
         # Caixa nova configurada pela tela não traz chave de integração: quem
@@ -119,8 +120,9 @@ def upsert_ai_config(
                     integration_key = None
         return conn.execute(
             """INSERT INTO tenant_ai_config (tenant_id, chatwoot_inbox_id, template_id,
-                                             integration_key_encrypted, autopilot, handoff_team_id)
-               VALUES (%s, %s, %s, %s, %s, %s)
+                                             integration_key_encrypted, autopilot, handoff_team_id,
+                                             show_progress)
+               VALUES (%s, %s, %s, %s, %s, %s, COALESCE(%s, FALSE))
                ON CONFLICT (tenant_id, chatwoot_inbox_id) DO UPDATE
                    SET template_id = EXCLUDED.template_id,
                        integration_key_encrypted = COALESCE(
@@ -128,6 +130,7 @@ def upsert_ai_config(
                            tenant_ai_config.integration_key_encrypted),
                        autopilot = EXCLUDED.autopilot,
                        handoff_team_id = EXCLUDED.handoff_team_id,
+                       show_progress = COALESCE(%s, tenant_ai_config.show_progress),
                        updated_at = now()
                RETURNING *""",
             (
@@ -137,6 +140,8 @@ def upsert_ai_config(
                 encrypt(integration_key) if integration_key else None,
                 autopilot,
                 handoff_team_id,
+                show_progress,
+                show_progress,
             ),
         ).fetchone()
 
