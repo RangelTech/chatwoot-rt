@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   # eles não podem depender da SPA autenticada nem de outro domínio do grupo.
   get 'politica-de-privacidade', to: 'legal#privacy'
   get 'termos-de-servico', to: 'legal#terms'
+  get 'termos-de-uso', to: 'legal#terms'
   get 'exclusao-de-dados', to: 'legal#data_deletion'
 
   # Proxy Luar (H-6): o agente de IA opera a API do Chatwoot como o usuário do chat.
