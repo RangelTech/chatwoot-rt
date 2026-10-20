@@ -56,7 +56,20 @@
         "THANKS": "Obrigado pelo retorno.",
         "ERROR": "Não foi possível enviar o retorno."
       },
-      "READ_ONLY": "Seu perfil permite apenas ler os chats."
+      "READ_ONLY": "Seu perfil permite apenas ler os chats.",
+      "MARKDOWN": {
+        "COPY": "Copiar",
+        "COPIED": "Copiado"
+      },
+      "THINKING": {
+        "TITLE": "Pensando…",
+        "WORKING": "Trabalhando na sua solicitação…",
+        "SHOW": "Ver detalhes",
+        "HIDE": "Ocultar detalhes",
+        "STEPS": "Passos",
+        "SUBAGENTS": "{n} subagente trabalhando | {n} subagentes trabalhando",
+        "SUBAGENTS_PROGRESS": "{done} de {total} concluídos"
+      }
     },
     "AGENTS": {
       "TITLE": "Agentes",
@@ -90,6 +103,13 @@
         "SAVED": "Arquivo salvo no rascunho",
         "ERROR": "Não foi possível enviar o arquivo.",
         "CONFIRM_REMOVE": "Remover este arquivo do agente?"
+      },
+      "OUTPUT_FORMAT": "Formato da resposta",
+      "OUTPUT_FORMAT_HELP": "Define como o agente escreve e como a resposta é exibida: Markdown completo na web ou texto do WhatsApp.",
+      "OUTPUT_FORMATS": {
+        "MARKDOWN": "Markdown (títulos, listas, tabelas, código)",
+        "WHATSAPP": "WhatsApp (*negrito*, _itálico_, sem tabelas)",
+        "TEXT": "Texto simples"
       }
     },
     "SKILLS": {
@@ -405,7 +425,9 @@
       "HELP": "Escolha qual agente atende cada caixa de entrada. Sem agente, a caixa é só humana.",
       "HUMAN_ONLY": "Só humano (sem agente)",
       "AUTOPILOT": "Responder automaticamente",
-      "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes."
+      "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes.",
+      "SHOW_PROGRESS": "Avisar que está trabalhando",
+      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final."
     },
     "ROUTINE": {
       "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",

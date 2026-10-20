@@ -50,6 +50,20 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it 'forwards show_progress (progress message permission) to the engine and drops unknown fields' do
+    allow(Rt::EngineClient).to receive(:put).and_return('ok' => true)
+    put "/api/v1/accounts/#{account.id}/rt_ai/resources/inboxes/12",
+        params: { template_id: SecureRandom.uuid, autopilot: true, show_progress: true, admin: true },
+        headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:success)
+    expect(Rt::EngineClient).to have_received(:put).with(
+      '/api/omnichannel/inboxes/12/ia',
+      hash_including('show_progress' => true, 'autopilot' => true),
+      anything
+    )
+    expect(Rt::EngineClient).not_to have_received(:put).with(anything, hash_including('admin' => true), anything)
+  end
+
   it 'updates an inbox agent link through the inbox routing endpoint' do
     allow(Rt::EngineClient).to receive(:put).and_return('ok' => true)
     put "/api/v1/accounts/#{account.id}/rt_ai/resources/inboxes/12", params: { template_id: SecureRandom.uuid, autopilot: true },

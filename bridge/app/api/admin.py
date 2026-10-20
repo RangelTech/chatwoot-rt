@@ -57,6 +57,8 @@ class AiConfigIn(BaseModel):
     integration_key: str | None = None
     autopilot: bool = True
     handoff_team_id: int | None = None
+    # None = não mexe no que já está salvo; True/False = decisão do motor para a caixa.
+    show_progress: bool | None = None
 
 
 class EvolutionDeprovisionIn(BaseModel):
@@ -435,6 +437,7 @@ async def set_ai_config(payload: AiConfigIn):
         integration_key=payload.integration_key,
         autopilot=payload.autopilot,
         handoff_team_id=payload.handoff_team_id,
+        show_progress=payload.show_progress,
     )
     bot = await _garante_bot_na_caixa(
         payload.tenant_id,
@@ -650,6 +653,7 @@ def _ai_config_out(config: dict | None) -> dict | None:
         "autopilot": config["autopilot"],
         "handoff_team_id": config["handoff_team_id"],
         "ai_team_id": config["ai_team_id"],
+        "show_progress": bool(config.get("show_progress")),
         # A chave nunca volta: o que interessa a quem lê é se existe.
         "has_integration_key": bool(config["integration_key_encrypted"]),
     }

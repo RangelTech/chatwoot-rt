@@ -12,6 +12,10 @@ import ChatComposer from './ChatComposer.vue';
 import ApprovalCard from './ApprovalCard.vue';
 import ArtifactPanel from './ArtifactPanel.vue';
 import MessageFeedback from './MessageFeedback.vue';
+import ChatMarkdown from './ChatMarkdown.vue';
+import ThinkingPanel from './ThinkingPanel.vue';
+import { normalizeFormat } from './markdown';
+import { isWorking, parseSubagents, upsertStep } from './progress';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -30,6 +34,10 @@ const approvals = ref([]);
 const runId = ref('');
 const sending = ref(false);
 const steps = ref([]);
+const thinking = ref('');
+const subagents = ref({ active: 0, total: 0 });
+// Formato em que o agente escreve (markdown | whatsapp | text): vem do chat, do início da run e do `done`.
+const chatFormat = ref('markdown');
 const loading = ref(true);
 const forbidden = ref(false);
 const scroller = ref(null);
@@ -51,6 +59,7 @@ const mapMessages = data =>
     id: m.id,
     role: m.role,
     content: m.content,
+    format: chatFormat.value,
     attachments: m.attachments || [],
   }));
 
@@ -83,12 +92,15 @@ const openChat = async id => {
   loadPendingApprovals(id);
   const chat = chats.value.find(c => c.id === id);
   if (chat?.template_id) templateId.value = chat.template_id;
+  chatFormat.value = normalizeFormat(chat?.output_format);
+  messages.value = mapMessages(data);
   router.replace({ name: 'ragent_chat_detail', params: { chatId: id } });
   scrollDown();
 };
 
 const newChat = () => {
   chatId.value = '';
+  chatFormat.value = 'markdown';
   messages.value = [];
   artifacts.value = [];
   approvals.value = [];
@@ -110,11 +122,24 @@ onMounted(async () => {
   }
 });
 
+const showThinking = computed(() =>
+  isWorking({
+    sending: sending.value,
+    lastContent: messages.value[messages.value.length - 1]?.content,
+    steps: steps.value,
+    subagents: subagents.value,
+  })
+);
+
 const handleEvent = (event, data) => {
   const last = messages.value[messages.value.length - 1];
   if (event === 'chat' && data.chat_id) {
     chatId.value = data.chat_id;
     runId.value = data.run_id || '';
+    if (data.output_format) {
+      chatFormat.value = normalizeFormat(data.output_format);
+      if (last) last.format = chatFormat.value;
+    }
   } else if (event === 'artifact' && data.artifact_id) {
     if (!artifacts.value.some(a => a.id === data.artifact_id)) {
       artifacts.value.push({
@@ -129,9 +154,17 @@ const handleEvent = (event, data) => {
     }
   } else if (event === 'token') {
     last.content += data.text || '';
+  } else if (event === 'thinking') {
+    thinking.value = data.text || '';
   } else if (event === 'step') {
-    steps.value = [data.label].filter(Boolean);
+    steps.value = upsertStep(steps.value, data);
+  } else if (event === 'subagents') {
+    subagents.value = parseSubagents(data);
   } else if (event === 'done') {
+    if (data.format) {
+      chatFormat.value = normalizeFormat(data.format);
+      last.format = chatFormat.value;
+    }
     if (!last.content) last.content = data.text || '';
   } else if (event === 'error') {
     last.content = data.detail || t('RAGENT.CHAT.ERROR');
@@ -150,6 +183,8 @@ const send = async ({ text, files }) => {
   messages.value.push({ role: 'assistant', content: '' });
   sending.value = true;
   steps.value = [];
+  thinking.value = '';
+  subagents.value = { active: 0, total: 0 };
   runId.value = '';
   controller = new AbortController();
   try {
@@ -173,6 +208,8 @@ const send = async ({ text, files }) => {
   } finally {
     sending.value = false;
     steps.value = [];
+    thinking.value = '';
+    subagents.value = { active: 0, total: 0 };
     await syncAfterRun();
   }
 };
@@ -279,8 +316,10 @@ const stop = async () => {
           :class="m.role === 'user' ? 'justify-end' : 'justify-start'"
         >
           <div
-            class="max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-body-main"
+            v-if="m.role === 'user' || m.content || m.error"
+            class="max-w-[80%] rounded-2xl px-4 py-2 text-body-main"
             :class="[
+              m.role === 'user' ? 'whitespace-pre-wrap' : 'min-w-0',
               m.role === 'user'
                 ? 'bg-n-brand text-white'
                 : 'bg-n-alpha-2 text-n-slate-12',
@@ -300,9 +339,16 @@ const stop = async () => {
                 {{ att.name }}
               </li>
             </ul>
-            {{
-              m.content || (sending && i === messages.length - 1 ? '...' : '')
-            }}
+            <template v-if="m.role === 'user' || m.error">{{
+              m.content
+            }}</template>
+            <ChatMarkdown
+              v-else
+              :text="m.content"
+              :format="m.format || chatFormat"
+              :chat-id="chatId"
+              :artifacts="artifacts"
+            />
             <MessageFeedback
               v-if="
                 m.role === 'assistant' && m.id && m.content && canRun && chatId
@@ -319,9 +365,12 @@ const stop = async () => {
           :approval="ap"
           :can-decide="canDecide"
         />
-        <p v-if="steps.length" class="text-body-main text-n-slate-11">
-          {{ steps[0] }}...
-        </p>
+        <ThinkingPanel
+          v-if="showThinking"
+          :thinking="thinking"
+          :steps="steps"
+          :subagents="subagents"
+        />
       </div>
 
       <ArtifactPanel v-if="chatId" :chat-id="chatId" :artifacts="artifacts" />

@@ -19,6 +19,8 @@ const manifest = ref({ tools: [] });
 const toolsText = ref('');
 const confirmActions = ref(false);
 const allowLuar = ref(false);
+const OUTPUT_FORMATS = ['markdown', 'whatsapp', 'text'];
+const outputFormat = ref('markdown');
 const problems = ref([]);
 const busy = ref(false);
 const fileError = ref('');
@@ -69,6 +71,9 @@ const edit = async agent => {
   toolsText.value = (manifest.value.tools || []).join(', ');
   confirmActions.value = Boolean(manifest.value.limits?.confirm_actions);
   allowLuar.value = Boolean(manifest.value.limits?.luar);
+  outputFormat.value = OUTPUT_FORMATS.includes(manifest.value.output?.format)
+    ? manifest.value.output.format
+    : 'markdown';
   problems.value = [];
   fileError.value = '';
 };
@@ -86,6 +91,7 @@ const payload = () => ({
     .map(f => ({ path: f.path, content: f.content })),
   manifest: {
     ...manifest.value,
+    output: { format: outputFormat.value },
     limits: {
       ...(manifest.value.limits || {}),
       confirm_actions: confirmActions.value,
@@ -279,6 +285,19 @@ const archive = async agent => {
       <label class="flex items-center gap-2 text-body-main text-n-slate-11">
         <input v-model="allowLuar" type="checkbox" class="!mb-0" />
         {{ t('RAGENT.AGENTS.ALLOW_LUAR') }}
+      </label>
+      <label class="flex flex-col gap-1 text-body-main text-n-slate-11">
+        {{ t('RAGENT.AGENTS.OUTPUT_FORMAT') }}
+        <select
+          v-model="outputFormat"
+          class="!mb-0 w-full max-w-md"
+          data-testid="output-format"
+        >
+          <option v-for="f in OUTPUT_FORMATS" :key="f" :value="f">
+            {{ t(`RAGENT.AGENTS.OUTPUT_FORMATS.${f.toUpperCase()}`) }}
+          </option>
+        </select>
+        <span>{{ t('RAGENT.AGENTS.OUTPUT_FORMAT_HELP') }}</span>
       </label>
       <section class="flex flex-col gap-2 rounded-xl border border-n-weak p-3">
         <h3 class="text-heading-3 text-n-slate-12">

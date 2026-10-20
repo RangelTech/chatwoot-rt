@@ -28,6 +28,7 @@ const load = async () => {
       id: x.id ?? x.chatwoot_inbox_id,
       template_id: x.template_id || x.ai?.template_id || '',
       autopilot: x.autopilot ?? x.ai?.autopilot ?? true,
+      show_progress: x.show_progress ?? x.ai?.show_progress ?? false,
       degraded: !!x.ai?.degraded,
     }));
     templates.value = tp.data || [];
@@ -45,6 +46,7 @@ const save = async inbox => {
     const { data } = await axios.put(`${base}/resources/inboxes/${inbox.id}`, {
       template_id: inbox.template_id || null,
       autopilot: inbox.autopilot,
+      show_progress: Boolean(inbox.show_progress),
     });
     // Vínculo salvo, mas o aviso ao atendimento automático falhou: nunca mostrar sucesso silencioso.
     inbox.degraded = data?.status === 'degraded';
@@ -79,6 +81,13 @@ const save = async inbox => {
         <label class="flex items-center gap-2 text-body-main text-n-slate-11">
           <input v-model="i.autopilot" type="checkbox" class="!mb-0" />
           {{ t('RAGENT.INBOXES.AUTOPILOT') }}
+        </label>
+        <label
+          class="flex items-center gap-2 text-body-main text-n-slate-11"
+          :title="t('RAGENT.INBOXES.SHOW_PROGRESS_HELP')"
+        >
+          <input v-model="i.show_progress" type="checkbox" class="!mb-0" />
+          {{ t('RAGENT.INBOXES.SHOW_PROGRESS') }}
         </label>
         <Button size="sm" :label="t('RAGENT.RES.SAVE')" :disabled="busy === String(i.id)" @click="save(i)" />
       </li>
