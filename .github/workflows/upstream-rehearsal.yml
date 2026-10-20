@@ -1,0 +1,71 @@
+name: Upstream rehearsal
+
+# Alerta antecipado semanal (spec 10, UPG-5): tenta mesclar a ultima versao estavel do Chatwoot numa
+# branch descartavel, mede conflitos/arquivos e envia o resultado ao Super Admin do LUAR.
+# Nao empurra nenhuma branch e nao mexe em producao.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versao alvo X.Y.Z (vazio = ultima estavel da mesma versao maior)'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    env:
+      RT_UPGRADE_REPORT_URL: ${{ secrets.RT_UPGRADE_REPORT_URL }}
+      RT_UPGRADE_REPORT_TOKEN: ${{ secrets.RT_UPGRADE_REPORT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Descobrir versao alvo
+        id: target
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          base="$(tr -d '[:space:]' < chatwoot/VERSION_CW)"
+          major="${base%%.*}"
+          if [ -n "$INPUT_VERSION" ]; then
+            target="$INPUT_VERSION"
+          else
+            target="$(git ls-remote --tags --refs https://github.com/chatwoot/chatwoot \
+              | sed -E 's#.*refs/tags/v##' | grep -E "^${major}\.[0-9]+\.[0-9]+$" | sort -V | tail -1)"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+      - name: Ensaiar mesclagem
+        id: merge
+        run: |
+          git config user.name "rehearsal"
+          git config user.email "rehearsal@localhost"
+          base="${{ steps.target.outputs.base }}"
+          target="${{ steps.target.outputs.target }}"
+          if [ "$target" = "$base" ]; then
+            echo '{"target":"'"$target"'","status":"clean","conflicts":0,"files":0}' > result.json
+          else
+            git fetch origin upstream-import:upstream-import 2>/dev/null || true
+            bash scripts/upgrade/import_upstream.sh "$target"
+            bash scripts/upgrade/merge_upstream.sh "$target" --dry-run | tail -1 > result.json
+          fi
+          cat result.json
+      - name: Resumo
+        run: |
+          {
+            echo "### Ensaio de mesclagem ${{ steps.target.outputs.base }} -> ${{ steps.target.outputs.target }}"
+            echo '```json'; cat result.json; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enviar ao Super Admin
+        if: ${{ env.RT_UPGRADE_REPORT_URL != '' }}
+        run: |
+          summary="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          jq --arg s "$summary" '. + {summary_url: $s}' result.json \
+            | curl -fsS -X POST "$RT_UPGRADE_REPORT_URL/rt/upgrade_rehearsals" \
+                -H "Authorization: Bearer $RT_UPGRADE_REPORT_TOKEN" -H 'Content-Type: application/json' -d @-

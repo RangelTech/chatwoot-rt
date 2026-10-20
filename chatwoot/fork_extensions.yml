@@ -135,4 +135,204 @@ extensions:
       app/controllers/api/base_controller.rb: "block_until_password_changed"
       config/routes.rb: "namespace :rt_ai"
       config/schedule.yml: "rt_outbox_job"
+      app/controllers/super_admin/accounts_controller.rb: "Rt::AccountLifecycle.enqueue"
+      app/controllers/super_admin/users_controller.rb: "Rt::ProvisionalPassword.issue!"
+      app/dashboards/account_dashboard.rb: "ai_state"
 
+
+  - id: rt_ai_ui_touchpoints
+    status: active
+    strategy: registration_points_only
+    purpose: Spec 10 -- pontos de registro no nucleo para as telas Vue de IA e Kanban (menu lateral, rotas, permissoes ai.*, barramento de eventos, troca de conta, senha provisoria, listener do Kanban, partials do Super Admin). O resto vive em pastas rt/ragent/kanban.
+    required_paths:
+      - app/javascript/dashboard/routes/dashboard/ragent/ragent.routes.js
+      - app/javascript/dashboard/routes/dashboard/kanban/kanban.routes.js
+      - app/javascript/dashboard/helper/ragentLanding.js
+      - app/javascript/dashboard/api/rtKanban.js
+    touchpoints:
+      - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+      - app/javascript/dashboard/components-next/sidebar/SidebarAccountSwitcher.vue
+      - app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+      - app/javascript/dashboard/routes/index.js
+      - app/javascript/dashboard/constants/permissions.js
+      - app/javascript/dashboard/helper/APIHelper.js
+      - app/javascript/dashboard/helper/actionCable.js
+      - app/javascript/shared/constants/busEvents.js
+      - app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue
+      - app/javascript/v3/helpers/AuthHelper.js
+      - app/javascript/dashboard/App.vue
+      - app/dispatchers/async_dispatcher.rb
+      - app/models/conversation.rb
+      - app/views/super_admin/accounts/show.html.erb
+      - app/views/super_admin/users/show.html.erb
+      - app/javascript/dashboard/routes/index.spec.js
+      - app/javascript/v3/helpers/specs/AuthHelper.spec.js
+    markers:
+      app/javascript/dashboard/components-next/sidebar/Sidebar.vue: "RtKanbanAPI"
+      app/javascript/dashboard/components-next/sidebar/SidebarAccountSwitcher.vue: "ragentLandingPath"
+      app/javascript/dashboard/routes/dashboard/dashboard.routes.js: "...ragentRoutes"
+      app/javascript/dashboard/routes/index.js: "ragentLandingPath"
+      app/javascript/dashboard/constants/permissions.js: "export const AI_PERMISSIONS"
+      app/javascript/dashboard/helper/APIHelper.js: "must_change_password"
+      app/javascript/dashboard/helper/actionCable.js: "rt_kanban.changed"
+      app/javascript/shared/constants/busEvents.js: "RT_KANBAN_CHANGED"
+      app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue: "<AiRolesPanel />"
+      app/javascript/v3/helpers/AuthHelper.js: "frontendURL(accountPath)"
+      app/javascript/dashboard/App.vue: "ragentes_branding"
+      app/dispatchers/async_dispatcher.rb: "RtKanban::ConversationListener.instance"
+      app/models/conversation.rb: "Conversation.prepend(Rt::ConversationKanban)"
+      app/views/super_admin/accounts/show.html.erb: 'partial: "ai_state"'
+      app/views/super_admin/users/show.html.erb: 'partial: "provisional_password"'
+      app/javascript/dashboard/routes/index.spec.js: "is not a member of"
+      app/javascript/v3/helpers/specs/AuthHelper.spec.js: "/app/accounts/7501"
+
+  - id: channels_ui_touchpoints
+    status: active
+    strategy: registration_points_only
+    purpose: Pontos de registro no nucleo para os canais WAPI/Evolution e conectores nao oficiais (API de caixas, seletor de canal, nome do canal, politica, jbuilder, preferencia por Account).
+    required_paths:
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Wapi.vue
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/channels/EvolutionApi.vue
+      - app/javascript/dashboard/routes/dashboard/settings/account/components/UnofficialChannels.vue
+    touchpoints:
+      - app/javascript/dashboard/api/inboxes.js
+      - app/javascript/dashboard/components/widgets/ChannelItem.vue
+      - app/javascript/dashboard/helper/inbox.js
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelFactory.vue
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelList.vue
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/components/ChannelName.vue
+      - app/javascript/dashboard/routes/dashboard/settings/account/Index.vue
+      - app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue
+      - app/controllers/api/v1/accounts_controller.rb
+      - app/models/inbox.rb
+      - app/policies/inbox_policy.rb
+      - app/views/api/v1/models/_inbox.json.jbuilder
+    markers:
+      app/javascript/dashboard/api/inboxes.js: "provisionEvolution"
+      app/javascript/dashboard/components/widgets/ChannelItem.vue: "'evolution_api'"
+      app/javascript/dashboard/helper/inbox.js: "EVOLUTION_API: 'Channel::EvolutionApi'"
+      app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelFactory.vue: "import EvolutionApi"
+      app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelList.vue: "instagram_unofficial"
+      app/javascript/dashboard/routes/dashboard/settings/inbox/components/ChannelName.vue: "'Channel::EvolutionApi'"
+      app/javascript/dashboard/routes/dashboard/settings/account/Index.vue: "UnofficialChannels"
+      app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue: "hasWhatsappConfigurationId"
+      app/controllers/api/v1/accounts_controller.rb: ":show_unofficial_channels"
+      app/models/inbox.rb: "deprovision_evolution_on_bridge!"
+      app/policies/inbox_policy.rb: "def provision_evolution?"
+      app/views/api/v1/models/_inbox.json.jbuilder: "resource.wapi? || resource.evolution_api?"
+
+  - id: platform_hardening
+    status: active
+    strategy: small_upstream_patch
+    purpose: Correcoes pequenas de robustez no nucleo (saude real do banco, cache de configuracao global, valor false legitimo, pagina publica de dominio).
+    touchpoints:
+      - app/controllers/api_controller.rb
+      - app/controllers/public_controller.rb
+      - lib/global_config.rb
+      - lib/global_config_service.rb
+      - app/controllers/concerns/instagram_concern.rb
+    markers:
+      app/controllers/concerns/instagram_concern.rb: "https://www.instagram.com/oauth/authorize"
+      app/controllers/api_controller.rb: "SELECT 1"
+      app/controllers/public_controller.rb: "suporte@rangeltech.net"
+      lib/global_config.rb: "conn.mget(*cache_keys)"
+      lib/global_config_service.rb: "config == ''"
+
+  - id: brand_luar_touchpoints
+    status: active
+    strategy: brand_script_reapply
+    purpose: Marca LUAR espalhada em arquivos do nucleo (e-mails, telas, Super Admin, configuracao padrao). Em conflito, aceitar a versao do upstream e reaplicar rt:brand:apply (UPG-4); estes marcadores provam que a marca voltou.
+    touchpoints:
+      - app/javascript/dashboard/components-next/Campaigns/EmptyState/CampaignEmptyStateContent.js
+      - app/javascript/dashboard/components-next/HelpCenter/PortalSwitcher/CreatePortalDialog.vue
+      - app/javascript/dashboard/components-next/icon/Logo.vue
+      - app/javascript/dashboard/components-next/year-in-review/slides/ThankYouSlide.vue
+      - app/javascript/dashboard/components/Code.vue
+      - app/javascript/dashboard/modules/widget-preview/components/Widget.vue
+      - app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/Header.vue
+      - app/javascript/dashboard/routes/dashboard/settings/profile/MfaManagementActions.vue
+      - app/javascript/dashboard/routes/dashboard/settings/profile/MfaSetupWizard.vue
+      - app/javascript/survey/views/Response.vue
+      - app/javascript/v3/views/login/Index.vue
+      - app/mailers/administrator_notifications/account_notification_mailer.rb
+      - app/mailers/application_mailer.rb
+      - app/mailers/conversation_reply_mailer.rb
+      - app/models/concerns/email_address_parseable.rb
+      - app/services/crm/leadsquared/mappers/contact_mapper.rb
+      - app/services/crm/leadsquared/mappers/conversation_mapper.rb
+      - app/services/crm/leadsquared/setup_service.rb
+      - app/services/mfa/management_service.rb
+      - app/services/notification/push_test_service.rb
+      - app/views/devise/mailer/_confirmation_body.html.erb
+      - app/views/devise/mailer/confirmation_instructions.html.erb
+      - app/views/installation/onboarding/index.html.erb
+      - app/views/layouts/mailer/base.liquid
+      - app/views/layouts/vueapp.html.erb
+      - app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
+      - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
+      - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid
+      - app/views/super_admin/application/_navigation.html.erb
+      - app/views/super_admin/devise/sessions/new.html.erb
+      - app/views/super_admin/settings/show.html.erb
+      - config/initializers/devise.rb
+      - config/installation_config.yml
+      - enterprise/app/views/devise/mailer/confirmation_instructions.html.erb
+    markers:
+      app/javascript/dashboard/components-next/Campaigns/EmptyState/CampaignEmptyStateContent.js: "LUAR"
+      app/javascript/dashboard/components-next/HelpCenter/PortalSwitcher/CreatePortalDialog.vue: "LUAR"
+      app/javascript/dashboard/components-next/icon/Logo.vue: 'alt="Luar"'
+      app/javascript/dashboard/components-next/year-in-review/slides/ThankYouSlide.vue: "LUAR"
+      app/javascript/dashboard/components/Code.vue: "LUAR"
+      app/javascript/dashboard/modules/widget-preview/components/Widget.vue: "LUAR"
+      app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/Header.vue: "LUAR"
+      app/javascript/dashboard/routes/dashboard/settings/profile/MfaManagementActions.vue: "LUAR"
+      app/javascript/dashboard/routes/dashboard/settings/profile/MfaSetupWizard.vue: "LUAR"
+      app/javascript/survey/views/Response.vue: "Luar logo"
+      app/javascript/v3/views/login/Index.vue: "dark:block"
+      app/mailers/administrator_notifications/account_notification_mailer.rb: "LUAR"
+      app/mailers/application_mailer.rb: "LUAR <no-reply@rangeltech.net>"
+      app/mailers/conversation_reply_mailer.rb: "LUAR <no-reply@rangeltech.net>"
+      app/models/concerns/email_address_parseable.rb: "no-reply@rangeltech.net"
+      app/services/crm/leadsquared/mappers/contact_mapper.rb: "LUAR"
+      app/services/crm/leadsquared/mappers/conversation_mapper.rb: "LUAR"
+      app/services/crm/leadsquared/setup_service.rb: "LUAR"
+      app/services/mfa/management_service.rb: "LUAR"
+      app/services/notification/push_test_service.rb: "LUAR"
+      app/views/devise/mailer/_confirmation_body.html.erb: "#0A1733"
+      app/views/devise/mailer/confirmation_instructions.html.erb: "LUAR"
+      app/views/installation/onboarding/index.html.erb: "LUAR"
+      app/views/layouts/mailer/base.liquid: "#75C8F2"
+      app/views/layouts/vueapp.html.erb: "#0A1733"
+      app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid: "LUAR"
+      app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid: "LUAR"
+      app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid: "LUAR"
+      app/views/super_admin/application/_navigation.html.erb: "Luar Admin"
+      app/views/super_admin/devise/sessions/new.html.erb: "LUAR"
+      app/views/super_admin/settings/show.html.erb: "LUAR"
+      config/initializers/devise.rb: "LUAR <no-reply@rangeltech.net>"
+      config/installation_config.yml: "value: 'LUAR'"
+      enterprise/app/views/devise/mailer/confirmation_instructions.html.erb: "LUAR"
+
+  - id: upgrade_cycle
+    status: active
+    strategy: additive_with_upstream_touchpoints
+    purpose: Fase UP -- ciclo mensal de atualizacao. Telemetria desligada (hub do Chatwoot), verificacao propria de versao, cartao no Super Admin, relatorio do ensaio semanal. Aviso de versao nunca na aplicacao do usuario.
+    required_paths:
+      - app/services/rt/upgrade_status.rb
+      - app/services/rt/upstream_version_check.rb
+      - app/services/rt/chatwoot_hub_guard.rb
+      - app/jobs/rt/upstream_version_check_job.rb
+      - app/controllers/rt/upgrade_rehearsals_controller.rb
+      - app/views/super_admin/instance_statuses/_chatwoot_update.html.erb
+      - config/initializers/rt_telemetry.rb
+    touchpoints:
+      - app/controllers/api/v1/accounts_controller.rb
+      - app/views/super_admin/instance_statuses/show.html.erb
+      - app/javascript/dashboard/components/app/UpdateBanner.vue
+      - config/schedule.yml
+    markers:
+      app/controllers/api/v1/accounts_controller.rb: "@latest_chatwoot_version = nil"
+      app/views/super_admin/instance_statuses/show.html.erb: "chatwoot_update"
+      app/javascript/dashboard/components/app/UpdateBanner.vue: "showUpstreamUpdateBanner"
+      config/schedule.yml: "rt_upstream_version_check_job"
+      config/initializers/rt_telemetry.rb: "Rt::ChatwootHubGuard"
