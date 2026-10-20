@@ -20,7 +20,8 @@ export const RESOURCES = {
   usage: { title: 'USAGE', columns: [], fields: [] },
   runs: {
     title: 'RUNS',
-    columns: ['title', 'status', 'device_name', 'last_activity_at'],
+    columns: ['started_at', 'agent', 'user', 'status', 'duration_ms'],
+    paged: true,
     fields: [],
   },
   environment: {

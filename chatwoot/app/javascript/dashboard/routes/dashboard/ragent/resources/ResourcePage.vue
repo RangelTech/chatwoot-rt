@@ -7,7 +7,13 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import { RESOURCES } from './resourceConfig';
 import UsagePanel from './UsagePanel.vue';
 import EnvironmentPanel from './EnvironmentPanel.vue';
-import { formatBytes, formatDate, formatNumber, isDateKey } from './format';
+import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatNumber,
+  isDateKey,
+} from './format';
 
 const { axios } = window;
 const { t, te } = useI18n();
@@ -30,6 +36,9 @@ const form = ref({});
 const busy = ref(false);
 // Chave de integração: o servidor a devolve uma única vez, na criação.
 const newKey = ref('');
+// Execuções vêm paginadas do motor (page/per_page/total).
+const page = ref(1);
+const pages = ref(1);
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
@@ -38,6 +47,7 @@ const cell = (value, column = '') => {
   if (typeof value === 'object') return '—';
   if (isDateKey(column)) return formatDate(value);
   if (column === 'size_bytes') return formatBytes(value);
+  if (column === 'duration_ms') return formatDuration(value);
   if (column === 'status') {
     const k = `RAGENT.RES.STATUS.${String(value).toUpperCase()}`;
     return te(k) ? t(k) : String(value);
@@ -78,7 +88,13 @@ const load = async () => {
   forbidden.value = false;
   failed.value = false;
   try {
-    const { data } = await axios.get(base.value);
+    const { data } = await axios.get(
+      base.value,
+      config.value.paged ? { params: { page: page.value } } : undefined
+    );
+    if (config.value.paged && data?.total !== undefined) {
+      pages.value = Math.max(1, Math.ceil(data.total / (data.per_page || 25)));
+    }
     const list = Array.isArray(data)
       ? data
       : data.items || data.sessions || data.charges || data.records;
@@ -101,11 +117,18 @@ const load = async () => {
 
 onMounted(load);
 watch(key, () => {
+  page.value = 1;
+  pages.value = 1;
   creating.value = false;
   newKey.value = '';
   form.value = {};
   load();
 });
+
+const goTo = n => {
+  page.value = Math.min(Math.max(1, n), pages.value);
+  load();
+};
 
 const canManage = computed(() => !!config.value.manage);
 
@@ -250,5 +273,28 @@ const runAction = async name => {
       </template>
     </dl>
     <p v-else-if="!loading && !forbidden && !failed" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
+    <nav
+      v-if="items.length && config.paged && pages > 1"
+      class="flex items-center justify-end gap-3"
+      data-testid="resource-pager"
+    >
+      <Button
+        size="sm"
+        variant="faded"
+        :label="t('RAGENT.RES.PAGER.PREV')"
+        :disabled="page <= 1"
+        @click="goTo(page - 1)"
+      />
+      <span class="text-body-main text-n-slate-11">
+        {{ t('RAGENT.RES.PAGER.PAGE', { page, pages }) }}
+      </span>
+      <Button
+        size="sm"
+        variant="faded"
+        :label="t('RAGENT.RES.PAGER.NEXT')"
+        :disabled="page >= pages"
+        @click="goTo(page + 1)"
+      />
+    </nav>
   </div>
 </template>

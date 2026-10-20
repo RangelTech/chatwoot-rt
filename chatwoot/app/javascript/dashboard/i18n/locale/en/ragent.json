@@ -4,6 +4,8 @@
       "TITLE": "AI Chat",
       "NEW": "New chat",
       "UNTITLED": "Untitled chat",
+      "HISTORY": "History",
+      "HISTORY_CLOSE": "Close history",
       "NOT_SENT_TO_CUSTOMER": "Test chat - not sent to the customer",
       "AGENT": "Agent",
       "PICK_AGENT": "Choose an agent",
@@ -258,9 +260,18 @@
         "TITLE": "Title",
         "DEVICE_NAME": "Device",
         "LAST_ACTIVITY_AT": "Last activity",
-        "KEY_PREFIX": "Key"
+        "KEY_PREFIX": "Key",
+        "AGENT": "Agent",
+        "USER": "Person",
+        "STARTED_AT": "Started",
+        "DURATION_MS": "Duration"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
+      "PAGER": {
+        "PREV": "Previous",
+        "NEXT": "Next",
+        "PAGE": "Page {page} of {pages}"
+      },
       "RETRY": "Try again",
       "STATUS": {
         "RUNNING": "Running",
