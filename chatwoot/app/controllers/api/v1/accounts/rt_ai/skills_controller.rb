@@ -1,18 +1,37 @@
-# BFF de Skills do usuário (aprendidas), rotinas e propostas de memória (spec 10, U-3a).
-# Tudo é do próprio usuário; o motor filtra por empresa e dono.
+# BFF de Skills (duas camadas), rotinas e propostas de memória (spec 10, U-3a / H-3).
+# "Minhas" é só do usuário e o motor filtra por empresa e dono; "Da empresa" é compartilhada pelo
+# tenant e só muda com `ai.skills.manage_company` ou `ai.agents.edit`.
 class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
   ACTIONS = %w[approve discard disable enable].freeze
+  COMPANY_ACTIONS = %w[enable disable].freeze
+  PASSTHROUGH_STATUSES = [400, 404, 409, 422].freeze
+  COMPANY_MANAGE = %w[ai.skills.manage_company ai.agents.edit].freeze
 
-  before_action -> { require_permission('ai.skills.view') }, only: [:index]
-  before_action -> { require_permission('ai.skills.manage_own') }, only: [:act, :destroy]
-  before_action -> { require_permission('ai.routines.view') }, only: [:routines]
-  before_action -> { require_permission('ai.routines.manage') }, only: [:routine_act, :routine_destroy]
+  before_action -> { require_permission('ai.skills.view') }, only: [:index, :show, :company, :company_show]
+  before_action -> { require_permission('ai.skills.manage_own') }, only: [:create, :update, :act, :destroy]
+  before_action :require_company_manage, only: [:company_create, :company_update, :company_destroy, :company_act]
+  before_action -> { require_permission('ai.routines.view') }, only: [:routines, :routine_runs]
+  before_action -> { require_permission('ai.routines.manage') }, only: [:routine_create, :routine_update, :routine_act, :routine_destroy]
   before_action -> { require_permission('ai.memories.review') }, only: [:memory_proposals, :memory_act]
-  before_action :need_uuid, only: [:act, :destroy, :routine_act, :routine_destroy, :memory_act]
+  before_action :need_uuid, only: [:show, :update, :act, :destroy, :company_show, :company_update, :company_destroy,
+                                   :company_act, :routine_update, :routine_runs, :routine_act, :routine_destroy, :memory_act]
 
+  # ---- Minhas
   def index
     render_engine engine_get('/api/me/skills')
+  end
+
+  def show
+    render_engine engine_get("/api/me/skills/#{params[:id]}")
+  end
+
+  def create
+    render_engine engine_post('/api/me/skills', { content: params[:content].to_s })
+  end
+
+  def update
+    render_engine engine_put("/api/me/skills/#{params[:id]}", { content: params[:content].to_s })
   end
 
   def act
@@ -25,8 +44,48 @@ class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseC
     render_engine engine_delete("/api/me/skills/#{params[:id]}")
   end
 
+  # ---- Da empresa
+  def company
+    render_engine engine_get('/api/skills/company')
+  end
+
+  def company_show
+    render_engine engine_get("/api/skills/company/#{params[:id]}")
+  end
+
+  def company_create
+    render_engine engine_post('/api/skills/company', { content: params[:content].to_s })
+  end
+
+  def company_update
+    render_engine engine_put("/api/skills/company/#{params[:id]}", { content: params[:content].to_s })
+  end
+
+  def company_destroy
+    render_engine engine_delete("/api/skills/company/#{params[:id]}")
+  end
+
+  def company_act
+    return head :not_found unless COMPANY_ACTIONS.include?(params[:do])
+
+    render_engine engine_post("/api/skills/company/#{params[:id]}/#{params[:do]}")
+  end
+
+  # ---- Rotinas
   def routines
     render_engine engine_get('/api/schedules')
+  end
+
+  def routine_runs
+    render_engine engine_get("/api/schedules/#{params[:id]}/runs")
+  end
+
+  def routine_create
+    render_engine engine_post('/api/schedules', routine_params)
+  end
+
+  def routine_update
+    render_engine engine_put("/api/schedules/#{params[:id]}", routine_params)
   end
 
   def routine_act
@@ -39,6 +98,7 @@ class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseC
     render_engine engine_delete("/api/schedules/#{params[:id]}")
   end
 
+  # ---- Memória
   def memory_proposals
     render_engine engine_get('/api/memories/proposals')
   end
@@ -51,8 +111,30 @@ class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseC
 
   private
 
+  def require_company_manage
+    return if COMPANY_MANAGE.intersect?(Current.account_user&.permissions || [])
+
+    render json: { code: 'forbidden', message: 'Permissão negada' }, status: :forbidden
+  end
+
+  def routine_params
+    params.permit(:name, :instruction, :cron, :timezone, :template_id, :active,
+                  frequency: [:kind, :time, :minute, :day, { weekdays: [] }]).to_h
+  end
+
   def render_engine(data)
     render json: data unless performed?
+  end
+
+  # Erro de validação do motor (nome repetido, segredo no texto, intervalo curto...) chega ao usuário
+  # com a mensagem e os problemas dele; o resto (rede, 5xx, contexto recusado) segue como 502 genérico.
+  def engine_failed(error)
+    return super unless PASSTHROUGH_STATUSES.include?(error.status) && error.body.is_a?(Hash)
+
+    problems = Array(error.body['problems'])
+    message = problems.first&.dig('message') || error.body['detail'].to_s
+    render json: { code: 'engine_rejected', message: message, problems: problems }, status: error.status
+    nil
   end
 
   def need_uuid
