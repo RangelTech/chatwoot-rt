@@ -29,3 +29,5 @@ class TeamMember < ApplicationRecord
 end
 
 TeamMember.include_mod_with('Audit::TeamMember')
+
+TeamMember.prepend(Rt::TeamMemberAiQueueGuard)

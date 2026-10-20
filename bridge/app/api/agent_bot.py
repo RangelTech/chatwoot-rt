@@ -11,12 +11,13 @@ disputarem a mesma conversa:
 Enquanto o estado não for `ai_active`, o bot não responde. Ponto.
 """
 
+import asyncio
 import base64
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Request
 
-from app.services import chatwoot, kernel, tenants
+from app.services import chatwoot, kernel, routing, tenants
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,7 @@ async def _build_audio_attachment_payload(attachment: dict) -> dict | None:
         "data_base64": base64.b64encode(data).decode(),
     }
 
+
 # --------------------------------------------------------------------------
 # Fila Demo IVR (produto-08): menu numerado "digite 1, digite 2", ZERO
 # chamada ao kernel. Isolado de propósito: vive na mesma tabela de estado
@@ -129,8 +131,7 @@ MENU_VOLTAR = "Digite 0 para voltar ao menu."
 # opção -> (texto de resposta, campo da config com o Team a atribuir)
 MENU_OPTIONS = {
     "1": (
-        "Você escolheu Falar com vendas. Um especialista vai te atender em breve. "
-        + MENU_VOLTAR,
+        "Você escolheu Falar com vendas. Um especialista vai te atender em breve. " + MENU_VOLTAR,
         "team_vendas_id",
     ),
     "2": (
@@ -199,7 +200,9 @@ async def _handle_menu_bot(
             except chatwoot.ChatwootError as exc:
                 logger.warning(
                     "falha ao atribuir o Team da opção %s na conversa %s: %s",
-                    content, conversation_id, exc,
+                    content,
+                    conversation_id,
+                    exc,
                 )
         tenants.set_menu_step(
             tenant_id=tenant_id, conversation_id=conversation_id, menu_step=f"option:{content}"
@@ -227,7 +230,7 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
     if not conversation_id:
         return
 
-    inbox_id = (conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id"))
+    inbox_id = conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id")
     content = (payload.get("content") or "").strip()
     audio_attachment = _extract_audio_attachment(payload)
     # Antes desta ligação (qa-02 seção 3b), uma nota de voz sozinha (sem
@@ -279,10 +282,16 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
             session_id=session_id,
             last_error=str(exc),
         )
-        await _escalate(tenant_id, account_id, conversation_id, config, note=(
-            "A IA não conseguiu responder agora (kernel indisponível). "
-            "A conversa foi encaminhada para atendimento humano."
-        ))
+        await _escalate(
+            tenant_id,
+            account_id,
+            conversation_id,
+            config,
+            note=(
+                "A IA não conseguiu responder agora (kernel indisponível). "
+                "A conversa foi encaminhada para atendimento humano."
+            ),
+        )
         return
 
     admin = _account_admin(tenant_id)
@@ -312,7 +321,10 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
             session_id=session_id,
         )
         await _escalate(
-            tenant_id, account_id, conversation_id, config,
+            tenant_id,
+            account_id,
+            conversation_id,
+            config,
             note="A IA pediu transferência para um atendente humano.",
             token=token,
         )
@@ -335,19 +347,191 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
         ai_team_id = (config or {}).get("ai_team_id")
         if ai_team_id and state_row is None:
             try:
-                await chatwoot.assign_team(
-                    account_id, token, conversation_id, int(ai_team_id)
-                )
+                await chatwoot.assign_team(account_id, token, conversation_id, int(ai_team_id))
             except chatwoot.ChatwootError as exc:
                 logger.warning(
                     "falha ao atribuir a Fila IA na conversa %s: %s", conversation_id, exc
                 )
 
 
+# --------------------------------------------------------------------------
+# Fase F: o respondente vem do Chatwoot (modo `filas`).
+# A ponte consulta o Luar por mensagem, deduplica e mantem apenas conversa+agente -> sessao.
+# --------------------------------------------------------------------------
+
+_CONVERSATION_LOCKS: dict[tuple[str, int], asyncio.Lock] = {}
+
+
+def _conversation_lock(tenant_id: str, conversation_id: int) -> asyncio.Lock:
+    return _CONVERSATION_LOCKS.setdefault((tenant_id, conversation_id), asyncio.Lock())
+
+
+def _ia_attrs(agent_id: str) -> dict:
+    """Marca mensagens da IA para que nao contem como mensagens humanas."""
+    return {"rt_origin": "ia", "rt_agent": agent_id}
+
+
+def _legacy_respondent(tenant_id: str, conversation_id: int, inbox_id: int | None) -> str:
+    """Decisao legada usada pelo modo sombra para medir divergencia."""
+    state_row = tenants.conversation_state(tenant_id, conversation_id)
+    state = state_row["state"] if state_row else "ai_active"
+    config = tenants.ai_config_for(tenant_id, inbox_id)
+    return "ia" if state in AI_STATES and config is not None and config["autopilot"] else "humano"
+
+
+async def _handle_message_filas(
+    tenant_id: str, account_id: int, payload: dict, decision: dict
+) -> None:
+    from app.crypto import decrypt
+
+    conversation = payload.get("conversation") or {}
+    conversation_id = int(conversation.get("id") or payload.get("conversation_id") or 0)
+    message_id = int(payload.get("id") or 0)
+    inbox_id = conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id")
+    content = (payload.get("content") or "").strip()
+    audio_attachment = _extract_audio_attachment(payload)
+    if not conversation_id or (not content and audio_attachment is None):
+        return
+
+    config = tenants.ai_config_for(tenant_id, int(inbox_id) if inbox_id else None)
+    if config is None or not config.get("integration_key_encrypted"):
+        logger.warning("fila de IA sem configuracao na conversa %s", conversation_id)
+        if message_id:
+            tenants.release_message(tenant_id, message_id)
+        return
+    agent_id = str(decision.get("agent") or config.get("template_id") or "")
+    attrs = _ia_attrs(agent_id)
+    integration_key = decrypt(config["integration_key_encrypted"])
+
+    kernel_attachments: list[dict] = []
+    if audio_attachment is not None:
+        built = await _build_audio_attachment_payload(audio_attachment)
+        if built is not None:
+            kernel_attachments.append(built)
+        elif not content:
+            content = "(o cliente enviou um áudio, mas não foi possível baixá-lo)"
+
+    async with _conversation_lock(tenant_id, conversation_id):
+        session_id, last_seen = tenants.agent_session(tenant_id, conversation_id, agent_id)
+        entries = await routing.history(account_id, conversation_id)
+        context = routing.history_block(
+            entries, agent_id=agent_id, after_id=last_seen, current_message_id=message_id
+        )
+        destinations = await routing.destinations(account_id, conversation_id)
+        parts = [context, routing.destinations_block(destinations)]
+        text = content or "(áudio recebido)"
+        prompt = "\n\n".join(p for p in parts if p)
+        prompt = f"{prompt}\n\nMensagem do cliente: {text}" if prompt else text
+
+        if config.get("show_progress"):
+            await _send_progress(tenant_id, account_id, conversation_id, attrs)
+        try:
+            result = await kernel.ask(
+                integration_key=integration_key,
+                message=prompt,
+                session_id=f"cw-{conversation_id}-{session_id}",
+                template_id=agent_id or None,
+                attachments=kernel_attachments or None,
+                extra_context={"destinations": destinations} if destinations else None,
+            )
+        except kernel.KernelError as exc:
+            logger.warning("kernel indisponivel para a conversa %s: %s", conversation_id, exc)
+            if message_id:
+                tenants.release_message(tenant_id, message_id)
+            await _note_private(
+                tenant_id,
+                account_id,
+                conversation_id,
+                "IA indisponivel agora; um atendente precisa assumir.",
+            )
+            return
+
+        # Reconfere: durante a execucao, um humano pode assumir ou a fila pode mudar.
+        again = await routing.resolve(account_id, conversation_id)
+        if (
+            again is None
+            or again.get("respondent") != "ia"
+            or str(again.get("agent") or "") != agent_id
+        ):
+            logger.info(
+                "resposta descartada na conversa %s: respondente mudou (%s)",
+                conversation_id,
+                (again or {}).get("reason"),
+            )
+            tenants.mark_agent_seen(tenant_id, conversation_id, agent_id, message_id)
+            return
+
+        admin = _account_admin(tenant_id)
+        if admin is None:
+            return
+        token = await chatwoot.user_access_token(int(admin["chatwoot_user_id"]))
+        if result["reply"]:
+            await chatwoot.create_message(
+                account_id,
+                token,
+                conversation_id,
+                result["reply"],
+                message_type="outgoing",
+                content_attributes=attrs,
+            )
+        await _deliver_artifacts(
+            tenant_id=tenant_id,
+            account_id=account_id,
+            token=token,
+            conversation_id=conversation_id,
+            integration_key=integration_key,
+            artifacts=result.get("artifacts") or [],
+            attrs=attrs,
+        )
+        if result.get("handoff"):
+            detail = result.get("handoff_detail") or {}
+            outcome = await routing.handoff(
+                account_id,
+                conversation_id,
+                queue=detail.get("queue"),
+                summary=detail.get("summary"),
+                run_id=session_id,
+            )
+            if not outcome.get("ok"):
+                logger.info(
+                    "repasse recusado na conversa %s: %s", conversation_id, outcome.get("reason")
+                )
+        seen = max(
+            [message_id]
+            + [
+                e["id"]
+                for e in entries
+                if not (e.get("role") == "ia" and e.get("agent") == agent_id)
+            ]
+        )
+        tenants.mark_agent_seen(tenant_id, conversation_id, agent_id, seen)
+
+
+async def _note_private(tenant_id: str, account_id: int, conversation_id: int, note: str) -> None:
+    try:
+        admin = _account_admin(tenant_id)
+        if admin is None:
+            return
+        token = await chatwoot.user_access_token(int(admin["chatwoot_user_id"]))
+        await chatwoot.create_message(
+            account_id,
+            token,
+            conversation_id,
+            note,
+            message_type="outgoing",
+            private=True,
+            content_attributes={"rt_origin": "ia"},
+        )
+    except chatwoot.ChatwootError as exc:
+        logger.warning("nota privada nao criada na conversa %s: %s", conversation_id, exc)
+
+
 PROGRESS_MESSAGE = "Pensando… já te respondo."
 
 
-async def _send_progress(tenant_id: str, account_id: int, conversation_id: int) -> None:
+async def _send_progress(
+    tenant_id: str, account_id: int, conversation_id: int, attrs: dict | None = None
+) -> None:
     """UMA mensagem curta de progresso, só nas caixas com `show_progress` ligado.
 
     Canal externo não tem stream: o padrão é cortar tudo e entregar só a resposta final. Falhar
@@ -359,11 +543,19 @@ async def _send_progress(tenant_id: str, account_id: int, conversation_id: int) 
             return
         token = await chatwoot.user_access_token(int(admin["chatwoot_user_id"]))
         await chatwoot.create_message(
-            account_id, token, conversation_id, PROGRESS_MESSAGE, message_type="outgoing"
+            account_id,
+            token,
+            conversation_id,
+            PROGRESS_MESSAGE,
+            message_type="outgoing",
+            content_attributes=attrs,
         )
     except Exception as exc:  # noqa: BLE001 - progresso é cortesia
-        logger.warning("mensagem de progresso não enviada na conversa %s: %s",
-                       conversation_id, type(exc).__name__)
+        logger.warning(
+            "mensagem de progresso não enviada na conversa %s: %s",
+            conversation_id,
+            type(exc).__name__,
+        )
 
 
 async def _deliver_artifacts(
@@ -374,6 +566,7 @@ async def _deliver_artifacts(
     conversation_id: int,
     integration_key: str,
     artifacts: list[dict],
+    attrs: dict | None = None,
 ) -> None:
     """Renders artifacts the kernel produced this turn (chart PNGs, the PIX
     QR code) as real Chatwoot attachments.
@@ -407,6 +600,7 @@ async def _deliver_artifacts(
                 filename=filename,
                 content_type=content_type,
                 message_type="outgoing",
+                content_attributes=attrs,
             )
         except (kernel.KernelError, chatwoot.ChatwootError) as exc:
             # Uma imagem que falha para entregar não pode derrubar o resto do
@@ -415,7 +609,10 @@ async def _deliver_artifacts(
             # total não é.
             logger.warning(
                 "falha ao entregar artefato %s na conversa %s (tenant %s): %s",
-                artifact.get("artifact_id"), conversation_id, tenant_id, exc,
+                artifact.get("artifact_id"),
+                conversation_id,
+                tenant_id,
+                exc,
             )
 
 
@@ -507,7 +704,7 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
     # Branch da fila demo ANTES de qualquer coisa relacionada ao kernel — a
     # inbox nunca cai em `_handle_message` (custo zero de LLM garantido pela
     # própria topologia do código, não por uma flag em runtime).
-    inbox_id = (conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id"))
+    inbox_id = conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id")
     if inbox_id:
         menu_config = tenants.menu_bot_config_for(tenant_id, int(inbox_id))
         if menu_config is not None:
@@ -522,6 +719,23 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
                     menu_config,
                 )
             return {"status": "accepted"}
+
+    # O interruptor por caixa decide quem manda.
+    # Sem rota interna ou em `legado`, vale o caminho de sempre.
+    # Em `sombra`, o legado responde e o Luar so registra a divergencia.
+    if routing.configured() and conversation_id:
+        legacy = _legacy_respondent(tenant_id, conversation_id, int(inbox_id) if inbox_id else None)
+        decision = await routing.resolve(int(account_id), conversation_id, legacy=legacy)
+        if decision and decision.get("routing_mode") == "filas":
+            message_id = int(payload.get("id") or 0)
+            if message_id and not tenants.claim_message(tenant_id, message_id):
+                return {"status": "duplicate"}
+            if decision.get("respondent") == "ia":
+                background.add_task(
+                    _handle_message_filas, tenant_id, int(account_id), payload, decision
+                )
+                return {"status": "accepted"}
+            return {"status": "humano"}
 
     background.add_task(_handle_message, tenant_id, int(account_id), payload)
     return {"status": "accepted"}

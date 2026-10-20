@@ -8,6 +8,7 @@ mestre, e a ponte só transporta contexto.
 
 import asyncio
 import logging
+import re
 
 import httpx
 
@@ -21,6 +22,31 @@ TIMEOUT = 300.0
 # entende que um humano precisa assumir. Fica no protocolo, não no prompt de
 # um tenant específico.
 HANDOFF_MARKER = "[[HANDOFF]]"
+# Contrato estruturado (Fase F): [[HANDOFF:<fila>|<resumo>]]; fila e resumo sao opcionais.
+_HANDOFF_RE = re.compile(r"\[\[HANDOFF(?::([^\]|]*)(?:\|([^\]]*))?)?\]\]")
+
+
+def parse_handoff(reply: str, structured=None) -> tuple[str, bool, dict]:
+    """(resposta limpa, houve repasse?, {queue, summary}).
+
+    Aceita o campo estruturado do motor e o marcador no texto.
+    `true` e o marcador puro valem "fila de repasse padrao" (queue vazio).
+    """
+    detail: dict = {"queue": None, "summary": None}
+    found = False
+    if isinstance(structured, dict):
+        found = True
+        detail["queue"] = structured.get("fila") or structured.get("queue")
+        detail["summary"] = structured.get("resumo") or structured.get("summary")
+    elif structured is True:
+        found = True
+    match = _HANDOFF_RE.search(reply)
+    if match:
+        found = True
+        detail["queue"] = detail["queue"] or (match.group(1) or "").strip() or None
+        detail["summary"] = detail["summary"] or (match.group(2) or "").strip() or None
+        reply = _HANDOFF_RE.sub("", reply).strip()
+    return reply, found, detail
 
 
 class KernelError(RuntimeError):
@@ -34,8 +60,9 @@ async def ask(
     session_id: str,
     template_id: str | None = None,
     attachments: list[dict] | None = None,
+    extra_context: dict | None = None,
 ) -> dict:
-    """Manda a mensagem ao agente e devolve {reply, handoff, artifacts}.
+    """Manda a mensagem ao agente e devolve {reply, handoff, handoff_detail, artifacts}.
 
     `attachments`: descritores no formato do `PublicAttachmentIn` do
     agent-platform (`{kind, name, content_type, data_base64}`) — hoje usado
@@ -53,6 +80,9 @@ async def ask(
         body["template_id"] = template_id
     if attachments:
         body["attachments"] = attachments
+    if extra_context:
+        # O texto tambem traz campos que o motor ainda pode ignorar, como as filas de destino.
+        body["context"] = extra_context
 
     # Erro de transporte não é indisponibilidade: o Cloud Run recicla instância
     # o tempo todo e corta conexões em voo. Uma tentativa a mais evita mandar
@@ -79,10 +109,13 @@ async def ask(
 
     payload = response.json()
     reply = (payload.get("reply") or "").strip()
-    handoff = HANDOFF_MARKER in reply
-    if handoff:
-        reply = reply.replace(HANDOFF_MARKER, "").strip()
-    return {"reply": reply, "handoff": handoff, "artifacts": payload.get("artifacts") or []}
+    reply, handoff, detail = parse_handoff(reply, payload.get("handoff"))
+    return {
+        "reply": reply,
+        "handoff": handoff,
+        "handoff_detail": detail,
+        "artifacts": payload.get("artifacts") or [],
+    }
 
 
 async def fetch_artifact(*, integration_key: str, artifact_id: str) -> tuple[bytes, str, str]:

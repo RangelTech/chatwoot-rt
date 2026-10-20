@@ -7,6 +7,7 @@ de rota ou de cabeçalho do Chatwoot.
 """
 
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -238,12 +239,16 @@ async def create_message(
     *,
     message_type: str = "incoming",
     private: bool = False,
+    content_attributes: dict | None = None,
 ) -> dict:
+    body = {"content": content, "message_type": message_type, "private": private}
+    if content_attributes:
+        body["content_attributes"] = content_attributes
     return await _request(
         "POST",
         f"/api/v1/accounts/{account_id}/conversations/{conversation_id}/messages",
         token=token,
-        json_body={"content": content, "message_type": message_type, "private": private},
+        json_body=body,
     )
 
 
@@ -258,6 +263,7 @@ async def create_message_with_attachment(
     content: str = "",
     message_type: str = "outgoing",
     private: bool = False,
+    content_attributes: dict | None = None,
 ) -> dict:
     """Same endpoint as `create_message`, but multipart — the only way the
     Chatwoot API accepts a file (`Messages::MessageBuilder#process_attachments`
@@ -276,6 +282,8 @@ async def create_message_with_attachment(
     data = {"message_type": message_type, "private": str(private).lower()}
     if content:
         data["content"] = content
+    if content_attributes:
+        data["content_attributes"] = json.dumps(content_attributes)
     files = [("attachments[]", (filename, file_bytes, content_type))]
     ultimo: Exception | None = None
     response = None

@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     evolution_internal_network: str = "internal"
     evolution_public_network: str = "public"
 
+    # Fase F: rotas internas do Luar (Rails) que dizem quem responde a conversa.
+    rt_internal_url: str = ""
+    rt_internal_token: str = ""
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

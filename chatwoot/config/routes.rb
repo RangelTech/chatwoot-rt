@@ -9,6 +9,14 @@ Rails.application.routes.draw do
   # Proxy Luar (H-6): o agente de IA opera a API do Chatwoot como o usuário do chat.
   match '/rt_luar/api/v1/accounts/:account_id(/*path)', to: 'rt_luar/proxy#handle', via: :all, format: false
 
+  # Fase F: rota interna da bridge (token de servico).
+  get '/internal/routing/resolve', to: 'rt_internal/routing#resolve', format: false
+  get '/internal/routing/destinations', to: 'rt_internal/routing#destinations', format: false
+  post '/internal/routing/handoff', to: 'rt_internal/routing#handoff', format: false
+  get '/internal/routing/history', to: 'rt_internal/routing#history', format: false
+  post '/internal/routing/migrate', to: 'rt_internal/routing_migrations#create', format: false
+  post '/internal/routing/migrate/rollback', to: 'rt_internal/routing_migrations#rollback', format: false
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
