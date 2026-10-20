@@ -72,7 +72,7 @@ const submit = () => {
 
 <template>
   <footer
-    class="flex flex-col gap-2 border-t border-n-weak p-3 max-md:ps-20"
+    class="flex flex-col gap-2 border-t border-n-weak p-3 max-md:min-h-24 max-md:ps-20"
     @dragover.prevent
     @drop.prevent="onDrop"
   >

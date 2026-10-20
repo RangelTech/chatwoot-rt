@@ -9,6 +9,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import { AI_PERMISSIONS } from 'dashboard/constants/permissions';
 import { streamChat } from './useChatStream';
 import ChatComposer from './ChatComposer.vue';
+import ChatHistoryList from './ChatHistoryList.vue';
 import ApprovalCard from './ApprovalCard.vue';
 import ArtifactPanel from './ArtifactPanel.vue';
 import MessageFeedback from './MessageFeedback.vue';
@@ -25,6 +26,8 @@ const canRun = computed(() => checkPermissions([AI_PERMISSIONS.CHAT_RUN]));
 const canDecide = computed(() => checkPermissions(['ai.approvals.decide']));
 
 const chats = ref([]);
+// Celular: o histórico abre numa gaveta (a lateral fixa só existe a partir de md).
+const historyOpen = ref(false);
 const templates = ref([]);
 const templateId = ref('');
 const messages = ref([]);
@@ -83,6 +86,7 @@ const loadPendingApprovals = async id => {
 };
 
 const openChat = async id => {
+  historyOpen.value = false;
   chatId.value = id;
   artifacts.value = [];
   approvals.value = [];
@@ -99,6 +103,7 @@ const openChat = async id => {
 };
 
 const newChat = () => {
+  historyOpen.value = false;
   chatId.value = '';
   chatFormat.value = 'markdown';
   messages.value = [];
@@ -246,36 +251,69 @@ const stop = async () => {
 <template>
   <div class="flex h-full w-full overflow-hidden bg-n-surface-1">
     <aside
-      class="hidden md:flex w-64 shrink-0 flex-col border-r border-n-weak p-3 gap-2"
+      class="hidden md:flex w-64 shrink-0 flex-col border-r border-n-weak p-3"
     >
-      <Button
-        :label="t('RAGENT.CHAT.NEW')"
-        size="sm"
-        class="w-full"
-        @click="newChat"
+      <ChatHistoryList
+        :chats="chats"
+        :chat-id="chatId"
+        @new="newChat"
+        @open="openChat"
       />
-      <ul class="flex-1 overflow-y-auto">
-        <li v-for="c in chats" :key="c.id">
-          <button
-            type="button"
-            class="w-full truncate rounded-lg px-3 py-2 text-start text-body-main hover:bg-n-alpha-2"
-            :class="
-              c.id === chatId
-                ? 'bg-n-alpha-2 text-n-slate-12'
-                : 'text-n-slate-11'
-            "
-            @click="openChat(c.id)"
-          >
-            {{ c.title || t('RAGENT.CHAT.UNTITLED') }}
-          </button>
-        </li>
-      </ul>
     </aside>
+
+    <div
+      v-if="historyOpen"
+      class="fixed inset-0 z-50 flex md:hidden"
+      data-testid="chat-history-drawer"
+    >
+      <div
+        class="flex h-full w-72 max-w-[85%] flex-col gap-2 bg-n-surface-1 p-3 shadow-xl"
+        role="dialog"
+        :aria-label="t('RAGENT.CHAT.HISTORY')"
+      >
+        <div class="flex items-center justify-between">
+          <h2 class="text-heading-3 text-n-slate-12">
+            {{ t('RAGENT.CHAT.HISTORY') }}
+          </h2>
+          <Button
+            icon="i-lucide-x"
+            variant="ghost"
+            color="slate"
+            size="sm"
+            :aria-label="t('RAGENT.CHAT.HISTORY_CLOSE')"
+            @click="historyOpen = false"
+          />
+        </div>
+        <ChatHistoryList
+          :chats="chats"
+          :chat-id="chatId"
+          @new="newChat"
+          @open="openChat"
+        />
+      </div>
+      <button
+        type="button"
+        class="flex-1 bg-n-alpha-black1 backdrop-blur-sm"
+        :aria-label="t('RAGENT.CHAT.HISTORY_CLOSE')"
+        @click="historyOpen = false"
+      />
+    </div>
 
     <section class="flex min-w-0 flex-1 flex-col">
       <header
         class="flex flex-wrap items-center gap-3 border-b border-n-weak px-4 py-3"
       >
+        <Button
+          class="md:!hidden"
+          icon="i-lucide-history"
+          variant="faded"
+          color="slate"
+          size="sm"
+          data-testid="chat-history-toggle"
+          :label="t('RAGENT.CHAT.HISTORY')"
+          :aria-expanded="historyOpen"
+          @click="historyOpen = true"
+        />
         <h1 class="text-heading-2 text-n-slate-12">
           {{ t('RAGENT.CHAT.TITLE') }}
         </h1>
@@ -287,7 +325,7 @@ const stop = async () => {
         <select
           v-if="hasTemplates"
           v-model="templateId"
-          class="!mb-0 ms-auto w-64"
+          class="!mb-0 w-full md:ms-auto md:w-64"
           :disabled="Boolean(chatId)"
           :aria-label="t('RAGENT.CHAT.AGENT')"
         >

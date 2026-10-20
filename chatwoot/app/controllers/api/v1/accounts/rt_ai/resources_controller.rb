@@ -8,7 +8,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'providers' => { path: '/api/ai-services', view: 'ai.providers.view', manage: 'ai.providers.manage',
                      fields: %w[name provider model api_key api_base] },
     'usage' => { path: '/api/usage', view: 'ai.usage.view', manage: nil, fields: [] },
-    'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
+    'runs' => { path: '/api/runs', view: 'ai.runs.view', manage: nil, fields: [] },
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
                        actions: %w[start stop backup] },
     'inboxes' => { path: '/api/omnichannel/inboxes', view: 'ai.inbox_routing.view', manage: 'ai.inbox_routing.manage',
@@ -23,7 +23,8 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   before_action :need_id, only: [:update, :destroy]
 
   def index
-    render_engine engine_get(@rt_resource[:path])
+    data = engine_get(index_path)
+    render_engine(performed? ? nil : Rt::ClientVocabulary.present(params[:key], data))
   end
 
   def create
@@ -50,6 +51,14 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   end
 
   private
+
+  # Execuções são paginadas; só números inteiros viajam ao motor.
+  def index_path
+    return @rt_resource[:path] unless params[:key] == 'runs'
+
+    query = { page: params[:page].to_i, per_page: params[:per_page].to_i }.select { |_k, v| v.positive? }
+    query.empty? ? @rt_resource[:path] : "#{@rt_resource[:path]}?#{query.to_query}"
+  end
 
   def find_resource
     @rt_resource = RESOURCES[params[:key]]

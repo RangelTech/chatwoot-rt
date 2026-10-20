@@ -4,6 +4,8 @@
       "TITLE": "Chat com IA",
       "NEW": "Novo chat",
       "UNTITLED": "Chat sem título",
+      "HISTORY": "Histórico",
+      "HISTORY_CLOSE": "Fechar histórico",
       "NOT_SENT_TO_CUSTOMER": "Chat de teste — não envia ao cliente",
       "AGENT": "Agente",
       "PICK_AGENT": "Escolha um agente",
@@ -258,9 +260,18 @@
         "TITLE": "Título",
         "DEVICE_NAME": "Dispositivo",
         "LAST_ACTIVITY_AT": "Última atividade",
-        "KEY_PREFIX": "Chave"
+        "KEY_PREFIX": "Chave",
+        "AGENT": "Agente",
+        "USER": "Pessoa",
+        "STARTED_AT": "Início",
+        "DURATION_MS": "Duração"
       },
       "LOAD_ERROR": "Não foi possível carregar esta tela agora. Tente novamente em instantes.",
+      "PAGER": {
+        "PREV": "Anterior",
+        "NEXT": "Próxima",
+        "PAGE": "Página {page} de {pages}"
+      },
       "RETRY": "Tentar de novo",
       "STATUS": {
         "RUNNING": "Em execução",

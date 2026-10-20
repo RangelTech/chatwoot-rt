@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import Draggable from 'vuedraggable';
 import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanCard from './KanbanCard.vue';
+import { DRAG_OPTIONS } from './dragOptions';
 
 const props = defineProps({
   stage: { type: Object, required: true },
@@ -138,13 +139,12 @@ const submitEdit = () => {
         </p>
         <Draggable
           v-model="localItems"
-          group="rt-kanban"
+          v-bind="DRAG_OPTIONS"
           item-key="id"
           tag="ul"
           role="list"
           class="flex flex-col gap-2 min-h-12"
           :disabled="busy"
-          :animation="150"
           @change="onChange"
         >
           <template #item="{ element }">
