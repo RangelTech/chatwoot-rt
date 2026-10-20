@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import { RESOURCES } from './resourceConfig';
+import UsagePanel from './UsagePanel.vue';
+import EnvironmentPanel from './EnvironmentPanel.vue';
+import { formatBytes, formatDate, formatNumber, isDateKey } from './format';
 
 const { axios } = window;
 const { t, te } = useI18n();
@@ -21,14 +24,24 @@ const items = ref([]);
 const raw = ref(null);
 const loading = ref(true);
 const forbidden = ref(false);
+const failed = ref(false);
 const creating = ref(false);
 const form = ref({});
 const busy = ref(false);
 
-const cell = value => {
-  if (value === null || value === undefined) return '';
+// Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
+const cell = (value, column = '') => {
+  if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
-  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'object') return '—';
+  if (isDateKey(column)) return formatDate(value);
+  if (column === 'size_bytes') return formatBytes(value);
+  if (column === 'status') {
+    const k = `RAGENT.RES.STATUS.${String(value).toUpperCase()}`;
+    return te(k) ? t(k) : String(value);
+  }
+  if (typeof value === 'number') return formatNumber(value, Number.isInteger(value) ? 0 : 2);
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return formatDate(value);
   return String(value);
 };
 
@@ -61,6 +74,7 @@ const rawRows = computed(() => (raw.value ? flatten(raw.value) : []));
 const load = async () => {
   loading.value = true;
   forbidden.value = false;
+  failed.value = false;
   try {
     const { data } = await axios.get(base.value);
     const list = Array.isArray(data)
@@ -74,7 +88,10 @@ const load = async () => {
       raw.value = data;
     }
   } catch (error) {
-    forbidden.value = true;
+    // Só 401/403 é "sem permissão"; qualquer outra falha é indisponibilidade, com nova tentativa.
+    const status = error?.response?.status;
+    forbidden.value = status === 401 || status === 403;
+    failed.value = !forbidden.value;
   } finally {
     loading.value = false;
   }
@@ -160,6 +177,17 @@ const runAction = async name => {
 
     <p v-if="loading" class="text-n-slate-11">{{ t('RAGENT.CHAT.LOADING') }}</p>
     <p v-else-if="forbidden" class="text-n-slate-11">{{ t('RAGENT.CHAT.FORBIDDEN') }}</p>
+    <div
+      v-else-if="failed"
+      class="flex flex-wrap items-center gap-3 rounded-xl border border-n-weak p-4"
+      role="alert"
+      data-testid="resource-error"
+    >
+      <p class="min-w-0 flex-1 text-body-main text-n-slate-11">
+        {{ t('RAGENT.RES.LOAD_ERROR') }}
+      </p>
+      <Button size="sm" variant="faded" :label="t('RAGENT.RES.RETRY')" @click="load" />
+    </div>
 
     <section v-if="creating" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
       <label v-for="f in config.fields" :key="f.key" class="text-body-main text-n-slate-11">
@@ -192,7 +220,7 @@ const runAction = async name => {
         <tbody>
           <tr v-for="it in items" :key="it.id || JSON.stringify(it)" class="border-b border-n-weak last:border-0">
             <td v-for="c in config.columns" :key="c" class="px-4 py-2 text-n-slate-12">
-              {{ cell(it[c]) }}
+              {{ cell(it[c], c) }}
             </td>
             <td v-if="canManage && it.id" class="px-4 py-2 text-end">
               <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
@@ -201,6 +229,8 @@ const runAction = async name => {
         </tbody>
       </table>
     </div>
+    <UsagePanel v-else-if="raw && key === 'usage'" :data="raw" />
+    <EnvironmentPanel v-else-if="raw && key === 'environment'" :data="raw" />
     <dl
       v-else-if="raw"
       class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-xl border border-n-weak p-4 text-body-main sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
@@ -210,6 +240,6 @@ const runAction = async name => {
         <dd class="text-n-slate-12">{{ row.value }}</dd>
       </template>
     </dl>
-    <p v-else-if="!loading && !forbidden" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
+    <p v-else-if="!loading && !forbidden && !failed" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
   </div>
 </template>
