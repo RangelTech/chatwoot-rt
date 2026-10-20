@@ -62,7 +62,7 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Chats', type: :request do
 
   it 'passes a business rejection from the engine through instead of a generic 502' do
     allow(Rt::EngineClient).to receive(:get)
-      .and_raise(Rt::EngineClient::Error.new('404 x', status: 404, detail: 'Conversa não encontrada'))
+      .and_raise(Rt::EngineClient::Error.new('404 x', status: 404, body: { 'detail' => 'Conversa não encontrada' }))
     get "/api/v1/accounts/#{account.id}/rt_ai/chats/#{SecureRandom.uuid}/messages", headers: headers, as: :json
     expect(response).to have_http_status(:not_found)
     expect(response.parsed_body['message']).to eq('Conversa não encontrada')
