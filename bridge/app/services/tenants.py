@@ -200,6 +200,78 @@ def set_default_teams(tenant_id: str, *, ai_team_id: int, handoff_team_id: int) 
         ).fetchone()
 
 
+def legacy_routing_migration_batches(tenant_id: str | None = None) -> list[dict]:
+    """Exporta so os ids necessarios para F-4; chaves de integracao nunca saem.
+
+    Uma configuracao por caixa vence a configuracao padrao do tenant. A bridge
+    nunca guardou o inbox em `conversation_states`; por isso ela envia todos os
+    estados do tenant e o Chatwoot filtra pela caixa real da conversa.
+    """
+    condition = "AND tl.tenant_id = %s" if tenant_id else ""
+    args = (tenant_id,) if tenant_id else ()
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"""SELECT tl.tenant_id, tl.chatwoot_account_id, c.chatwoot_inbox_id AS inbox_id,
+                       c.ai_team_id, c.handoff_team_id, c.template_id, c.autopilot
+                  FROM tenant_links tl
+                  JOIN tenant_ai_config c ON c.tenant_id = tl.tenant_id
+                 WHERE tl.chatwoot_account_id IS NOT NULL
+                   AND c.chatwoot_inbox_id IS NOT NULL
+                   AND c.template_id IS NOT NULL {condition}""",
+            args,
+        ).fetchall()
+        defaults = conn.execute(
+            f"""SELECT tl.tenant_id, tl.chatwoot_account_id, ch.chatwoot_inbox_id AS inbox_id,
+                       c.ai_team_id, c.handoff_team_id, c.template_id, c.autopilot
+                  FROM tenant_links tl
+                  JOIN tenant_ai_config c ON c.tenant_id = tl.tenant_id
+                  JOIN tenant_channels ch ON ch.tenant_id = tl.tenant_id
+                 WHERE tl.chatwoot_account_id IS NOT NULL
+                   AND c.chatwoot_inbox_id IS NULL
+                   AND ch.chatwoot_inbox_id IS NOT NULL
+                   AND c.template_id IS NOT NULL {condition}""",
+            args,
+        ).fetchall()
+        states = conn.execute(
+            f"""SELECT tenant_id, chatwoot_conversation_id, state
+                  FROM conversation_states
+                 WHERE TRUE {('AND tenant_id = %s' if tenant_id else '')}""",
+            args,
+        ).fetchall()
+
+    selected: dict[tuple[str, int], dict] = {}
+    for row in defaults:
+        selected[(str(row["tenant_id"]), int(row["inbox_id"]))] = row
+    for row in rows:
+        selected[(str(row["tenant_id"]), int(row["inbox_id"]))] = row
+
+    batches: dict[int, dict] = {}
+    tenant_accounts: dict[str, int] = {}
+    for row in selected.values():
+        account_id = int(row["chatwoot_account_id"])
+        tenant_accounts[str(row["tenant_id"])] = account_id
+        batch = batches.setdefault(
+            account_id,
+            {"account_id": account_id, "configurations": [], "conversations": []},
+        )
+        batch["configurations"].append(
+            {
+                "inbox_id": int(row["inbox_id"]),
+                "ai_team_id": row["ai_team_id"],
+                "handoff_team_id": row["handoff_team_id"],
+                "template_id": str(row["template_id"]),
+                "autopilot": bool(row["autopilot"]),
+            }
+        )
+    for state in states:
+        account_id = tenant_accounts.get(str(state["tenant_id"]))
+        if account_id:
+            batches[account_id]["conversations"].append(
+                {"conversation_id": int(state["chatwoot_conversation_id"]), "state": state["state"]}
+            )
+    return list(batches.values())
+
+
 def conversation_state(tenant_id: str, conversation_id: int) -> dict | None:
     with get_connection() as conn:
         return conn.execute(
@@ -433,3 +505,61 @@ def set_menu_step(*, tenant_id: str, conversation_id: int, menu_step: str) -> di
                RETURNING *""",
             (tenant_id, conversation_id, menu_step),
         ).fetchone()
+
+
+# --------------------------------------------------------------------------
+# Fase F: deduplicacao por mensagem e sessao por (conversa, agente)
+# --------------------------------------------------------------------------
+
+
+def claim_message(tenant_id: str, message_id: int) -> bool:
+    """True se esta e a primeira vez que a mensagem e vista (e a reserva); False se duplicada."""
+    with get_connection() as conn:
+        row = conn.execute(
+            """INSERT INTO processed_messages (tenant_id, chatwoot_message_id)
+               VALUES (%s, %s) ON CONFLICT DO NOTHING RETURNING chatwoot_message_id""",
+            (tenant_id, message_id),
+        ).fetchone()
+    return row is not None
+
+
+def release_message(tenant_id: str, message_id: int) -> None:
+    """Devolve a reserva quando o processamento falhou antes de responder (permite reentrega)."""
+    with get_connection() as conn:
+        conn.execute(
+            "DELETE FROM processed_messages WHERE tenant_id = %s AND chatwoot_message_id = %s",
+            (tenant_id, message_id),
+        )
+
+
+def agent_session(tenant_id: str, conversation_id: int, agent_id: str) -> tuple[str, int]:
+    """(session_id, last_message_id) da conversa para este agente.
+
+    Agente novo na conversa = sessao nova e last_message_id 0 (recebe o historico inteiro).
+    """
+    candidate = new_session_id()
+    with get_connection() as conn:
+        row = conn.execute(
+            """INSERT INTO conversation_agent_sessions
+                      (tenant_id, chatwoot_conversation_id, agent_id, session_id)
+               VALUES (%s, %s, %s, %s)
+               ON CONFLICT DO NOTHING RETURNING session_id, last_message_id""",
+            (tenant_id, conversation_id, agent_id, candidate),
+        ).fetchone()
+        if row is None:
+            row = conn.execute(
+                """SELECT session_id, last_message_id FROM conversation_agent_sessions
+                    WHERE tenant_id = %s AND chatwoot_conversation_id = %s AND agent_id = %s""",
+                (tenant_id, conversation_id, agent_id),
+            ).fetchone()
+    return row["session_id"], int(row["last_message_id"])
+
+
+def mark_agent_seen(tenant_id: str, conversation_id: int, agent_id: str, message_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """UPDATE conversation_agent_sessions
+                  SET last_message_id = GREATEST(last_message_id, %s)
+                WHERE tenant_id = %s AND chatwoot_conversation_id = %s AND agent_id = %s""",
+            (message_id, tenant_id, conversation_id, agent_id),
+        )

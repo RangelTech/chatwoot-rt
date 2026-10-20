@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_000300) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1404,6 +1404,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000300) do
     t.index ["account_user_id"], name: "index_rt_ai_grants_on_account_user_id", unique: true
   end
 
+  create_table "rt_inbox_entry_queues", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.bigint "team_id"
+    t.string "routing_mode", default: "legado", null: false
+    t.jsonb "legacy_snapshot", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_rt_inbox_entry_queues_on_account_id"
+    t.index ["inbox_id"], name: "index_rt_inbox_entry_queues_on_inbox_id", unique: true
+    t.index ["team_id"], name: "index_rt_inbox_entry_queues_on_team_id"
+  end
+
   create_table "rt_kanban_boards", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "name", default: "Conversas", null: false
@@ -1488,6 +1501,46 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000300) do
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_rt_outbox_events_on_account_id"
     t.index ["state", "run_at"], name: "index_rt_outbox_events_on_state_and_run_at"
+  end
+
+  create_table "rt_queue_bindings", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "team_id", null: false
+    t.string "respondent_kind", default: "humano", null: false
+    t.string "template_id"
+    t.string "mode", default: "desligado", null: false
+    t.bigint "allowed_destination_team_ids", default: [], null: false, array: true
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_rt_queue_bindings_on_account_id"
+    t.index ["team_id"], name: "index_rt_queue_bindings_on_team_id", unique: true
+  end
+
+  create_table "rt_routing_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "from_team_id"
+    t.bigint "to_team_id"
+    t.string "actor_kind", default: "system", null: false
+    t.bigint "actor_id"
+    t.string "reason"
+    t.string "run_id"
+    t.datetime "created_at", null: false
+    t.index ["account_id", "created_at"], name: "index_rt_routing_events_on_account_id_and_created_at"
+    t.index ["conversation_id", "created_at"], name: "index_rt_routing_events_on_conversation_id_and_created_at"
+  end
+
+  create_table "rt_routing_shadow_log", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "message_id"
+    t.jsonb "legacy_decision", default: {}, null: false
+    t.jsonb "derived_decision", default: {}, null: false
+    t.boolean "diverged", default: false, null: false
+    t.datetime "created_at", null: false
+    t.index ["account_id", "created_at"], name: "index_rt_routing_shadow_log_on_account_id_and_created_at"
+    t.index ["diverged"], name: "index_rt_routing_shadow_log_on_diverged", where: "diverged"
   end
 
   create_table "sla_events", force: :cascade do |t|
@@ -1663,11 +1716,45 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_000300) do
   add_foreign_key "inboxes", "portals"
   add_foreign_key "rt_ai_accounts", "accounts", on_delete: :cascade
   add_foreign_key "rt_ai_grants", "account_users", on_delete: :cascade
+  add_foreign_key "rt_inbox_entry_queues", "accounts", on_delete: :cascade
+  add_foreign_key "rt_inbox_entry_queues", "inboxes", on_delete: :cascade
+  add_foreign_key "rt_inbox_entry_queues", "teams", on_delete: :nullify
   add_foreign_key "rt_kanban_boards", "accounts", on_delete: :cascade
   add_foreign_key "rt_kanban_cards", "accounts", on_delete: :cascade
   add_foreign_key "rt_kanban_cards", "conversations", on_delete: :cascade
   add_foreign_key "rt_kanban_cards", "rt_kanban_boards", column: "board_id", on_delete: :cascade
   add_foreign_key "rt_kanban_cards", "rt_kanban_stages", column: "stage_id"
   add_foreign_key "rt_kanban_stages", "rt_kanban_boards", column: "board_id", on_delete: :cascade
+  add_foreign_key "rt_queue_bindings", "accounts", on_delete: :cascade
+  add_foreign_key "rt_queue_bindings", "teams", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
+  create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
+      on("accounts").
+      after(:insert).
+      for_each(:row) do
+    "execute format('create sequence IF NOT EXISTS conv_dpid_seq_%s', NEW.id);"
+  end
+
+  create_trigger("conversations_before_insert_row_tr", :generated => true, :compatibility => 1).
+      on("conversations").
+      before(:insert).
+      for_each(:row) do
+    "NEW.display_id := nextval('conv_dpid_seq_' || NEW.account_id);"
+  end
+
+  create_trigger("camp_dpid_before_insert", :generated => true, :compatibility => 1).
+      on("accounts").
+      name("camp_dpid_before_insert").
+      after(:insert).
+      for_each(:row) do
+    "execute format('create sequence IF NOT EXISTS camp_dpid_seq_%s', NEW.id);"
+  end
+
+  create_trigger("campaigns_before_insert_row_tr", :generated => true, :compatibility => 1).
+      on("campaigns").
+      before(:insert).
+      for_each(:row) do
+    "NEW.display_id := nextval('camp_dpid_seq_' || NEW.account_id);"
+  end
+
 end

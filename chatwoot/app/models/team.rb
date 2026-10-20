@@ -87,3 +87,5 @@ class Team < ApplicationRecord
 end
 
 Team.include_mod_with('Audit::Team')
+
+Team.prepend(Rt::TeamAiQueueGuard)
