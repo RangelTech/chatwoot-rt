@@ -13,7 +13,50 @@
       "LOADING": "Carregando...",
       "ERROR": "Não foi possível concluir. Tente novamente.",
       "FORBIDDEN": "A IA não está disponível para a sua conta.",
-      "NO_AGENTS": "Nenhum agente publicado ainda. Crie um em Agentes."
+      "NO_AGENTS": "Nenhum agente publicado ainda. Crie um em Agentes.",
+      "ATTACH": "Anexar arquivo",
+      "ATTACH_REMOVE": "Remover {name}",
+      "ATTACH_TOO_BIG": "{name} passa de 25 MB e não foi anexado.",
+      "ATTACH_LIMIT": "Você pode anexar até {n} arquivos por mensagem.",
+      "ARTIFACTS": {
+        "TITLE": "Arquivos gerados",
+        "EMPTY": "Nenhum arquivo gerado neste chat.",
+        "DOWNLOAD": "Baixar",
+        "DOWNLOAD_ERROR": "Não foi possível baixar o arquivo.",
+        "PREVIEW_ALT": "Pré-visualização de {name}",
+        "KIND": {
+          "dataset": "Tabela",
+          "chart": "Gráfico",
+          "document": "Documento",
+          "file": "Arquivo"
+        }
+      },
+      "APPROVAL": {
+        "TITLE": "Confirmação necessária",
+        "APPROVE": "Aprovar",
+        "DENY": "Negar",
+        "EXPIRES_IN": "Expira em {time}",
+        "EXPIRED": "Esta confirmação expirou.",
+        "APPROVED": "Você aprovou esta ação.",
+        "DENIED": "Você negou esta ação.",
+        "ALREADY": "Esta confirmação já foi respondida.",
+        "ERROR": "Não foi possível registrar a decisão.",
+        "NO_PERMISSION": "Você não tem permissão para decidir.",
+        "RISK": {
+          "low": "Risco baixo",
+          "medium": "Risco médio",
+          "high": "Risco alto"
+        }
+      },
+      "FEEDBACK": {
+        "GOOD": "Resposta boa",
+        "BAD": "Resposta ruim",
+        "COMMENT": "Comentário (opcional)",
+        "SEND": "Enviar",
+        "THANKS": "Obrigado pelo retorno.",
+        "ERROR": "Não foi possível enviar o retorno."
+      },
+      "READ_ONLY": "Seu perfil permite apenas ler os chats."
     },
     "AGENTS": {
       "TITLE": "Agentes",

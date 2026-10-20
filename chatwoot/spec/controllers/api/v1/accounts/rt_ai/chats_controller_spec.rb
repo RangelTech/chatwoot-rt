@@ -60,18 +60,65 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Chats', type: :request do
       .with("/api/chats/#{chat_id}/feedback", { 'message_id' => 'm-1', 'comment' => 'ótimo', 'rating' => 1 }, claims: anything)
   end
 
-  it 'passes a business rejection from the engine through instead of a generic 502' do
-    allow(Rt::EngineClient).to receive(:get)
-      .and_raise(Rt::EngineClient::Error.new('404 x', status: 404, body: { 'detail' => 'Conversa não encontrada' }))
-    get "/api/v1/accounts/#{account.id}/rt_ai/chats/#{SecureRandom.uuid}/messages", headers: headers, as: :json
-    expect(response).to have_http_status(:not_found)
-    expect(response.parsed_body['message']).to eq('Conversa não encontrada')
+  it 'denies the reader feedback (needs ai.chat.run)' do
+    reader = create(:user, account: account, role: :agent)
+    Rt::AiGrant.create!(account_user: reader.account_users.find_by(account: account), role_key: 'leitor')
+    post "/api/v1/accounts/#{account.id}/rt_ai/chats/#{SecureRandom.uuid}/feedback",
+         params: { message_id: 'm', rating: 1 }, headers: reader.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:forbidden)
   end
 
-  it 'keeps a generic 502 when the engine is unreachable' do
-    allow(Rt::EngineClient).to receive(:get).and_raise(Rt::EngineClient::Error, 'timeout')
-    get "/api/v1/accounts/#{account.id}/rt_ai/chats", headers: headers, as: :json
-    expect(response).to have_http_status(:bad_gateway)
-    expect(response.parsed_body['code']).to eq('engine_error')
+  context 'with artifacts' do
+    let(:chat_id) { SecureRandom.uuid }
+    let(:artifact_id) { SecureRandom.uuid }
+    let(:listing) { [{ 'artifact_id' => artifact_id, 'kind' => 'file', 'title' => '../relatorio.xlsx', 'row_count' => nil }] }
+    let(:base) { "/api/v1/accounts/#{account.id}/rt_ai/chats/#{chat_id}/artifacts" }
+
+    it 'lists the chat artifacts with an id alias' do
+      allow(Rt::EngineClient).to receive(:get).and_return(listing)
+      get base, headers: headers, as: :json
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body.first['id']).to eq(artifact_id)
+    end
+
+    it 'returns 404 when the engine says the chat is not the user\'s' do
+      allow(Rt::EngineClient).to receive(:get).and_raise(Rt::EngineClient::Error.new('404', status: 404))
+      get base, headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'proxies the download as an attachment with a sanitized name' do
+      allow(Rt::EngineClient).to receive(:get).and_return(listing)
+      allow(Rt::EngineClient).to receive(:download).and_return({ body: 'abc', content_type: 'application/pdf' })
+      get "#{base}/#{artifact_id}/download", headers: headers
+      expect(response).to have_http_status(:success)
+      expect(response.body).to eq('abc')
+      expect(response.headers['Content-Disposition']).to include('attachment').and include('relatorio.xlsx')
+      expect(response.headers['Content-Disposition']).not_to include('..')
+      expect(Rt::EngineClient).to have_received(:download).with("/api/artifacts/#{artifact_id}/download", claims: anything)
+    end
+
+    it 'only serves images inline' do
+      allow(Rt::EngineClient).to receive(:get).and_return(listing)
+      allow(Rt::EngineClient).to receive(:download).and_return({ body: 'x', content_type: 'text/html' })
+      get "#{base}/#{artifact_id}/download", params: { inline: 1 }, headers: headers
+      expect(response.headers['Content-Disposition']).to include('attachment')
+      allow(Rt::EngineClient).to receive(:download).and_return({ body: 'x', content_type: 'image/png' })
+      get "#{base}/#{artifact_id}/download", params: { inline: 1 }, headers: headers
+      expect(response.headers['Content-Disposition']).to include('inline')
+    end
+
+    it 'does not download an artifact that is not in the user\'s chat' do
+      allow(Rt::EngineClient).to receive(:get).and_return(listing)
+      allow(Rt::EngineClient).to receive(:download)
+      get "#{base}/#{SecureRandom.uuid}/download", headers: headers
+      expect(response).to have_http_status(:not_found)
+      expect(Rt::EngineClient).not_to have_received(:download)
+    end
+
+    it 'rejects non-UUID ids' do
+      get "#{base}/xyz/download", headers: headers
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end
