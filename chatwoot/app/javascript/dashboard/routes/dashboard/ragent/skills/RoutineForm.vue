@@ -27,8 +27,15 @@ const parsed = props.routine ? frequencyFromCron(props.routine.cron) : null;
 
 const name = ref(props.routine?.name || '');
 const instruction = ref(props.routine?.instruction || '');
+// Rotinas só rodam em agentes por skills com versão publicada; os estruturados recusam o agendamento.
+const routineTemplates = computed(() => {
+  const skills = props.templates.filter(
+    tp => tp.agent_kind === 'skills' && tp.active_version_id
+  );
+  return skills.length ? skills : props.templates;
+});
 const templateId = ref(
-  props.routine?.template_id || props.templates[0]?.id || ''
+  props.routine?.template_id || routineTemplates.value[0]?.id || ''
 );
 const timezone = ref(props.routine?.timezone || 'America/Sao_Paulo');
 const active = ref(props.routine ? props.routine.status === 'active' : true);
@@ -123,7 +130,7 @@ const save = async () => {
     <label class="flex flex-col gap-1 text-body-main text-n-slate-11">
       {{ t('RAGENT.ROUTINE.AGENT') }}
       <select v-model="templateId" class="!mb-0">
-        <option v-for="tp in templates" :key="tp.id" :value="tp.id">
+        <option v-for="tp in routineTemplates" :key="tp.id" :value="tp.id">
           {{ tp.name }}
         </option>
       </select>

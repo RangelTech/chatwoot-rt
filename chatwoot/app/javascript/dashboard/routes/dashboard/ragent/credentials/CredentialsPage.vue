@@ -222,7 +222,7 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
 
 <template>
   <div
-    class="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-6"
+    class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6"
   >
     <header class="flex items-center gap-3">
       <h1 class="text-heading-1 text-n-slate-12">
@@ -410,7 +410,7 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
             <td class="px-4 py-2 text-n-slate-12">
               {{ t(`RAGENT.CRED.TYPES.${it.type.toUpperCase()}`) }}
             </td>
-            <td class="px-4 py-2 text-n-slate-12">{{ details(it) }}</td>
+            <td class="break-all px-4 py-2 text-n-slate-12">{{ details(it) }}</td>
             <td class="px-4 py-2">
               <code
                 v-for="v in it.env_vars"
