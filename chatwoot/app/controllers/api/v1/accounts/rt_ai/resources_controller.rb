@@ -1,4 +1,5 @@
-# BFF de cadastros de IA (spec 10, U-4): provedores, credenciais, conhecimento, uso, execuções e ambiente.
+# BFF de cadastros de IA (spec 10, U-4): provedores, uso, execuções, ambiente e integrações.
+# Credenciais (segredos, bancos, SSH, GCP, e-mail, pagamento, OAuth) vivem em CredentialsController.
 # Allowlist fixa por domínio: nada de URL ou método vindos do navegador. Segredos só entram (write-only).
 class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
@@ -6,12 +7,6 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   RESOURCES = {
     'providers' => { path: '/api/ai-services', view: 'ai.providers.view', manage: 'ai.providers.manage',
                      fields: %w[name provider model api_key api_base] },
-    'credentials' => { path: '/api/secrets', view: 'ai.credentials.view', manage: 'ai.credentials.manage',
-                       fields: %w[name value] },
-    'sources' => { path: '/api/datasources', view: 'ai.knowledge.view', manage: 'ai.knowledge.manage',
-                   fields: %w[name kind config secret] },
-    'files' => { path: '/api/files', view: 'ai.knowledge.view', manage: 'ai.knowledge.manage', fields: [] },
-    'memories' => { path: '/api/memories', view: 'ai.knowledge.view', manage: 'ai.knowledge.manage', fields: [] },
     'usage' => { path: '/api/usage', view: 'ai.usage.view', manage: nil, fields: [] },
     'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
@@ -19,9 +14,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'inboxes' => { path: '/api/omnichannel/inboxes', view: 'ai.inbox_routing.view', manage: 'ai.inbox_routing.manage',
                    fields: [], update_suffix: '/ia', update_fields: %w[template_id autopilot handoff_team_id] },
     'integrations' => { path: '/api/integrations', view: 'ai.integrations.view', manage: 'ai.integrations.manage',
-                        fields: %w[name] },
-    'payments' => { path: '/api/payments/credentials', view: 'ai.payments.view', manage: 'ai.payments.manage',
-                    fields: %w[access_token webhook_secret sandbox] }
+                        fields: %w[name] }
   }.freeze
 
   before_action :find_resource

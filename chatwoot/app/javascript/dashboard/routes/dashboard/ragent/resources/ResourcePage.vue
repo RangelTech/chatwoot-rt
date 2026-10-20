@@ -28,6 +28,8 @@ const failed = ref(false);
 const creating = ref(false);
 const form = ref({});
 const busy = ref(false);
+// Chave de integração: o servidor a devolve uma única vez, na criação.
+const newKey = ref('');
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
@@ -100,6 +102,7 @@ const load = async () => {
 onMounted(load);
 watch(key, () => {
   creating.value = false;
+  newKey.value = '';
   form.value = {};
   load();
 });
@@ -115,7 +118,8 @@ const submit = async () => {
       if (v === undefined || v === '') return;
       body[f.key] = f.json ? JSON.parse(v) : v;
     });
-    await axios.post(base.value, body);
+    const { data } = await axios.post(base.value, body);
+    newKey.value = data?.api_key || '';
     form.value = {};
     creating.value = false;
     useAlert(t('RAGENT.RES.SAVED'));
@@ -173,6 +177,11 @@ const runAction = async name => {
     </header>
     <p class="text-body-main text-n-slate-11">
       {{ t(`RAGENT.RES.${config.title}.HELP`) }}
+    </p>
+
+    <p v-if="newKey" class="rounded-xl border border-n-weak p-3 text-n-slate-12">
+      {{ t('RAGENT.RES.NEW_KEY') }}
+      <code class="mt-1 block break-all font-mono">{{ newKey }}</code>
     </p>
 
     <p v-if="loading" class="text-n-slate-11">{{ t('RAGENT.CHAT.LOADING') }}</p>

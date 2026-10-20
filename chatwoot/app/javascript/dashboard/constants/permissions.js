@@ -59,7 +59,6 @@ export const AI_PERMISSIONS = {
   AGENTS_VIEW: 'ai.agents.view',
   AGENTS_EDIT: 'ai.agents.edit',
   SKILLS_VIEW: 'ai.skills.view',
-  KNOWLEDGE_VIEW: 'ai.knowledge.view',
   RUNS_VIEW: 'ai.runs.view',
   USAGE_VIEW: 'ai.usage.view',
   PROVIDERS_VIEW: 'ai.providers.view',

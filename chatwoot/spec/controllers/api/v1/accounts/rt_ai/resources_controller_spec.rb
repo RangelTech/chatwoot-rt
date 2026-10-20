@@ -28,9 +28,14 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     expect(Rt::EngineClient).to have_received(:post).with('/api/ai-services', hash_excluding('tenant_id'), anything)
   end
 
-  it 'denies operators credentials and provider management' do
-    get "/api/v1/accounts/#{account.id}/rt_ai/resources/credentials", headers: agent.create_new_auth_token, as: :json
-    expect(response).to have_http_status(:forbidden)
+  it 'no longer serves knowledge or credential resources (credentials has its own endpoint)' do
+    %w[credentials sources files memories payments].each do |key|
+      get "/api/v1/accounts/#{account.id}/rt_ai/resources/#{key}", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found), key
+    end
+  end
+
+  it 'denies operators provider management' do
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", params: { name: 'x' }, headers: agent.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)
   end

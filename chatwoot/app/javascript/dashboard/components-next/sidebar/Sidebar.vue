@@ -541,12 +541,6 @@ const menuItems = computed(() => {
           activeOn: ['ragent_skills'],
         },
         {
-          name: 'RagentSources',
-          label: t('RAGENT.MENU.KNOWLEDGE'),
-          to: accountScopedRoute('ragent_sources'),
-          activeOn: ['ragent_sources', 'ragent_files', 'ragent_memories'],
-        },
-        {
           name: 'RagentProviders',
           label: t('RAGENT.MENU.PROVIDERS'),
           to: accountScopedRoute('ragent_providers'),
@@ -568,7 +562,7 @@ const menuItems = computed(() => {
           name: 'RagentIntegrations',
           label: t('RAGENT.MENU.INTEGRATIONS'),
           to: accountScopedRoute('ragent_integrations'),
-          activeOn: ['ragent_integrations', 'ragent_payments'],
+          activeOn: ['ragent_integrations'],
         },
         {
           name: 'RagentRuns',
