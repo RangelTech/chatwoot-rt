@@ -17,6 +17,8 @@ const editing = ref(null);
 const files = ref([]);
 const manifest = ref({ tools: [] });
 const toolsText = ref('');
+const confirmActions = ref(false);
+const allowLuar = ref(false);
 const problems = ref([]);
 const busy = ref(false);
 const fileError = ref('');
@@ -65,6 +67,8 @@ const edit = async agent => {
   files.value = data.files || [];
   manifest.value = data.manifest || { tools: [] };
   toolsText.value = (manifest.value.tools || []).join(', ');
+  confirmActions.value = Boolean(manifest.value.limits?.confirm_actions);
+  allowLuar.value = Boolean(manifest.value.limits?.luar);
   problems.value = [];
   fileError.value = '';
 };
@@ -82,6 +86,11 @@ const payload = () => ({
     .map(f => ({ path: f.path, content: f.content })),
   manifest: {
     ...manifest.value,
+    limits: {
+      ...(manifest.value.limits || {}),
+      confirm_actions: confirmActions.value,
+      luar: allowLuar.value,
+    },
     tools: toolsText.value
       .split(',')
       .map(x => x.trim())
@@ -262,6 +271,14 @@ const archive = async agent => {
       <label class="text-body-main text-n-slate-11">
         {{ t('RAGENT.AGENTS.TOOLS') }}
         <input v-model="toolsText" type="text" class="!mb-0 w-full" />
+      </label>
+      <label class="flex items-center gap-2 text-body-main text-n-slate-11">
+        <input v-model="confirmActions" type="checkbox" class="!mb-0" />
+        {{ t('RAGENT.AGENTS.CONFIRM_ACTIONS') }}
+      </label>
+      <label class="flex items-center gap-2 text-body-main text-n-slate-11">
+        <input v-model="allowLuar" type="checkbox" class="!mb-0" />
+        {{ t('RAGENT.AGENTS.ALLOW_LUAR') }}
       </label>
       <section class="flex flex-col gap-2 rounded-xl border border-n-weak p-3">
         <h3 class="text-heading-3 text-n-slate-12">

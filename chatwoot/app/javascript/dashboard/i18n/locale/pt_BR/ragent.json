@@ -71,6 +71,8 @@
       "EMPTY": "Nenhum agente ainda.",
       "INSTRUCTIONS": "Instruções (AGENTE.md)",
       "TOOLS": "Ferramentas (separadas por vírgula)",
+      "CONFIRM_ACTIONS": "Pedir confirmação antes de executar ações (cartão de aprovação)",
+      "ALLOW_LUAR": "Permitir que o agente opere o LUAR (conversas, Kanban, notas) como o usuário",
       "SAVE": "Salvar rascunho",
       "PUBLISH": "Publicar",
       "BACK": "Voltar",

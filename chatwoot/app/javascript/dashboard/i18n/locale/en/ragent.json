@@ -71,6 +71,8 @@
       "EMPTY": "No agents yet.",
       "INSTRUCTIONS": "Instructions (AGENTE.md)",
       "TOOLS": "Tools (comma separated)",
+      "CONFIRM_ACTIONS": "Ask for confirmation before running actions (approval card)",
+      "ALLOW_LUAR": "Allow the agent to operate LUAR (conversations, Kanban, notes) as the user",
       "SAVE": "Save draft",
       "PUBLISH": "Publish",
       "BACK": "Back",
