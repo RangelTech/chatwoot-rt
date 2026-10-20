@@ -36,7 +36,7 @@ git log -1 --format=%s upstream-import | grep -q "Chatwoot ${VERSION}\$" || { ec
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "arvore de trabalho suja" >&2; exit 3; }
 
 START_REF="$(git rev-parse HEAD)"
-if [ "$DRY" = "0" ]; then git switch -c "$BRANCH"; fi
+if [ "$DRY" = "0" ] && [ "$(git branch --show-current)" != "$BRANCH" ]; then git switch -c "$BRANCH"; fi
 
 set +e
 git merge --no-commit --no-ff upstream-import >/dev/null 2>&1
