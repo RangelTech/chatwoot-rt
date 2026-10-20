@@ -131,6 +131,27 @@ const chatPath = id =>
 const pkgSkills = computed(() =>
   companySkills.value.filter(s => s.scope === 'template')
 );
+// Pacote publicado de cada agente: AGENTE.md + skills/*/SKILL.md, agrupado por agente.
+const agentGroups = computed(() => {
+  const groups = new Map();
+  pkgSkills.value.forEach(s => {
+    if (!groups.has(s.template_id)) {
+      groups.set(s.template_id, {
+        id: s.template_id,
+        name: s.template_name,
+        agentFile: null,
+        skills: [],
+      });
+    }
+    const group = groups.get(s.template_id);
+    if (s.kind === 'agent') group.agentFile = s;
+    else group.skills.push(s);
+  });
+  return [...groups.values()];
+});
+const agentsPath = computed(
+  () => `/app/accounts/${route.params.accountId}/ragent/agents`
+);
 const sharedSkills = computed(() =>
   companySkills.value.filter(s => s.scope === 'company')
 );
@@ -139,7 +160,7 @@ const tabs = computed(() => [
   {
     key: 'company',
     label: t('RAGENT.SKILLS.COMPANY'),
-    count: companySkills.value.length,
+    count: companySkills.value.filter(s => s.kind !== 'agent').length,
   },
   { key: 'mine', label: t('RAGENT.SKILLS.MINE'), count: mySkills.value.length },
   {
@@ -254,27 +275,67 @@ const tabs = computed(() => [
               />
             </template>
           </li>
-          <li
-            v-for="s in pkgSkills"
-            :key="`${s.template_id}-${s.name}`"
-            class="flex flex-wrap items-center gap-3 px-4 py-3"
-          >
-            <div class="min-w-0 flex-1">
+          <li v-if="!sharedSkills.length" class="px-4 py-4 text-n-slate-11">
+            {{ t('RAGENT.SKILLS.EMPTY_SHARED') }}
+          </li>
+        </ul>
+
+        <section
+          v-for="g in agentGroups"
+          :key="g.id"
+          class="rounded-xl border border-n-weak"
+          data-testid="agent-package"
+        >
+          <header class="flex flex-wrap items-center gap-3 px-4 py-3">
+            <h2 class="min-w-0 flex-1 truncate text-heading-3 text-n-slate-12">
+              {{ t('RAGENT.SKILLS.AGENT_PACKAGE', { agent: g.name }) }}
+            </h2>
+            <a
+              :href="agentsPath"
+              class="text-body-main text-n-brand hover:underline"
+            >
+              {{ t('RAGENT.SKILLS.OPEN_AGENT') }}
+            </a>
+          </header>
+          <ul class="divide-y divide-n-weak border-t border-n-weak">
+            <li v-if="g.agentFile" class="flex flex-col gap-1 px-4 py-3">
+              <p class="text-body-main text-n-slate-12">
+                {{ t('RAGENT.SKILLS.AGENT_FILE') }}
+              </p>
+              <p class="text-body-main text-n-slate-11">
+                {{ g.agentFile.description }}
+              </p>
+            </li>
+            <li
+              v-for="s in g.skills"
+              :key="`${g.id}-${s.name}`"
+              class="flex flex-col gap-1 px-4 py-3"
+            >
               <p class="truncate text-body-main text-n-slate-12">
                 {{ s.name }}
               </p>
               <p class="truncate text-body-main text-n-slate-11">
                 {{ s.description }}
               </p>
-            </div>
-            <span class="text-body-main text-n-slate-11">
-              {{ t('RAGENT.SKILLS.FROM_AGENT', { agent: s.template_name }) }}
-            </span>
-          </li>
-          <li v-if="!companySkills.length" class="px-4 py-6 text-n-slate-11">
+            </li>
+            <li v-if="!g.skills.length" class="px-4 py-3 text-n-slate-11">
+              {{ t('RAGENT.SKILLS.EMPTY_PACKAGE') }}
+            </li>
+          </ul>
+        </section>
+
+        <div
+          v-if="!companySkills.length"
+          class="rounded-xl border border-dashed border-n-weak px-4 py-6 text-n-slate-11"
+          data-testid="company-empty"
+        >
+          <p class="text-body-main text-n-slate-12">
             {{ t('RAGENT.SKILLS.EMPTY_COMPANY') }}
-          </li>
-        </ul>
+          </p>
+          <p class="mt-1 text-body-main">
+            {{ t('RAGENT.SKILLS.EMPTY_COMPANY_WHY') }}
+          </p>
+        </div>
         <p v-if="pkgSkills.length" class="text-xs text-n-slate-10">
           {{ t('RAGENT.SKILLS.PACKAGE_HINT') }}
         </p>
@@ -410,8 +471,8 @@ const tabs = computed(() => [
                 <p class="truncate text-body-main text-n-slate-11">
                   {{ describe(r.cron) }} · {{ r.timezone }}
                   <template v-if="r.template_name">
-                    · {{ r.template_name }}</template
-                  >
+                    · {{ r.template_name }}
+                  </template>
                 </p>
                 <p class="truncate text-xs text-n-slate-10">
                   <template v-if="r.status === 'active' && r.next_run_at">
@@ -419,9 +480,9 @@ const tabs = computed(() => [
                       t('RAGENT.ROUTINE.NEXT', { when: when(r.next_run_at) })
                     }}
                   </template>
-                  <template v-else>{{
-                    t('RAGENT.ROUTINE.NOT_SCHEDULED')
-                  }}</template>
+                  <template v-else>
+                    {{ t('RAGENT.ROUTINE.NOT_SCHEDULED') }}
+                  </template>
                   <template v-if="r.last_run_at">
                     ·
                     {{

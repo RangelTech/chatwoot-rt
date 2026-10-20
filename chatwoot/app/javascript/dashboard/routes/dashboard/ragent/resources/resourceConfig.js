@@ -32,7 +32,11 @@ export const RESOURCES = {
     columns: ['name', 'kind', 'status'],
     fields: [
       { key: 'name', label: 'NAME' },
-      { key: 'kind', label: 'KIND', options: ['postgres', 'mysql', 'sqlserver', 'rest'] },
+      {
+        key: 'kind',
+        label: 'KIND',
+        options: ['postgres', 'mysql', 'sqlserver', 'rest'],
+      },
       { key: 'config', label: 'CONFIG_JSON', json: true },
       { key: 'secret', label: 'SECRET', secret: true, optional: true },
     ],
@@ -52,7 +56,7 @@ export const RESOURCES = {
   usage: { title: 'USAGE', columns: [], fields: [] },
   runs: {
     title: 'RUNS',
-    columns: ['title', 'status', 'created_at'],
+    columns: ['title', 'status', 'device_name', 'last_activity_at'],
     fields: [],
   },
   environment: {
@@ -74,7 +78,12 @@ export const RESOURCES = {
     columns: ['sandbox', 'has_token', 'is_active'],
     fields: [
       { key: 'access_token', label: 'ACCESS_TOKEN', secret: true },
-      { key: 'webhook_secret', label: 'WEBHOOK_SECRET', secret: true, optional: true },
+      {
+        key: 'webhook_secret',
+        label: 'WEBHOOK_SECRET',
+        secret: true,
+        optional: true,
+      },
     ],
   },
 };
