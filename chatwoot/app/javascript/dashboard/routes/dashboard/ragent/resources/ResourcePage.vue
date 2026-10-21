@@ -122,7 +122,22 @@ watch(key, () => {
   load();
 });
 
-const canManage = computed(() => !!config.value.manage);
+// Botões de gerência só para quem tem a permissão ai.*.manage da tela (o BFF nega de qualquer forma).
+const scopes = ref([]);
+const loadScopes = async () => {
+  try {
+    const { data } = await axios.get(
+      `/api/v1/accounts/${accountId.value}/rt_ai/me`
+    );
+    scopes.value = data.scopes || [];
+  } catch (error) {
+    scopes.value = [];
+  }
+};
+onMounted(loadScopes);
+const canManage = computed(
+  () => !!config.value.manage && scopes.value.includes(config.value.manage)
+);
 
 const submit = async () => {
   busy.value = true;
