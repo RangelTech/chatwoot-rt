@@ -63,4 +63,42 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Queues', type: :request do
     post url, params: { name: 'nao', respondent_kind: 'humano' }, headers: agent.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)
   end
+
+  describe 'GET respondent' do
+    let(:ai_team) { create(:team, account: account, name: 'ia atendimento') }
+    let(:conversation) { create(:conversation, account: account, inbox: inbox) }
+
+    before do
+      Rt::QueueBinding.create!(account: account, team: ai_team, respondent_kind: 'ia', template_id: 'agent-1', mode: 'piloto')
+      Rt::InboxEntryQueue.create!(account: account, inbox: inbox, team: ai_team, routing_mode: 'filas')
+    end
+
+    it 'says the AI answers a conversation in an AI queue, to any operator, without mutating anything' do
+      conversation.update!(team: ai_team)
+      get url('/respondent'), params: { conversation_id: conversation.display_id }, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include('respondent' => 'ia', 'queue_name' => 'ia atendimento')
+      expect(conversation.reload.team_id).to eq(ai_team.id)
+    end
+
+    it 'says a person answers when there is a human assignee' do
+      conversation.update!(team: ai_team)
+      create(:inbox_member, inbox: inbox, user: admin)
+      conversation.update!(assignee: admin)
+      get url('/respondent'), params: { conversation_id: conversation.display_id }, headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body).to include('respondent' => 'humano', 'assignee_name' => admin.available_name)
+    end
+
+    it 'is silent in legacy mode' do
+      Rt::InboxEntryQueue.find_by!(inbox: inbox).update!(routing_mode: 'legado')
+      get url('/respondent'), params: { conversation_id: conversation.display_id }, headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['respondent']).to be_nil
+    end
+
+    it 'does not leak conversations of another account' do
+      foreign = create(:conversation, account: other_account)
+      get url('/respondent'), params: { conversation_id: foreign.display_id }, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

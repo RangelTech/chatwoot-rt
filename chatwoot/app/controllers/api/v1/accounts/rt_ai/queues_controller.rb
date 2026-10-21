@@ -2,7 +2,7 @@
 # account_id: toda consulta e escrita e limitada a Current.account.
 class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseController
   before_action -> { require_permission('ai.inbox_routing.view') }, only: :index
-  before_action -> { require_permission('ai.inbox_routing.manage') }, except: :index
+  before_action -> { require_permission('ai.inbox_routing.manage') }, except: [:index, :respondent]
   before_action :load_binding, only: [:update, :destroy]
 
   def index
@@ -47,6 +47,15 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
   rescue ActiveRecord::RecordNotDestroyed, ActiveRecord::RecordInvalid => e
     messages = e.respond_to?(:record) ? e.record.errors.full_messages : [e.message]
     render json: { code: 'queue_not_removed', message: messages.to_sentence }, status: :unprocessable_entity
+  end
+
+  # Indicador do cabecalho da conversa (qualquer operador com acesso a conversa): so leitura, nunca aplica nada.
+  def respondent
+    conversation = Current.account.conversations.find_by!(display_id: params.require(:conversation_id))
+    authorize conversation, :show?
+    render json: Rt::Routing::RespondentView.call(conversation)
+  rescue ActiveRecord::RecordNotFound
+    render json: { code: 'not_found', message: 'Conversa não encontrada' }, status: :not_found
   end
 
   # Cada caixa tem seu proprio interruptor: legado, sombra ou filas, e uma

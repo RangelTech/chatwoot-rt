@@ -6,3 +6,4 @@ json.icon resource.icon
 json.icon_color resource.icon_color
 json.account_id resource.account_id
 json.is_member Current.user.teams.include?(resource)
+json.rt_ai_queue resource.ai_queue? # LUAR Fase F: fila "Gerenciada por IA" (selo/bloqueio de membros na tela)
