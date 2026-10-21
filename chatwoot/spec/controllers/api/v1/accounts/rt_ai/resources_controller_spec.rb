@@ -10,7 +10,8 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
   end
 
   around do |example|
-    with_modified_env(RT_ENGINE_URL: 'http://engine.test', RT_UI_CONTEXT_SECRET: 'segredo') { example.run }
+    with_modified_env(RT_ENGINE_URL: 'http://engine.test', RT_UI_CONTEXT_SECRET: 'segredo',
+                      GATEWAY_BASE_URL: 'http://gateway.test', GATEWAY_ADMIN_TOKEN: 'segredo') { example.run }
   end
 
   it 'only serves allowlisted resources' do
@@ -19,13 +20,15 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
   end
 
   it 'lets an administrator list and create providers, forwarding only allowed fields' do
-    allow(Rt::EngineClient).to receive(:get).and_return([])
-    allow(Rt::EngineClient).to receive(:post).and_return('id' => 'x')
+    allow(Rt::GatewayClient).to receive(:get).and_return('connections' => [])
+    allow(Rt::GatewayClient).to receive(:post).and_return('connection' => { 'id' => 'x' })
     get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", headers: admin.create_new_auth_token, as: :json
     expect(response).to have_http_status(:success)
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers",
          params: { name: 'n', provider: 'openai', model: 'm', api_key: 'k', tenant_id: 'hack' }, headers: admin.create_new_auth_token, as: :json
-    expect(Rt::EngineClient).to have_received(:post).with('/api/ai-services', hash_excluding('tenant_id'), anything)
+    expect(Rt::GatewayClient).to have_received(:post).with(
+      account: account, path: '/api/providers', payload: hash_excluding(:tenant_id)
+    )
   end
 
   it 'no longer serves knowledge or credential resources (credentials has its own endpoint)' do
