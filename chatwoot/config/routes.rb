@@ -116,6 +116,8 @@ Rails.application.routes.draw do
             post 'credentials/oauth/:provider', to: 'credentials#oauth_start'
             put 'credentials/:type/:id', to: 'credentials#update'
             delete 'credentials/:type/:id', to: 'credentials#destroy'
+            # Leitura por item explicitamente allowlisted; o browser não informa URL do Gateway.
+            get 'resources/:key/:id/models', to: 'resources#models'
             get 'resources/:key', to: 'resources#index'
             post 'resources/:key', to: 'resources#create'
             put 'resources/:key/:id', to: 'resources#update'

@@ -194,10 +194,12 @@
         "STOP": "Parar",
         "BACKUP": "Fazer backup",
         "TEST": "Testar conexão",
+        "MODELS": "Ver modelos",
         "ACTIVATE": "Ativar",
         "DEACTIVATE": "Desativar"
       },
       "TEST_OK": "A conexão funciona.",
+      "AVAILABLE_MODELS": "Modelos disponíveis neste provedor",
       "TEST_FAILED": "O teste de conexão falhou.",
       "PROVIDERS": {
         "TITLE": "Provedores de IA",

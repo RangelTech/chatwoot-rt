@@ -21,9 +21,9 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   }.freeze
 
   before_action :find_resource
-  before_action -> { require_permission(@rt_resource[:view]) }, only: [:index]
+  before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
-  before_action :need_id, only: [:update, :destroy, :member_action]
+  before_action :need_id, only: [:update, :destroy, :member_action, :models]
 
   def index
     return render_gateway(gateway_get) if @rt_resource[:gateway]
@@ -37,6 +37,16 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     body = params.permit(*@rt_resource[:fields]).to_h
     body['config'] = params[:config].to_unsafe_h if params[:config].respond_to?(:to_unsafe_h)
     render_engine engine_post(@rt_resource[:path], body)
+  end
+
+  # Lista de modelos de uma conexão. A identificação do tenant continua sendo
+  # derivada de Current.account dentro de GatewayClient, e não da requisição.
+  def models
+    return head :not_found unless @rt_resource[:gateway] == :providers
+
+    render_gateway Rt::GatewayClient.get(account: Current.account, path: "/api/providers/#{params[:id]}/models")
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
   end
 
   def update
