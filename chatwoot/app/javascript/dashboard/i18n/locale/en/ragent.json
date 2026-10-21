@@ -247,6 +247,7 @@
         "NAME": "Name",
         "PROVIDER": "Provider",
         "MODEL": "Model",
+        "MODELS": "Models (JSON list)",
         "API_KEY": "API key",
         "API_BASE": "API base URL (optional)"
       },
@@ -254,6 +255,7 @@
         "NAME": "Name",
         "PROVIDER": "Provider",
         "MODEL": "Model",
+        "MODELS": "Models",
         "IS_ACTIVE": "Active",
         "UPDATED_AT": "Updated",
         "STATUS": "Status",
