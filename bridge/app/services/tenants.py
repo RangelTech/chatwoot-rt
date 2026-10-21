@@ -221,7 +221,9 @@ def legacy_routing_migration_batches(tenant_id: str | None = None) -> list[dict]
             args,
         ).fetchall()
         # `tenant_channels` nao existe em todo ambiente; sem ela nao ha config padrao a herdar.
-        has_channels = conn.execute("SELECT to_regclass('public.tenant_channels') IS NOT NULL AS ok").fetchone()["ok"]
+        has_channels = conn.execute(
+            "SELECT to_regclass('public.tenant_channels') IS NOT NULL AS ok"
+        ).fetchone()["ok"]
         defaults = (
             conn.execute(
                 f"""SELECT tl.tenant_id, tl.chatwoot_account_id, ch.chatwoot_inbox_id AS inbox_id,
