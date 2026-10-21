@@ -171,6 +171,7 @@
       "AGENTS": "Agentes",
       "SKILLS": "Skills e rotinas",
       "PROVIDERS": "Provedores",
+      "COMBOS": "Combos",
       "CREDENTIALS": "Credenciais",
       "INBOXES": "Caixas de entrada",
       "INTEGRATIONS": "Integrações",
@@ -247,6 +248,7 @@
         "NAME": "Nome",
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
+        "MODELS": "Modelos (lista JSON)",
         "API_KEY": "Chave de API",
         "API_BASE": "URL base da API (opcional)"
       },
@@ -254,6 +256,7 @@
         "NAME": "Nome",
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
+        "MODELS": "Modelos",
         "IS_ACTIVE": "Ativo",
         "UPDATED_AT": "Atualizado",
         "STATUS": "Situação",
