@@ -1,0 +1,53 @@
+<!-- Copia redigida (cookies, tokens, senhas e hashes longos removidos) de: C:/Users/lucas.rangel/Desktop/<acervo-pessoal>/vps_rt_infra_matrix_test/docker-compose.yml -->
+services:
+  matrix-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: matrix_admin
+      POSTGRES_PASSWORD: [REDIGIDO]
+      POSTGRES_DB: postgres
+    volumes:
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matrix_admin -d synapse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    depends_on:
+      matrix-postgres:
+        condition: service_healthy
+    volumes:
+      - ./configs/homeserver.yaml:/data/homeserver.yaml:ro
+      - ./configs/log.config:/data/matrix.rangeltech.net.log.config:ro
+      - ./configs/registrations:/data/registrations:ro
+      - synapse_data:/data
+    ports:
+      - "18008:8008"
+
+  mautrix-meta-facebook:
+    image: dock.mau.dev/mautrix/meta:latest
+    depends_on:
+      matrix-postgres:
+        condition: service_healthy
+      synapse:
+        condition: service_started
+    volumes:
+      - ./data-fb:/data
+
+  mautrix-meta-instagram:
+    image: dock.mau.dev/mautrix/meta:ig-latest
+    depends_on:
+      matrix-postgres:
+        condition: service_healthy
+      synapse:
+        condition: service_started
+    volumes:
+      - ./data-ig:/data
+
+volumes:
+  synapse_data:
+  mautrix_fb_data:
+  mautrix_ig_data:

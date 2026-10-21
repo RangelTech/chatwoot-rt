@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_20_000200) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -587,7 +587,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
 
   create_table "channel_facebook_unofficial", force: :cascade do |t|
     t.integer "account_id", null: false
-    t.text "cookies", null: false
+    t.text "cookies"
     t.string "external_label"
     t.string "webhook_verify_token", null: false
     t.jsonb "connection_status", default: {}, null: false
@@ -595,7 +595,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
     t.datetime "last_polled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "connection_id"
+    t.string "state"
+    t.text "webhook_secret"
+    t.string "last_error_code"
+    t.datetime "last_activity_at"
+    t.string "connector_version"
     t.index ["account_id"], name: "index_channel_facebook_unofficial_on_account_id"
+    t.index ["connection_id"], name: "index_channel_facebook_unofficial_on_connection_id", unique: true, where: "(connection_id IS NOT NULL)"
   end
 
   create_table "channel_instagram", force: :cascade do |t|
@@ -610,7 +617,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
 
   create_table "channel_instagram_unofficial", force: :cascade do |t|
     t.integer "account_id", null: false
-    t.text "cookies", null: false
+    t.text "cookies"
     t.string "external_label"
     t.string "webhook_verify_token", null: false
     t.jsonb "connection_status", default: {}, null: false
@@ -618,7 +625,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
     t.datetime "last_polled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "connection_id"
+    t.string "state"
+    t.text "webhook_secret"
+    t.string "last_error_code"
+    t.datetime "last_activity_at"
+    t.string "connector_version"
     t.index ["account_id"], name: "index_channel_instagram_unofficial_on_account_id"
+    t.index ["connection_id"], name: "index_channel_instagram_unofficial_on_connection_id", unique: true, where: "(connection_id IS NOT NULL)"
   end
 
   create_table "channel_line", force: :cascade do |t|
@@ -629,6 +643,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["line_channel_id"], name: "index_channel_line_on_line_channel_id", unique: true
+  end
+
+  create_table "channel_messenger_unofficial", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "external_label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "connection_id"
+    t.string "state"
+    t.text "webhook_secret"
+    t.string "last_error_code"
+    t.datetime "last_activity_at"
+    t.string "connector_version"
+    t.index ["account_id"], name: "index_channel_messenger_unofficial_on_account_id"
+    t.index ["connection_id"], name: "index_channel_messenger_unofficial_on_connection_id", unique: true, where: "(connection_id IS NOT NULL)"
   end
 
   create_table "channel_sms", force: :cascade do |t|
@@ -660,6 +689,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["business_id"], name: "index_channel_tiktok_on_business_id", unique: true
+  end
+
+  create_table "channel_tiktok_unofficial", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "external_label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "connection_id"
+    t.string "state"
+    t.text "webhook_secret"
+    t.string "last_error_code"
+    t.datetime "last_activity_at"
+    t.string "connector_version"
+    t.index ["account_id"], name: "index_channel_tiktok_unofficial_on_account_id"
+    t.index ["connection_id"], name: "index_channel_tiktok_unofficial_on_connection_id", unique: true, where: "(connection_id IS NOT NULL)"
   end
 
   create_table "channel_twilio_sms", force: :cascade do |t|
@@ -705,6 +749,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_000000) do
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_channel_wapi_on_account_id"
     t.index ["project_id"], name: "index_channel_wapi_on_project_id", unique: true
+  end
+
+  create_table "channel_whatsapp_unofficial", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "external_label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "connection_id"
+    t.string "state"
+    t.text "webhook_secret"
+    t.string "last_error_code"
+    t.datetime "last_activity_at"
+    t.string "connector_version"
+    t.index ["account_id"], name: "index_channel_whatsapp_unofficial_on_account_id"
+    t.index ["connection_id"], name: "index_channel_whatsapp_unofficial_on_connection_id", unique: true, where: "(connection_id IS NOT NULL)"
   end
 
   create_table "channel_web_widgets", id: :serial, force: :cascade do |t|

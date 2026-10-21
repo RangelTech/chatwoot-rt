@@ -50,6 +50,25 @@ class Settings(BaseSettings):
     rt_internal_url: str = ""
     rt_internal_token: str = ""
 
+    # --- Fase CH: gateway de canais nao oficiais ---
+    # Token que o Rails (chatwoot-rt) apresenta ao gateway (rede interna).
+    channels_gateway_token: str = ""
+    # Dominio do homeserver (Synapse privado) e tokens do appservice proprio.
+    matrix_server_name: str = "matrix.internal"
+    matrix_homeserver_url: str = "http://synapse:8008"
+    matrix_as_token: str = ""
+    matrix_hs_token: str = ""
+    # Bridges (API de provisionamento do mautrix bridgev2) e segredos.
+    bridge_instagram_url: str = "http://mautrix-instagram:29319"
+    bridge_messenger_url: str = "http://mautrix-meta:29319"
+    bridge_whatsapp_url: str = "http://mautrix-whatsapp:29318"
+    bridge_provisioning_secret: str = ""
+    # Limites de login (evitam bloqueio de conta): por identificador e por tenant.
+    channels_login_attempts_per_hour: int = 5
+    channels_login_attempts_per_tenant_hour: int = 20
+    channels_webhook_max_attempts: int = 8
+    channels_webhook_tolerance_s: int = 300
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

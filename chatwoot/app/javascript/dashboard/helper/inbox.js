@@ -15,6 +15,9 @@ export const INBOX_TYPES = {
   EVOLUTION_API: 'Channel::EvolutionApi',
   INSTAGRAM_UNOFFICIAL: 'Channel::InstagramUnofficial',
   FACEBOOK_UNOFFICIAL: 'Channel::FacebookUnofficial',
+  MESSENGER_UNOFFICIAL: 'Channel::MessengerUnofficial',
+  WHATSAPP_UNOFFICIAL: 'Channel::WhatsappUnofficial',
+  TIKTOK_UNOFFICIAL: 'Channel::TiktokUnofficial',
 };
 
 // Short channel-type slugs used to identify a channel without leaning on its

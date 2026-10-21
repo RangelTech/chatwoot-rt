@@ -11,3 +11,7 @@ filter_regex = /\A(?!.*\bwebsite_token\b).*token/i
 
 # Apply the regex for filtering
 Rails.application.config.filter_parameters += [filter_regex]
+
+# Fase CH: assistente "Conectar canal" -- senha, código 2FA/verificação e o envelope `data`
+# do passo de login nunca vão para log (casamento exato da chave, não por substring).
+Rails.application.config.filter_parameters += [/\A(data|code|verification_code|password|webhook_secret)\z/i]

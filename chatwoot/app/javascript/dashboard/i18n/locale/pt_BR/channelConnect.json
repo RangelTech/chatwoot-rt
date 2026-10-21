@@ -1,0 +1,117 @@
+{
+  "CHANNEL_CONNECT": {
+    "CATALOG": {
+      "INSTAGRAM_TITLE": "Instagram (experimental)",
+      "INSTAGRAM_DESC": "Conecte com usuário e senha. Conector experimental.",
+      "MESSENGER_TITLE": "Messenger (experimental)",
+      "MESSENGER_DESC": "Conecte com usuário e senha. Conector experimental.",
+      "TIKTOK_TITLE": "TikTok (experimental)",
+      "TIKTOK_DESC": "Conecte lendo um QR code. Conector experimental.",
+      "WHATSAPP_TITLE": "WhatsApp (experimental)",
+      "WHATSAPP_DESC": "Conecte lendo um QR code ou código de pareamento. Conector experimental."
+    },
+    "PROVIDERS": {
+      "INSTAGRAM": "Instagram",
+      "MESSENGER": "Messenger",
+      "TIKTOK": "TikTok",
+      "WHATSAPP": "WhatsApp"
+    },
+    "EXPERIMENTAL_BADGE": "Conectar canal",
+    "MODE": {
+      "OFFICIAL_TITLE": "Oficial",
+      "OFFICIAL_DESC": "Usa a integração oficial da plataforma. É a opção mais segura e recomendada sempre que existir.",
+      "EXPERIMENTAL_TITLE": "Experimental",
+      "EXPERIMENTAL_DESC": "Entra com a sua conta como um aplicativo comum. Funciona onde a opção oficial não existe, com riscos."
+    },
+    "INFO": {
+      "REQUIREMENTS_TITLE": "Requisitos",
+      "REQUIREMENTS_PASSWORD": "Usuário e senha da conta. Se a conta usa verificação em duas etapas, deixe o celular por perto.",
+      "REQUIREMENTS_QR": "Um celular com o aplicativo instalado e logado na conta, para ler o QR code.",
+      "LIMITATIONS_TITLE": "Limitações",
+      "LIMITATIONS_TEXT": "Mensagens de texto são suportadas. O comportamento pode mudar quando a plataforma se atualiza.",
+      "LIMITATIONS_MEDIA": "Mídia, grupos e reações só ficam disponíveis depois de testados.",
+      "RISKS_TITLE": "Riscos",
+      "RISK_BLOCK": "A plataforma pode bloquear ou limitar a conta.",
+      "RISK_OWN_ACCOUNT": "Use uma conta sua, nunca a conta de um cliente.",
+      "RISK_2FA": "Não desative a verificação em duas etapas (2FA).",
+      "CONSENT": "Entendo os riscos e concordo em conectar esta conta de forma experimental."
+    },
+    "STEPS": {
+      "CREDENTIALS_HELP": "Entre com a conta que você quer conectar.",
+      "CODE_HELP": "Digite o código de verificação enviado pela plataforma (SMS ou aplicativo autenticador).",
+      "PASSWORD_NOT_STORED": "Sua senha é enviada com segurança e nunca é guardada.",
+      "SIGN_IN": "Entrar",
+      "VERIFY": "Verificar",
+      "APPROVAL_TITLE": "Confirme no aplicativo",
+      "APPROVAL_HELP": "Abra o aplicativo no celular e aprove a tentativa de login. Esta página continua sozinha.",
+      "QR_ALT": "QR code para conectar a conta",
+      "QR_REFRESHING": "Renovando o código...",
+      "QR_EXPIRES_IN": "O código é renovado em {seconds}s",
+      "QR_HELP_TIKTOK": "No celular: TikTok > Perfil > ☰ > Código QR e leia este código.",
+      "QR_HELP_WHATSAPP": "No celular: WhatsApp > Aparelhos conectados > Conectar um aparelho e leia este código.",
+      "QR_HELP_INSTAGRAM": "Leia este código com o aplicativo.",
+      "QR_HELP_MESSENGER": "Leia este código com o aplicativo.",
+      "PAIRING_HELP": "No celular: WhatsApp > Aparelhos conectados > Conectar com número de telefone e digite este código.",
+      "SYNC_TITLE": "Validando o acesso e sincronizando",
+      "SYNC_HELP": "Importando suas conversas recentes. Pode manter esta página aberta."
+    },
+    "FINALIZE": {
+      "HELP": "Quase pronto. Escolha como esta caixa de entrada vai funcionar.",
+      "NAME": "Nome da caixa de entrada",
+      "TEAM": "Fila de entrada (equipe)",
+      "TEAM_HINT": "As novas conversas vão para esta equipe.",
+      "AGENT": "Agente de atendimento",
+      "NONE": "Nenhum",
+      "SYNC_WINDOW": "Importar conversas dos últimos",
+      "DAYS": "{count} dias",
+      "SUBMIT": "Criar caixa de entrada"
+    },
+    "ACTIONS": {
+      "CONTINUE": "Continuar",
+      "BACK": "Voltar",
+      "CANCEL": "Cancelar",
+      "CLOSE": "Fechar"
+    },
+    "DONE": "Canal conectado.",
+    "CANCELLED": "A conexão foi cancelada.",
+    "ERRORS": {
+      "WRONG_PASSWORD": "Usuário ou senha incorretos. Confira e tente de novo.",
+      "WRONG_CODE": "Esse código está incorreto. Confira o código mais recente e tente de novo.",
+      "ACCOUNT_LOCKED": "A conta está bloqueada. Desbloqueie pelo aplicativo oficial e tente mais tarde.",
+      "CHECKPOINT_REQUIRED": "A plataforma pediu uma verificação de segurança. Abra o aplicativo oficial, conclua a verificação e tente de novo.",
+      "TIMEOUT": "O tempo esgotou. Inicie a conexão de novo.",
+      "TOO_MANY_ATTEMPTS": "Muitas tentativas. Aguarde um pouco antes de tentar de novo, para evitar o bloqueio da conta.",
+      "PROVIDER_UNAVAILABLE": "A plataforma não está respondendo agora. Tente de novo em alguns minutos.",
+      "UNSUPPORTED_STEP": "Esta etapa de login não é suportada. Use a opção oficial ou fale com o suporte.",
+      "GENERIC": "Algo deu errado. Tente de novo em alguns minutos.",
+      "CONSENT_REQUIRED": "Aceite os termos para continuar.",
+      "ATTEMPTS_LEFT": "Tentativas restantes: {count}"
+    },
+    "STATES": {
+      "PENDING_AUTH": "Entrando",
+      "AWAITING_2FA": "Aguardando código",
+      "AWAITING_CHALLENGE": "Aguardando aprovação",
+      "CONNECTED": "Conectado",
+      "DEGRADED": "Instável",
+      "REAUTH_REQUIRED": "Reconexão necessária",
+      "DISCONNECTED": "Desconectado",
+      "REVOKED": "Revogado"
+    },
+    "PANEL": {
+      "TITLE": "Conexão",
+      "LAST_ACTIVITY": "Última atividade",
+      "LAST_ERROR": "Último erro",
+      "NO_ERROR": "Nenhum",
+      "CONNECTOR_VERSION": "Versão do conector",
+      "NEVER": "Sem atividade ainda",
+      "RECONNECT": "Reconectar",
+      "DISCONNECT": "Desconectar",
+      "REVOKE": "Revogar acesso",
+      "CONFIRM_DISCONNECT": "Desconectar esta conta? Você deixa de receber mensagens até reconectar. As conversas são mantidas.",
+      "CONFIRM_REVOKE": "Revogar o acesso? A sessão é removida e a conta precisa entrar de novo para usar esta caixa.",
+      "CONFIRM_YES": "Sim, confirmar",
+      "DISCONNECT_DONE": "Conta desconectada.",
+      "REVOKE_DONE": "Acesso revogado."
+    }
+  }
+}

@@ -29,6 +29,8 @@ const UNOFFICIAL_CHANNEL_KEYS = [
   'evolution_api',
   'instagram_unofficial',
   'facebook_unofficial',
+  'tiktok_unofficial',
+  'whatsapp_unofficial',
 ];
 
 const showUnofficialChannels = ref(false);
@@ -80,15 +82,27 @@ const channelList = computed(() => {
     },
     {
       key: 'instagram_unofficial',
-      title: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.INSTAGRAM.TITLE'),
-      description: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.INSTAGRAM.DESC'),
+      title: t('CHANNEL_CONNECT.CATALOG.INSTAGRAM_TITLE'),
+      description: t('CHANNEL_CONNECT.CATALOG.INSTAGRAM_DESC'),
       icon: 'i-woot-instagram',
     },
     {
       key: 'facebook_unofficial',
-      title: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.FACEBOOK.TITLE'),
-      description: t('INBOX_MGMT.ADD.SOCIAL_UNOFFICIAL.FACEBOOK.DESC'),
+      title: t('CHANNEL_CONNECT.CATALOG.MESSENGER_TITLE'),
+      description: t('CHANNEL_CONNECT.CATALOG.MESSENGER_DESC'),
       icon: 'i-woot-messenger',
+    },
+    {
+      key: 'tiktok_unofficial',
+      title: t('CHANNEL_CONNECT.CATALOG.TIKTOK_TITLE'),
+      description: t('CHANNEL_CONNECT.CATALOG.TIKTOK_DESC'),
+      icon: 'i-woot-tiktok',
+    },
+    {
+      key: 'whatsapp_unofficial',
+      title: t('CHANNEL_CONNECT.CATALOG.WHATSAPP_TITLE'),
+      description: t('CHANNEL_CONNECT.CATALOG.WHATSAPP_DESC'),
+      icon: 'i-woot-whatsapp',
     },
     {
       key: 'sms',

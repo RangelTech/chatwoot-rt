@@ -15,8 +15,7 @@ import Tiktok from './channels/Tiktok.vue';
 import Voice from './channels/Voice.vue';
 import Wapi from './channels/Wapi.vue';
 import EvolutionApi from './channels/EvolutionApi.vue';
-import InstagramUnofficial from './channels/InstagramUnofficial.vue';
-import FacebookUnofficial from './channels/FacebookUnofficial.vue';
+import ConnectChannelWizard from './channelConnect/ConnectChannelWizard.vue';
 
 const channelViewList = {
   facebook: Facebook,
@@ -34,8 +33,14 @@ const channelViewList = {
   voice: Voice,
   wapi: Wapi,
   evolution_api: EvolutionApi,
-  instagram_unofficial: InstagramUnofficial,
-  facebook_unofficial: FacebookUnofficial,
+};
+
+// Canais nao oficiais: assistente "Conectar canal" (login por usuario/senha ou QR).
+const unofficialProviders = {
+  instagram_unofficial: 'instagram',
+  facebook_unofficial: 'messenger',
+  tiktok_unofficial: 'tiktok',
+  whatsapp_unofficial: 'whatsapp',
 };
 
 export default defineComponent({
@@ -47,6 +52,8 @@ export default defineComponent({
     },
   },
   render() {
+    const provider = unofficialProviders[this.channelName];
+    if (provider) return h(ConnectChannelWizard, { provider });
     const ChannelComponent = channelViewList[this.channelName];
     return ChannelComponent ? h(ChannelComponent) : null;
   },
