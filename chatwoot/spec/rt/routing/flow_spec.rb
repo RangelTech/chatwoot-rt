@@ -170,6 +170,18 @@ RSpec.describe 'Fase F: fluxo de roteamento', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it 'pending lista so conversa de IA cuja ultima mensagem e do cliente sem resposta' do
+      conversation.update!(team: ia_team)
+      create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, content: 'oi?')
+      get '/internal/routing/pending', params: { minutes: 15 }, headers: headers
+      expect(response.parsed_body['items']).to include(include('conversation_id' => conversation.display_id, 'message' => include('content' => 'oi?')))
+      Current.user = agent
+      create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :outgoing, sender: agent, content: 'ola')
+      Current.reset
+      get '/internal/routing/pending', params: { minutes: 15 }, headers: headers
+      expect(response.parsed_body['items'].pluck('conversation_id')).not_to include(conversation.display_id)
+    end
+
     it 'resolve devolve quem responde' do
       get '/internal/routing/resolve', params: { account_id: account.id, conversation_id: conversation.display_id }, headers: headers
       expect(response).to have_http_status(:ok)

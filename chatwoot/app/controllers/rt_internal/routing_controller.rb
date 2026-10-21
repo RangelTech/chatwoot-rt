@@ -1,7 +1,7 @@
 # Fase F (F-2/F-5/F-6): rotas internas da bridge. Auth: token de servico (RT_INTERNAL_TOKEN).
 class RtInternal::RoutingController < ActionController::API
   before_action :authenticate_service
-  before_action :load_conversation
+  before_action :load_conversation, except: :pending
 
   # GET /internal/routing/resolve?account_id=&conversation_id=&legacy=ia|humano
   def resolve
@@ -25,6 +25,24 @@ class RtInternal::RoutingController < ActionController::API
     result = Rt::Routing::Handoff.call(conversation: @conversation, destination: params[:queue].presence,
                                        summary: params[:summary], run_id: params[:run_id].presence)
     render json: { ok: result.ok, reason: result.reason, team_id: result.team_id }, status: result.ok ? :ok : :unprocessable_entity
+  end
+
+  # GET /internal/routing/pending?minutes=15: conversas em modo filas, atendidas por IA, cuja ultima mensagem publica
+  # e do cliente e nao teve resposta (ex.: a bridge reiniciou e o webhook se perdeu). Serve a varredura da bridge.
+  def pending
+    since = (params[:minutes].presence || 15).to_i.clamp(1, 120).minutes.ago
+    entries = Rt::InboxEntryQueue.where(routing_mode: 'filas').includes(:inbox)
+    items = entries.flat_map do |entry|
+      Conversation.where(inbox_id: entry.inbox_id, status: %i[open pending]).where('last_activity_at >= ?', since).filter_map do |conv|
+        last = conv.messages.where(private: false, message_type: %i[incoming outgoing]).order(:id).last
+        next unless last&.incoming? && last.created_at >= since
+        next unless Rt::Routing::RespondentView.call(conv)[:respondent] == 'ia'
+
+        { account_id: conv.account_id, conversation_id: conv.display_id, inbox_id: conv.inbox_id,
+          message: { id: last.id, content: last.content, message_type: 'incoming' } }
+      end
+    end
+    render json: { items: items }
   end
 
   # GET /internal/routing/history
