@@ -102,7 +102,7 @@ const reorderStage = ({ id, direction }) => {
 };
 
 const selectClass =
-  'h-8 px-2 text-sm rounded bg-n-alpha-1 text-n-slate-12 outline outline-1 outline-n-weak';
+  'w-auto max-w-56 h-8 px-2 text-sm rounded bg-n-alpha-1 text-n-slate-12 outline outline-1 outline-n-weak';
 </script>
 
 <template>
@@ -150,7 +150,7 @@ const selectClass =
             v-model="search"
             type="search"
             inputmode="numeric"
-            :class="`${selectClass} w-40`"
+            :class="`${selectClass} !w-40`"
             :aria-label="t('KANBAN.FILTERS.SEARCH')"
             :placeholder="t('KANBAN.FILTERS.SEARCH_PLACEHOLDER')"
           />

@@ -171,6 +171,7 @@ const submitEdit = () => {
           role="list"
           class="flex flex-col gap-2 min-h-12"
           :disabled="busy"
+          handle=".rt-kanban-handle"
           :animation="150"
           :force-fallback="true"
           :fallback-tolerance="5"
@@ -184,7 +185,14 @@ const submitEdit = () => {
           @change="onChange"
         >
           <template #item="{ element }">
-            <li class="list-none cursor-grab">
+            <li class="relative list-none">
+              <span
+                class="rt-kanban-handle absolute top-2 end-2 z-10 flex items-center justify-center size-7 rounded cursor-grab text-n-slate-10 hover:bg-n-alpha-2 touch-none select-none"
+                :title="t('KANBAN.CARD.DRAG')"
+                aria-hidden="true"
+              >
+                <span class="i-lucide-grip-vertical size-4" />
+              </span>
               <KanbanCard
                 :card="element"
                 :stages="stages"
