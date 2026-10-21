@@ -113,6 +113,14 @@ def bind_room(*, room_id: str, connection_id: str, account_id: int, conversation
         )
 
 
+def set_room_conversation(room_id: str, conversation: str) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE rt_channel_rooms SET conversation_external_id=%s WHERE room_id=%s",
+            (conversation, room_id),
+        )
+
+
 def room_binding(room_id: str) -> dict | None:
     with get_connection() as conn:
         return conn.execute(

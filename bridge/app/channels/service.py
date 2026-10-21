@@ -86,9 +86,15 @@ def public_view(row: dict, step: Step | None = None, health: Health | None = Non
 
 
 class Gateway:
-    def __init__(self, adapters: dict[str, ProviderAdapter], http: httpx.AsyncClient | None = None):
+    def __init__(
+        self,
+        adapters: dict[str, ProviderAdapter],
+        http: httpx.AsyncClient | None = None,
+        matrix: Any = None,
+    ):
         self.adapters = adapters
         self._http = http
+        self.matrix = matrix  # appservice -> Synapse (registro de usuario, join); None nos testes
 
     # --- util ----------------------------------------------------------------
     def _row(self, connection_id: str, account_id: int) -> dict:
@@ -125,6 +131,14 @@ class Gateway:
         mx = matrix_user_for(account_id, row["id"])
         store.set_matrix_user(row["id"], mx)
         row = self._row(row["id"], account_id)
+        if self.matrix is not None:
+            try:
+                await self.matrix.ensure_user(mx)
+            except ProviderError as exc:
+                row = self._set_state(row, State.DISCONNECTED, exc.error_code)
+                return public_view(
+                    row, Step(step_id="", kind="credentials", error_code=exc.error_code)
+                )
         store.audit(
             account_id=account_id,
             connection_id=row["id"],

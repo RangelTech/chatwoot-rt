@@ -1,5 +1,7 @@
 """Ponte Rangel Tech — Chatwoot ⇄ agent-platform."""
 
+import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -54,7 +56,16 @@ async def lifespan(app: FastAPI):
     applied = run_migrations()
     if applied:
         logger.info("migrações aplicadas: %s", applied)
-    yield
+    worker = None
+    if settings.channels_gateway_token:
+        worker = asyncio.create_task(channels_api.worker_loop())
+    try:
+        yield
+    finally:
+        if worker:
+            worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await worker
 
 
 app = FastAPI(title="chatwoot-rt bridge", lifespan=lifespan)

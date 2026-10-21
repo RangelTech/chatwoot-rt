@@ -8,9 +8,11 @@ outro tenant sao ignoradas (nunca ha mapeamento cruzado).
 
 from __future__ import annotations
 
+import re
 import secrets
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -66,16 +68,114 @@ def _event_to_message(event: dict[str, Any], binding: dict, conn: dict) -> Inbou
     )
 
 
+_GHOST_RE = re.compile(r"^@(?:instagram|messenger|whatsapp)_(?P<id>[^:]+):")
+_LUAR_USER_RE = re.compile(r"^@luar_t(?P<acct>\d+)_c(?P<conn>[0-9a-f]+):")
+_BRIDGE_STATE_TYPES = ("m.bridge", "uk.half-shot.bridge")
+
+
+def ghost_id(mxid: str) -> str | None:
+    m = _GHOST_RE.match(mxid or "")
+    return m.group("id") if m else None
+
+
+def is_luar_user(mxid: str) -> bool:
+    return bool(_LUAR_USER_RE.match(mxid or ""))
+
+
+class MatrixHS:
+    """Chamadas do appservice do gateway ao Synapse. O usuario Luar da conexao age sempre
+    por `user_id=` (impersonacao permitida so no namespace do registro do gateway)."""
+
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
+        self._transport = transport
+
+    async def _call(self, method: str, path: str, user_id: str | None = None, body: Any = None):
+        try:
+            async with httpx.AsyncClient(transport=self._transport, timeout=20) as http:
+                return await http.request(
+                    method,
+                    f"{settings.matrix_homeserver_url}/_matrix/client/v3{path}",
+                    params={"user_id": user_id} if user_id else None,
+                    json=body,
+                    headers={"Authorization": f"Bearer {settings.matrix_as_token}"},
+                )
+        except httpx.HTTPError as exc:
+            raise ProviderError("provider_unavailable") from exc
+
+    async def ensure_user(self, mxid: str) -> None:
+        """Registra o usuario Luar da conexao (idempotente); o bridge so convida quem existe."""
+        localpart = mxid[1:].split(":", 1)[0]
+        resp = await self._call(
+            "POST", "/register", body={"type": "m.login.application_service", "username": localpart}
+        )
+        if resp.status_code >= 400 and resp.json().get("errcode") != "M_USER_IN_USE":
+            raise ProviderError("provider_unavailable", f"register {resp.status_code}")
+
+    async def join(self, mxid: str, room_id: str) -> bool:
+        resp = await self._call("POST", f"/join/{quote(room_id, safe='')}", mxid, {})
+        return resp.status_code < 400
+
+    async def room_info(self, mxid: str, room_id: str) -> tuple[str, str]:
+        """(id da conversa no provedor, nome do contato); vazios se a sala nao e um portal."""
+        resp = await self._call("GET", f"/rooms/{quote(room_id, safe='')}/state", mxid)
+        if resp.status_code >= 400:
+            return "", ""
+        conversation = name = ""
+        for ev in resp.json():
+            if ev.get("type") in _BRIDGE_STATE_TYPES:
+                conversation = str(ev.get("content", {}).get("channel", {}).get("id") or "")
+            elif ev.get("type") == "m.room.member":
+                g = ghost_id(ev.get("state_key", ""))
+                if g and ev.get("content", {}).get("membership") == "join":
+                    name = ev["content"].get("displayname", "") or name
+                    conversation = conversation or g
+        return conversation, name
+
+
+async def _on_invite(gateway: Any, event: dict[str, Any]) -> None:
+    """Convite do bridge ao usuario Luar de UMA conexao: entra e liga sala -> conversa."""
+    matrix = getattr(gateway, "matrix", None)
+    mxid = event.get("state_key", "")
+    room = event.get("room_id", "")
+    if matrix is None or not room or not is_luar_user(mxid):
+        return
+    conn = store.connection_by_matrix_user(mxid)
+    if not conn or store.room_binding(room):
+        return
+    if not await matrix.join(mxid, room):
+        return
+    conversation, _ = await matrix.room_info(mxid, room)
+    # Sala de gerenciamento do bridge nao tem contato: fica ligada com id vazio (ignorada).
+    store.bind_room(
+        room_id=room,
+        connection_id=conn["id"],
+        account_id=conn["account_id"],
+        conversation=conversation,
+    )
+
+
 async def handle_transaction(gateway: Any, txn_id: str, events: list[dict[str, Any]]) -> dict:
     """Processa uma transacao do Synapse. Idempotente por txn_id e por event_id."""
     if not store.register_txn(txn_id):
         return {"duplicate": True, "delivered": 0}
     delivered = 0
     for event in events:
+        if (
+            event.get("type") == "m.room.member"
+            and event.get("content", {}).get("membership") == "invite"
+        ):
+            await _on_invite(gateway, event)
+            continue
         room = event.get("room_id")
         binding = store.room_binding(room) if room else None
         if not binding:
             continue
+        if not binding["conversation_external_id"]:
+            gid = ghost_id(event.get("sender", ""))
+            if not gid:
+                continue  # sala de gerenciamento, ou contato ainda nao entrou
+            store.set_room_conversation(room, gid)
+            binding = {**binding, "conversation_external_id": gid}
         conn = store.get_connection_row(binding["connection_id"], binding["account_id"])
         if not conn:
             continue

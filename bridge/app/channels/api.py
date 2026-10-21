@@ -34,8 +34,27 @@ def build_default_gateway() -> Gateway:
             "whatsapp": MatrixBridgeAdapter(
                 "whatsapp", ProvisioningClient(settings.bridge_whatsapp_url, secret), sender
             ),
-        }
+        },
+        matrix=appservice.MatrixHS(),
     )
+
+
+async def worker_loop(interval_s: float = 3.0) -> None:
+    """Entrega webhooks pendentes ao Rails e reenvia saidas com falha (outbox + dead-letter)."""
+    import asyncio
+    import logging
+
+    log = logging.getLogger("channels.worker")
+    while True:
+        try:
+            gw = get_gateway()
+            await gw.flush_webhooks()
+            await gw.retry_sends()
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # um ciclo ruim nao derruba o laco; sem segredos no log
+            log.exception("ciclo do worker de canais falhou")
+        await asyncio.sleep(interval_s)
 
 
 def get_gateway() -> Gateway:
@@ -250,7 +269,9 @@ async def transactions(
     access_token: str | None = None,
     gw: Gateway = Depends(get_gateway),
 ):
-    if not appservice.verify_hs_token(access_token):
+    bearer = request.headers.get("authorization", "")
+    header_token = bearer[7:] if bearer.lower().startswith("bearer ") else None
+    if not (appservice.verify_hs_token(header_token) or appservice.verify_hs_token(access_token)):
         raise HTTPException(403, "M_FORBIDDEN")
     body = await request.json()
     return await appservice.handle_transaction(gw, txn_id, body.get("events", []))
