@@ -220,18 +220,24 @@ def legacy_routing_migration_batches(tenant_id: str | None = None) -> list[dict]
                    AND c.template_id IS NOT NULL {condition}""",
             args,
         ).fetchall()
-        defaults = conn.execute(
-            f"""SELECT tl.tenant_id, tl.chatwoot_account_id, ch.chatwoot_inbox_id AS inbox_id,
-                       c.ai_team_id, c.handoff_team_id, c.template_id, c.autopilot
-                  FROM tenant_links tl
-                  JOIN tenant_ai_config c ON c.tenant_id = tl.tenant_id
-                  JOIN tenant_channels ch ON ch.tenant_id = tl.tenant_id
-                 WHERE tl.chatwoot_account_id IS NOT NULL
-                   AND c.chatwoot_inbox_id IS NULL
-                   AND ch.chatwoot_inbox_id IS NOT NULL
-                   AND c.template_id IS NOT NULL {condition}""",
-            args,
-        ).fetchall()
+        # `tenant_channels` nao existe em todo ambiente; sem ela nao ha config padrao a herdar.
+        has_channels = conn.execute("SELECT to_regclass('public.tenant_channels') IS NOT NULL AS ok").fetchone()["ok"]
+        defaults = (
+            conn.execute(
+                f"""SELECT tl.tenant_id, tl.chatwoot_account_id, ch.chatwoot_inbox_id AS inbox_id,
+                           c.ai_team_id, c.handoff_team_id, c.template_id, c.autopilot
+                      FROM tenant_links tl
+                      JOIN tenant_ai_config c ON c.tenant_id = tl.tenant_id
+                      JOIN tenant_channels ch ON ch.tenant_id = tl.tenant_id
+                     WHERE tl.chatwoot_account_id IS NOT NULL
+                       AND c.chatwoot_inbox_id IS NULL
+                       AND ch.chatwoot_inbox_id IS NOT NULL
+                       AND c.template_id IS NOT NULL {condition}""",
+                args,
+            ).fetchall()
+            if has_channels
+            else []
+        )
         states = conn.execute(
             f"""SELECT tenant_id, chatwoot_conversation_id, state
                   FROM conversation_states
