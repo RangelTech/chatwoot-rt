@@ -33,6 +33,7 @@
     "CARD": {
       "ARIA": "Conversation #{id} with {contact}",
       "NO_CONTACT": "No contact",
+      "DRAG": "Drag to move",
       "UNASSIGNED": "Unassigned"
     },
     "MOVE": {
