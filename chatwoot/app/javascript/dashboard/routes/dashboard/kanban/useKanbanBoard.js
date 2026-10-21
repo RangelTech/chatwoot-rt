@@ -17,6 +17,7 @@ import { moveErrorKey } from './kanbanHelpers';
 export const PAGE_SIZE = 30;
 const MAX_LIMIT = 50;
 const REFETCH_DEBOUNCE_MS = 500;
+const RETRY_MS = 3000;
 const DEFAULT_STATUS = 'active';
 const ACTIVE_STATUSES = 'open,pending,snoozed';
 
@@ -125,7 +126,10 @@ export function useKanbanBoard() {
       await fetchAllColumns({ keepSize });
     } catch (error) {
       if (error.response?.status === 404) state.value = 'disabled';
-      else state.value = 'error';
+      else if (state.value === 'ready' && keepSize) {
+        // refetch em segundo plano falhou (rede caiu): mantém o quadro na tela e tenta de novo
+        scheduleRefetch(RETRY_MS);
+      } else state.value = 'error';
     }
   };
 
@@ -225,7 +229,7 @@ export function useKanbanBoard() {
 
   // Realtime: so invalida; a lista vem sempre da API autorizada.
   let timer = null;
-  const scheduleRefetch = () => {
+  function scheduleRefetch(delay = REFETCH_DEBOUNCE_MS) {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       if (moving.value) {
@@ -233,8 +237,8 @@ export function useKanbanBoard() {
         return;
       }
       await load({ keepSize: true });
-    }, REFETCH_DEBOUNCE_MS);
-  };
+    }, delay);
+  }
 
   const onChanged = data => {
     if (state.value !== 'ready' && state.value !== 'disabled') return;
@@ -245,17 +249,20 @@ export function useKanbanBoard() {
     scheduleRefetch();
   };
   const onReconnect = () => scheduleRefetch();
+  const onOnline = () => scheduleRefetch(0);
 
   onMounted(() => {
     load();
     emitter.on(BUS_EVENTS.RT_KANBAN_CHANGED, onChanged);
     emitter.on(BUS_EVENTS.WEBSOCKET_RECONNECT, onReconnect);
+    window.addEventListener('online', onOnline);
   });
 
   onBeforeUnmount(() => {
     clearTimeout(timer);
     emitter.off(BUS_EVENTS.RT_KANBAN_CHANGED, onChanged);
     emitter.off(BUS_EVENTS.WEBSOCKET_RECONNECT, onReconnect);
+    window.removeEventListener('online', onOnline);
   });
 
   watch(
