@@ -548,7 +548,7 @@ const menuItems = computed(() => {
         },
         {
           name: 'RagentCombos',
-          label: 'Combos',
+          label: t('RAGENT.MENU.COMBOS'),
           to: accountScopedRoute('ragent_combos'),
           activeOn: ['ragent_combos'],
         },
