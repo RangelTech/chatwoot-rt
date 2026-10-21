@@ -121,7 +121,10 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
                                name: body['name'], provider: body['provider'], apiKey: body['api_key'], defaultModel: body['model']
                              }.compact)['connection']
     when :combos
-      Rt::GatewayClient.post(account: Current.account, path: '/api/combos', payload: body.slice('name', 'models'))
+      payload = combo_payload
+      return if performed?
+
+      Rt::GatewayClient.post(account: Current.account, path: '/api/combos', payload: payload)
     end
   rescue Rt::GatewayClient::Error => e
     gateway_failed(e)
@@ -129,14 +132,36 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   def gateway_put
     body = params.permit(:name, :model, :api_key, :is_active, models: []).to_h
-    payload = if @rt_resource[:gateway] == :providers
-                { name: body['name'], apiKey: body['api_key'], defaultModel: body['model'], isActive: body['is_active'] }.compact
-              else
-                body.slice('name', 'models')
-              end
+    if @rt_resource[:gateway] == :providers
+      payload = { name: body['name'], apiKey: body['api_key'], defaultModel: body['model'], isActive: body['is_active'] }.compact
+    else
+      payload = combo_payload
+      return if performed?
+    end
     Rt::GatewayClient.put(account: Current.account, path: "/api/#{@rt_resource[:gateway]}/#{params[:id]}", payload: payload)
   rescue Rt::GatewayClient::Error => e
     gateway_failed(e)
+  end
+
+  COMBO_NAME = /\A[\w .\-]{1,64}\z/
+  COMBO_MODEL = %r{\A[\w.\-:/ ]{1,128}\z}
+  COMBO_STRATEGIES = %w[fallback round-robin fusion].freeze
+
+  # Combo do tenant: só nomes/modelos em texto simples e estratégia da lista. Quais provedores/combos
+  # existem é decidido pelo gateway (400 para provedor de outro tenant); o BFF só filtra a forma.
+  def combo_payload
+    name = params[:name].to_s
+    models = Array(params[:models]).map(&:to_s)
+    strategy = params[:strategy].respond_to?(:permit) ? params[:strategy].permit(:fallbackStrategy, :judgeModel).to_h : {}
+    invalid = name.present? && !COMBO_NAME.match?(name)
+    invalid ||= models.size > 30 || models.any? { |m| !COMBO_MODEL.match?(m) }
+    invalid ||= strategy['fallbackStrategy'].present? && COMBO_STRATEGIES.exclude?(strategy['fallbackStrategy'])
+    if invalid
+      render json: { code: 'invalid_combo', message: 'Combo inválido' }, status: :unprocessable_entity
+      return nil
+    end
+
+    { name: name.presence, models: (models if params.key?(:models)), strategy: strategy.presence }.compact
   end
 
   def gateway_delete
@@ -154,10 +179,17 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     gateway_failed(e)
   end
 
+  # Erro de validação do gateway (ex.: provedor que o tenant não tem) é texto de negócio, sem segredo.
+  def gateway_message(error)
+    text = error.body.is_a?(Hash) ? error.body['error'] : nil
+    text.is_a?(String) ? text.first(300) : nil
+  end
+
   def gateway_failed(error)
     Rails.logger.warn("rt_ai gateway error: #{error.message}")
     status = PASSTHROUGH_STATUSES.include?(error.status) ? error.status : :bad_gateway
-    render json: { code: 'gateway_error', message: 'Gateway de IA indisponível no momento' }, status: status
+    message = gateway_message(error) if status != :bad_gateway
+    render json: { code: 'gateway_error', message: message || 'Gateway de IA indisponível no momento' }, status: status
     nil
   end
 

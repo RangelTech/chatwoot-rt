@@ -7,6 +7,9 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import { RESOURCES } from './resourceConfig';
 import UsagePanel from './UsagePanel.vue';
 import EnvironmentPanel from './EnvironmentPanel.vue';
+import ProviderCostPanel from './ProviderCostPanel.vue';
+import ProviderOauth from './ProviderOauth.vue';
+import ComboEditor from './ComboEditor.vue';
 import { formatBytes, formatDate, formatNumber, isDateKey } from './format';
 
 const { axios } = window;
@@ -31,6 +34,10 @@ const busy = ref(false);
 // Chave de integração: o servidor a devolve uma única vez, na criação.
 const newKey = ref('');
 const providerModels = ref([]);
+const providerQuota = ref(null);
+const showOauth = ref(false);
+const editingCombo = ref(null);
+const comboSuggestions = ref([]);
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
@@ -106,6 +113,10 @@ const load = async () => {
 onMounted(load);
 watch(key, () => {
   creating.value = false;
+  showOauth.value = false;
+  editingCombo.value = null;
+  providerModels.value = [];
+  providerQuota.value = null;
   newKey.value = '';
   form.value = {};
   load();
@@ -134,6 +145,62 @@ const submit = async () => {
     busy.value = false;
   }
 };
+
+// Sugestões do editor de combos: só provedores e combos do tenant da sessão.
+const openComboEditor = async combo => {
+  editingCombo.value = combo || {};
+  creating.value = false;
+  try {
+    const { data } = await axios.get(
+      `/api/v1/accounts/${accountId.value}/rt_ai/resources/providers`
+    );
+    comboSuggestions.value = (Array.isArray(data) ? data : [])
+      .filter(c => c.provider && (c.defaultModel || c.model))
+      .map(c => `${c.provider}/${c.defaultModel || c.model}`);
+  } catch (error) {
+    comboSuggestions.value = [];
+  }
+  comboSuggestions.value = [
+    ...comboSuggestions.value,
+    ...items.value.filter(c => c.id !== combo?.id).map(c => c.name),
+  ];
+};
+
+const saveCombo = async payload => {
+  busy.value = true;
+  try {
+    if (editingCombo.value?.id) {
+      await axios.put(`${base.value}/${editingCombo.value.id}`, payload);
+    } else {
+      await axios.post(base.value, payload);
+    }
+    editingCombo.value = null;
+    useAlert(t('RAGENT.RES.SAVED'));
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const loadQuota = async item => {
+  busy.value = true;
+  providerQuota.value = null;
+  try {
+    const { data } = await axios.get(`${base.value}/${item.id}/quota`);
+    providerQuota.value = { name: item.name || item.provider, data };
+  } catch (error) {
+    providerQuota.value = { name: item.name || item.provider, data: null };
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const quotaRows = computed(() =>
+  providerQuota.value?.data ? flatten(providerQuota.value.data) : []
+);
 
 const remove = async item => {
   // eslint-disable-next-line no-alert
@@ -219,7 +286,18 @@ const loadProviderModels = async item => {
           @click="runAction(a)"
         />
         <Button
-          v-if="canManage && config.fields.length"
+          v-if="canManage && key === 'providers'"
+          variant="faded"
+          :label="t('RAGENT.RES.GW.OAUTH.BUTTON')"
+          @click="showOauth = !showOauth"
+        />
+        <Button
+          v-if="canManage && key === 'combos'"
+          :label="t('RAGENT.RES.NEW')"
+          @click="openComboEditor(null)"
+        />
+        <Button
+          v-else-if="canManage && config.fields.length"
           :label="t('RAGENT.RES.NEW')"
           @click="creating = !creating"
         />
@@ -248,7 +326,21 @@ const loadProviderModels = async item => {
       <Button size="sm" variant="faded" :label="t('RAGENT.RES.RETRY')" @click="load" />
     </div>
 
-    <section v-if="creating" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
+    <ProviderOauth
+      v-if="showOauth && key === 'providers'"
+      :base="`/api/v1/accounts/${accountId}/rt_ai`"
+      @done="load"
+    />
+    <ComboEditor
+      v-if="editingCombo && key === 'combos'"
+      :key="editingCombo.id || 'new'"
+      :initial="editingCombo.id ? editingCombo : null"
+      :suggestions="comboSuggestions"
+      :busy="busy"
+      @save="saveCombo"
+      @cancel="editingCombo = null"
+    />
+    <section v-if="creating && key !== 'combos'" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
       <label v-for="f in config.fields" :key="f.key" class="text-body-main text-n-slate-11">
         {{ t(`RAGENT.RES.FIELDS.${f.label}`) }}
         <select v-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
@@ -305,6 +397,22 @@ const loadProviderModels = async item => {
                 size="sm"
                 variant="faded"
                 :disabled="busy"
+                :label="t('RAGENT.RES.GW.QUOTA.BUTTON')"
+                @click="loadQuota(it)"
+              />
+              <Button
+                v-if="key === 'combos'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t('RAGENT.RES.GW.COMBO.EDIT')"
+                @click="openComboEditor(it)"
+              />
+              <Button
+                v-if="key === 'providers'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
                 :label="t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.ACTIONS.DEACTIVATE' : 'RAGENT.RES.ACTIONS.ACTIVATE')"
                 @click="toggleActive(it)"
               />
@@ -320,6 +428,21 @@ const loadProviderModels = async item => {
         <li v-for="model in providerModels" :key="model.id || model.name">{{ model.name || model.id }}</li>
       </ul>
     </section>
+    <section v-if="providerQuota" class="rounded-xl border border-n-weak p-4" data-testid="provider-quota">
+      <h2 class="mb-2 text-heading-4 text-n-slate-12">
+        {{ t('RAGENT.RES.GW.QUOTA.TITLE', { name: providerQuota.name }) }}
+      </h2>
+      <p v-if="!quotaRows.length || providerQuota.data?.message" class="text-body-main text-n-slate-11">
+        {{ t('RAGENT.RES.GW.QUOTA.UNAVAILABLE') }}
+      </p>
+      <dl v-else class="grid grid-cols-1 gap-x-6 gap-y-2 text-body-main sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <template v-for="(row, i) in quotaRows" :key="i">
+          <dt class="text-n-slate-11">{{ row.label }}</dt>
+          <dd class="text-n-slate-12">{{ row.value }}</dd>
+        </template>
+      </dl>
+    </section>
+    <ProviderCostPanel v-if="raw && key === 'usage' && raw.byProvider" :data="raw" />
     <UsagePanel v-else-if="raw && key === 'usage'" :data="raw" />
     <EnvironmentPanel v-else-if="raw && key === 'environment'" :data="raw" />
     <dl
