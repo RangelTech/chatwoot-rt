@@ -12,6 +12,7 @@ import { useAlert } from 'dashboard/composables';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import RtKanbanAPI from 'dashboard/api/rtKanban';
+import { moveErrorKey } from './kanbanHelpers';
 
 export const PAGE_SIZE = 30;
 const MAX_LIMIT = 50;
@@ -150,20 +151,8 @@ export function useKanbanBoard() {
   };
 
   // Mapeia o erro da API para a mensagem do toast.
-  const moveErrorMessage = error => {
-    switch (error.response?.status) {
-      case 409:
-        return t('KANBAN.MOVE.ERROR_CONFLICT');
-      case 422:
-        return t('KANBAN.MOVE.ERROR_INVALID');
-      case 403:
-        return t('KANBAN.MOVE.ERROR_FORBIDDEN');
-      case 404:
-        return t('KANBAN.MOVE.ERROR_NOT_FOUND');
-      default:
-        return t('KANBAN.MOVE.ERROR_GENERIC');
-    }
-  };
+  const moveErrorMessage = error =>
+    t(`KANBAN.MOVE.${moveErrorKey(error.response?.status)}`);
 
   /**
    * Unico caminho de movimento (drag e menu "Mover para").
@@ -210,9 +199,9 @@ export function useKanbanBoard() {
     }
   };
 
-  const saveStage = async ({ id, name }) => {
+  const saveStage = async ({ id, name, ...rest }) => {
     try {
-      if (id) await RtKanbanAPI.updateStage(id, { name });
+      if (id) await RtKanbanAPI.updateStage(id, { name, ...rest });
       else await RtKanbanAPI.createStage({ name });
       useAlert(t('KANBAN.STAGE.SAVED'));
       await fetchBoard();

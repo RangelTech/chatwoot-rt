@@ -81,6 +81,7 @@ Rails.application.routes.draw do
           end
           namespace :rt_kanban do
             resource :board, only: [:show, :update]
+            resource :metrics, only: [:show]
             resources :cards, only: [:index] do
               patch :move, on: :member
             end

@@ -18,25 +18,43 @@ class Api::V1::Accounts::RtKanban::CardsController < Api::V1::Accounts::RtKanban
   end
 
   def move
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     result = RtKanban::MoveCard.call(account: Current.account, user: Current.user, card_id: params[:id],
                                      to_stage_id: params.require(:to_stage_id), before_card_id: params[:before_card_id],
                                      expected_lock_version: params.require(:expected_lock_version),
                                      idempotency_key: params.require(:idempotency_key), request_id: request.request_id)
     broadcast_change unless result.replayed
+    record_move(result.replayed ? 'replayed' : 'ok', started, result.card&.id)
     render json: { card: { id: result.card.id, stage_id: result.card.stage_id, position: result.card.position,
                            lock_version: result.card.lock_version },
                    event_id: result.event.id, board_revision: result.board_revision }
   rescue RtKanban::MoveCard::Error => e
+    record_move(e.code, started, params[:id])
     render json: { code: e.code }, status: e.status
   end
 
   private
 
+  def record_move(result, started, card_id)
+    RtKanban::Metrics.record_move(account_id: Current.account.id, result: result, card_id: card_id, request_id: request.request_id,
+                                  duration_ms: (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000)
+  end
+
+  VALID_STATUSES = %w[open pending snoozed resolved].freeze
+
+  # Filtro inválido é 400 (não devolve lista vazia como se fosse resultado).
   def apply_filters(scope)
+    %i[inbox_id assignee_id].each do |key|
+      raise ArgumentError, key.to_s if params[key].present? && !params[key].to_s.match?(/\A\d{1,12}\z/)
+    end
     scope = scope.where(conversations: { inbox_id: params[:inbox_id] }) if params[:inbox_id].present?
     scope = scope.where(conversations: { assignee_id: params[:assignee_id] }) if params[:assignee_id].present?
-    statuses = params.fetch(:status, 'open,pending,snoozed').to_s.split(',') & %w[open pending snoozed resolved]
-    scope = scope.where(conversations: { status: statuses }) unless params[:status] == 'all'
+    unless params[:status] == 'all'
+      statuses = params.fetch(:status, 'open,pending,snoozed').to_s.split(',')
+      raise ArgumentError, 'status' if statuses.empty? || (statuses - VALID_STATUSES).any?
+
+      scope = scope.where(conversations: { status: statuses })
+    end
     scope = scope.where('conversations.display_id::text = ?', params[:q].to_s.strip[0, 40]) if params[:q].present?
     scope
   end
@@ -56,12 +74,5 @@ class Api::V1::Accounts::RtKanban::CardsController < Api::V1::Accounts::RtKanban
       conversation: { display_id: conversation.display_id, status: conversation.status, priority: conversation.priority,
                       inbox: conversation.inbox&.name, contact: conversation.contact&.name,
                       assignee: conversation.assignee&.name, last_activity_at: conversation.last_activity_at } }
-  end
-
-  # Só avisa que o quadro mudou (sem dados do cartão); o navegador rebusca pela API autorizada.
-  def broadcast_change
-    ActionCable.server.broadcast("account_#{Current.account.id}",
-                                 { event: 'rt_kanban.changed', data: { account_id: Current.account.id, board_id: @board.id,
-                                                                       revision: @board.reload.revision } })
   end
 end
