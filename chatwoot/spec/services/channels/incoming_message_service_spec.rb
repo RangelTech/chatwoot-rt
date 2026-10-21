@@ -9,7 +9,7 @@ RSpec.describe Channels::IncomingMessageService do
   def run(event) = described_class.new(channel: channel, payload: event.deep_stringify_keys).perform
 
   it 'cria contato, conversa e mensagem com source_id = external_id' do
-    run(message_event)
+    run(gateway_message_event)
     msg = inbox.messages.last
     expect(msg).to have_attributes(source_id: 'm-1', content: 'olá', message_type: 'incoming')
     expect(msg.conversation.contact.name).to eq('Maria')
@@ -17,31 +17,31 @@ RSpec.describe Channels::IncomingMessageService do
   end
 
   it 'é idempotente por external_id (0 duplicata)' do
-    3.times { run(message_event) }
+    3.times { run(gateway_message_event) }
     expect(inbox.messages.where(source_id: 'm-1').count).to eq(1)
     expect(inbox.conversations.count).to eq(1)
   end
 
   it 'agrupa mensagens da mesma sala na mesma conversa' do
-    run(message_event(external_id: 'a'))
-    run(message_event(external_id: 'b'))
+    run(gateway_message_event(external_id: 'a'))
+    run(gateway_message_event(external_id: 'b'))
     expect(inbox.conversations.count).to eq(1)
     expect(inbox.messages.count).to eq(2)
   end
 
   it 'separa salas diferentes' do
-    run(message_event(external_id: 'a', conversation: 't1'))
-    run(message_event(external_id: 'b', conversation: 't2'))
+    run(gateway_message_event(external_id: 'a', conversation: 't1'))
+    run(gateway_message_event(external_id: 'b', conversation: 't2'))
     expect(inbox.conversations.count).to eq(2)
   end
 
   it 'ignora eventos sem external_id' do
-    expect { run(message_event(external_id: '')) }.not_to(change { inbox.messages.count })
+    expect { run(gateway_message_event(external_id: '')) }.not_to(change { inbox.messages.count })
   end
 
   describe 'eco de saída (outgoing_echo)' do
     let!(:conversation) do
-      run(message_event(external_id: 'in-1'))
+      run(gateway_message_event(external_id: 'in-1'))
       inbox.conversations.last
     end
 
@@ -51,18 +51,18 @@ RSpec.describe Channels::IncomingMessageService do
 
     it 'adota o external_id da mensagem enviada por nós sem duplicar' do
       ours = own_message
-      expect { run(message_event(external_id: 'out-9', text: 'resposta', direction: 'outgoing_echo')) }.not_to(change { inbox.messages.count })
+      expect { run(gateway_message_event(external_id: 'out-9', text: 'resposta', direction: 'outgoing_echo')) }.not_to(change { inbox.messages.count })
       expect(ours.reload.source_id).to eq('out-9')
     end
 
     it 'eco repetido depois de adotado também não duplica' do
       own_message
-      2.times { run(message_event(external_id: 'out-9', text: 'resposta', direction: 'outgoing_echo')) }
+      2.times { run(gateway_message_event(external_id: 'out-9', text: 'resposta', direction: 'outgoing_echo')) }
       expect(inbox.messages.where(source_id: 'out-9').count).to eq(1)
     end
 
     it 'eco de mensagem enviada pelo aplicativo nativo vira outgoing com source_id e não é reenviada' do
-      run(message_event(external_id: 'out-10', text: 'pelo celular', direction: 'outgoing_echo'))
+      run(gateway_message_event(external_id: 'out-10', text: 'pelo celular', direction: 'outgoing_echo'))
       msg = inbox.messages.find_by(source_id: 'out-10')
       expect(msg.message_type).to eq('outgoing')
       expect(Channels::SendOnUnofficialService.new(message: msg).perform).to be_nil
@@ -79,7 +79,7 @@ RSpec.describe Channels::IncomingMessageService do
 
   describe 'message.status' do
     it 'atualiza o status da mensagem pelo external_id' do
-      run(message_event(external_id: 'x'))
+      run(gateway_message_event(external_id: 'x'))
       msg = inbox.messages.find_by(source_id: 'x')
       run(type: 'message.status', message: { external_id: 'x', status: 'read' })
       expect(msg.reload.status).to eq('read')
@@ -95,7 +95,7 @@ RSpec.describe Channels::IncomingMessageService do
           .with(headers: { 'Authorization' => "Bearer #{ChannelsGatewayHelpers::GATEWAY_TOKEN}" })
           .to_return(status: 200, body: 'PNGDATA', headers: { 'Content-Type' => 'image/png' })
         att = { kind: 'image', mime: 'image/png', name: 'a.png', url: "#{base}/tok1" }
-        run(message_event(external_id: 'img', text: '', attachments: [att]))
+        run(gateway_message_event(external_id: 'img', text: '', attachments: [att]))
         attachment = inbox.messages.find_by(source_id: 'img').attachments.first
         expect(attachment).to have_attributes(file_type: 'image')
         expect(attachment.file.download).to eq('PNGDATA')
@@ -105,7 +105,7 @@ RSpec.describe Channels::IncomingMessageService do
     it 'recusa URL fora do gateway (SSRF) mas mantém a mensagem' do
       with_gateway_env do
         att = { kind: 'image', mime: 'image/png', name: 'a.png', url: 'http://evil.test/x' }
-        run(message_event(external_id: 'img2', text: 'oi', attachments: [att]))
+        run(gateway_message_event(external_id: 'img2', text: 'oi', attachments: [att]))
         msg = inbox.messages.find_by(source_id: 'img2')
         expect(msg).to be_present
         expect(msg.attachments).to be_empty

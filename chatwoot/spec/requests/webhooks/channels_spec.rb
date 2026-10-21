@@ -6,7 +6,7 @@ RSpec.describe 'Webhooks::ChannelsController', type: :request do
   let(:channel) { create(:channel_instagram_unofficial) }
   let(:secret) { channel.webhook_secret }
   let(:path) { "/webhooks/channels/instagram_unofficial/#{channel.id}" }
-  let(:body) { message_event.to_json }
+  let(:body) { gateway_message_event.to_json }
 
   after { Redis::Alfred.scan_each(match: 'channels:webhook:*') { |k| Redis::Alfred.delete(k) } }
 
@@ -33,7 +33,7 @@ RSpec.describe 'Webhooks::ChannelsController', type: :request do
 
   it 'rejeita corpo adulterado' do
     headers = signed_headers(secret, body)
-    deliver(headers, message_event(text: 'adulterado').to_json)
+    deliver(headers, gateway_message_event(text: 'adulterado').to_json)
     expect(response).to have_http_status(:unauthorized)
   end
 
