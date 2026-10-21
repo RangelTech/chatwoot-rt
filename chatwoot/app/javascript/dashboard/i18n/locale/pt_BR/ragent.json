@@ -3,6 +3,8 @@
     "CHAT": {
       "TITLE": "Chat com IA",
       "NEW": "Novo chat",
+      "HISTORY": "Histórico",
+      "CLOSE_HISTORY": "Fechar histórico",
       "UNTITLED": "Chat sem título",
       "NOT_SENT_TO_CUSTOMER": "Chat de teste — não envia ao cliente",
       "AGENT": "Agente",
