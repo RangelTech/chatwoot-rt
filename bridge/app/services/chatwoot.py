@@ -170,7 +170,16 @@ async def logout_user(user_id: int) -> None:
 
 
 async def user_access_token(user_id: int) -> str:
-    body = await _request("GET", f"/platform/api/v1/users/{user_id}", token=_platform_token())
+    # O recurso ``show`` da Platform API só é permitido para usuários
+    # vinculados explicitamente ao PlatformApp. O fork expõe a emissão de
+    # token como uma ação separada, protegida pelo mesmo vínculo, justamente
+    # para que a representação normal de User não revele a credencial.
+    #
+    # Usar GET aqui fazia a bridge falhar com 401 para contas válidas e
+    # deixava a tela de filas aparentar que a IA não estava disponível.
+    body = await _request(
+        "POST", f"/platform/api/v1/users/{user_id}/token", token=_platform_token()
+    )
     token = (body or {}).get("access_token")
     if not token:
         raise ChatwootError("Chatwoot não devolveu access_token do usuário")
