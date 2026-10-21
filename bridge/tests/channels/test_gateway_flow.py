@@ -395,3 +395,38 @@ def test_nenhum_segredo_no_banco_auditoria_ou_respostas(env, api):
             dump += str(conn.execute(f"SELECT * FROM {t}").fetchall())
     assert "SenhaSuperSecreta1" not in dump
     assert "ana" not in str(store.count_login_attempts) and "'ana'" not in dump
+
+
+def test_sync_conclui_e_respeita_tenant(env, api):
+    c = _connected(api, env)
+    r = api.post(
+        f"/internal/channels/connections/{c['id']}/sync", json={"account_id": 1, "since_days": 30}
+    )
+    assert r.status_code == 202 and r.json()["status"] == "done"
+    view = api.get(f"/internal/channels/connections/{c['id']}", params={"account_id": 1}).json()
+    assert view["sync"]["status"] == "done" and view["sync"]["progress"] == 100
+    r = api.post(
+        f"/internal/channels/connections/{c['id']}/sync", json={"account_id": 2, "since_days": 30}
+    )
+    assert r.status_code == 404
+
+
+def test_actor_id_inteiro_do_rails_e_aceito(env, api):
+    r = api.post(
+        "/internal/channels/connections",
+        json={
+            "account_id": 1,
+            "provider": "instagram",
+            "actor_id": 42,
+            "consent": CONSENT,
+        },
+    )
+    assert r.status_code == 201
+    cid = r.json()["id"]
+    assert (
+        api.post(
+            f"/internal/channels/connections/{cid}/disconnect",
+            json={"account_id": 1, "actor_id": 42},
+        ).status_code
+        == 200
+    )

@@ -337,12 +337,20 @@ async def send(cid: str, body: SendIn, gw: Gateway = Depends(get_gateway)):
 
 
 @router.post("/connections/{cid}/sync", status_code=202, dependencies=[Depends(require_token)])
-def sync(cid: str, body: SyncIn):
+async def sync(cid: str, body: SyncIn, gw: Gateway = Depends(get_gateway)):
+    from app.channels.service import _ctx
+
     row = store.get_connection_row(cid, body.account_id)
     if not row:
         raise HTTPException(404, "not_found")
     store.update_connection(cid, sync_status="running", sync_since_days=body.since_days)
-    return {"job_id": cid, "status": "running"}
+    status = "done"
+    try:
+        await gw.adapters[row["provider"]].sync(_ctx(row), body.since_days)
+    except Exception:  # sync e melhor-esforco: a conexao segue valida
+        status = "failed"
+    store.update_connection(cid, sync_status=status, sync_progress=100 if status == "done" else 0)
+    return {"job_id": cid, "status": status}
 
 
 @router.get("/dead-letters", dependencies=[Depends(require_token)])

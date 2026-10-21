@@ -46,4 +46,22 @@ RSpec.describe Channels::GatewayClient do
     ENV['CHANNELS_GATEWAY_URL'] = nil
     expect { client.catalog }.to raise_error(described_class::Error)
   end
+
+  it 'envia account_id (query no GET, corpo nos demais) e actor_id como string' do
+    get_stub = stub_request(:get, gateway_url("/connections/#{id}")).with(query: { account_id: 7 }).to_return(status: 200, body: '{}')
+    step_stub = stub_request(:post, gateway_url("/connections/#{id}/step"))
+                .with(body: hash_including('account_id' => 7, 'kind' => 'credentials')).to_return(status: 200, body: '{}')
+    create_stub = stub_request(:post, gateway_url('/connections'))
+                  .with(body: hash_including('account_id' => 7, 'actor_id' => '42')).to_return(status: 201, body: '{}')
+    client.show(id)
+    client.step(id, step_id: 's', kind: 'credentials', data: { username: 'u' })
+    client.create_connection(account_id: 7, provider: 'instagram', actor_id: 42, consent: { accepted: true })
+    expect([get_stub, step_stub, create_stub]).to all(have_been_requested)
+  end
+
+  it 'detail em lista (422 do FastAPI) nao quebra: vira provider_unavailable' do
+    stub_request(:post, gateway_url('/connections')).to_return(status: 422, body: { detail: [{ loc: ['body'], msg: 'x' }] }.to_json)
+    expect { client.create_connection(account_id: 7, provider: 'instagram', actor_id: 1, consent: {}) }
+      .to raise_error(described_class::Error) { |e| expect(e.code).to eq('provider_unavailable') }
+  end
 end
