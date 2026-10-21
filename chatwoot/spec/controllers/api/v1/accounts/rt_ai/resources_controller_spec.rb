@@ -90,7 +90,7 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
         headers: admin.create_new_auth_token, as: :json
 
     expect(response).to have_http_status(:success)
-    expect(response.parsed_body).to include('models' => include('id' => 'model-a'))
+    expect(response.parsed_body.fetch('models')).to include(include('id' => 'model-a'))
     expect(Rt::GatewayClient).to have_received(:get).with(
       account: account, path: "/api/providers/#{provider_id}/models"
     )
