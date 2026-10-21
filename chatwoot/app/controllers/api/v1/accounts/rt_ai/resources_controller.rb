@@ -87,7 +87,12 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   def gateway_get
     case @rt_resource[:gateway]
-    when :providers then Rt::GatewayClient.get(account: Current.account, path: '/api/providers')['connections'] || []
+    when :providers
+      # A API do Gateway usa camelCase. Normalizamos somente o estado público
+      # para a tabela Vue, sem expor campos de credencial ou alterar o escopo.
+      (Rt::GatewayClient.get(account: Current.account, path: '/api/providers')['connections'] || []).map do |provider|
+        provider.merge('is_active' => provider['isActive'])
+      end
     when :combos then Rt::GatewayClient.get(account: Current.account, path: '/api/combos')['combos'] || []
     when :summary, :usage, :requests
       tenant_id = Rt::AiAccount.find_by!(account_id: Current.account.id).engine_tenant_id

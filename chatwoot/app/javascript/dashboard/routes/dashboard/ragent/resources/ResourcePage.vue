@@ -171,6 +171,22 @@ const runItemAction = async (item, name) => {
     busy.value = false;
   }
 };
+
+// O estado ativo e alterado pelo BFF tenant-scoped; nunca enviamos tenant, URL
+// do gateway ou qualquer credencial a partir do navegador.
+const toggleActive = async item => {
+  busy.value = true;
+  try {
+    const current = item.is_active ?? item.isActive ?? true;
+    await axios.put(`${base.value}/${item.id}`, { is_active: !current });
+    useAlert(t('RAGENT.RES.SAVED'));
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -260,6 +276,14 @@ const runItemAction = async (item, name) => {
                 :disabled="busy"
                 :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
                 @click="runItemAction(it, a)"
+              />
+              <Button
+                v-if="key === 'providers'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.ACTIONS.DEACTIVATE' : 'RAGENT.RES.ACTIONS.ACTIVATE')"
+                @click="toggleActive(it)"
               />
               <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
             </td>

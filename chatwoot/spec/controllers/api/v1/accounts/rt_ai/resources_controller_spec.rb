@@ -82,6 +82,23 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     )
   end
 
+  it 'lists a provider active state and changes it only through the tenant-scoped BFF' do
+    provider_id = SecureRandom.uuid
+    allow(Rt::GatewayClient).to receive(:get).and_return('connections' => [{ 'id' => provider_id, 'isActive' => true }])
+    allow(Rt::GatewayClient).to receive(:put).and_return('id' => provider_id, 'isActive' => false)
+
+    get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", headers: admin.create_new_auth_token, as: :json
+    expect(response.parsed_body).to include(include('id' => provider_id, 'is_active' => true))
+
+    put "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/#{provider_id}",
+        params: { is_active: false, tenant_id: 'browser-must-not-control-this' }, headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(Rt::GatewayClient).to have_received(:put).with(
+      account: account, path: "/api/providers/#{provider_id}", payload: { isActive: false }
+    )
+  end
+
   it 'restricts environment actions to the allowlist and to environment managers' do
     allow(Rt::EngineClient).to receive(:post).and_return('ok' => true)
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/environment/actions/start", headers: admin.create_new_auth_token, as: :json

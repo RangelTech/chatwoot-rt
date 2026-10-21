@@ -193,7 +193,9 @@
         "START": "Ligar",
         "STOP": "Parar",
         "BACKUP": "Fazer backup",
-        "TEST": "Testar conexão"
+        "TEST": "Testar conexão",
+        "ACTIVATE": "Ativar",
+        "DEACTIVATE": "Desativar"
       },
       "TEST_OK": "A conexão funciona.",
       "TEST_FAILED": "O teste de conexão falhou.",
