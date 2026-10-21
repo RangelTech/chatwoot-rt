@@ -108,6 +108,11 @@ class Channels::GatewayClient
     raise Error.new(nil, 'provider_unavailable') unless self.class.configured?
 
     uri = URI.parse("#{base_uri}/internal/channels#{path}")
+    # o gateway exige o tenant em toda rota de conexao (query no GET, corpo nos demais)
+    if @account_id
+      query = (query || {}).merge(account_id: @account_id) if verb == :get
+      body = (body || {}).merge(account_id: @account_id) if verb != :get
+    end
     uri.query = query.to_query if query
     response = http_for(uri).request(build_request(verb, uri, body))
     parse(response)
