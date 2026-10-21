@@ -43,7 +43,7 @@ async def download_attachment(url: str) -> bytes:
     response = None
     for tentativa in range(2):
         try:
-            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
                 response = await client.get(url)
             break
         except httpx.HTTPError as exc:
