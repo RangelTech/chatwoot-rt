@@ -201,10 +201,20 @@ class Gateway:
                 )
                 attempts = max(0, settings.channels_login_attempts_per_hour - used)
             row = store.update_connection(row["id"], last_error_code=exc.error_code)
-            return public_view(
-                row,
-                Step(step_id=step_id, kind=kind, error_code=exc.error_code, attempts_left=attempts),  # type: ignore[arg-type]
-            )
+            # mantem os campos do passo para o usuario tentar de novo (sem isso a tela fica sem inputs)
+            last = getattr(adapter, "last_step", lambda _c: None)(_ctx(row))
+            if last is not None:
+                err_step = last.model_copy(
+                    update={"error_code": exc.error_code, "attempts_left": attempts}
+                )
+            else:
+                err_step = Step(
+                    step_id=step_id,
+                    kind=kind,  # type: ignore[arg-type]
+                    error_code=exc.error_code,
+                    attempts_left=attempts,
+                )
+            return public_view(row, err_step)
         return self._apply(row, view)
 
     async def status(self, *, account_id: int, connection_id: str) -> dict:

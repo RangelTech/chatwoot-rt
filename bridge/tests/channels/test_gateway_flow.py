@@ -78,6 +78,8 @@ def test_senha_errada_e_conta_bloqueada(env, api):
     c = connect(api)
     r = step(api, c["id"], "credentials", {"username": "ana", "password": "bad"}).json()
     assert r["step"]["error_code"] == "wrong_password" and r["step"]["attempts_left"] == 4
+    # a tela precisa dos campos para tentar de novo
+    assert [f["id"] for f in r["step"]["fields"]] == ["username", "password"]
     assert r["state"] == "pending_auth"
     r = step(api, c["id"], "credentials", {"username": "ana", "password": "locked"}).json()
     assert r["step"]["error_code"] == "account_locked"

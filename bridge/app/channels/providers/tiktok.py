@@ -324,6 +324,9 @@ class TikTokAdapter:
         await p.call("login_code", {"code": code})  # wrong_code sobe como ProviderError
         return await self.poll_step(ctx)
 
+    def last_step(self, ctx: ConnectionCtx) -> Step | None:
+        return None
+
     async def cancel_login(self, ctx: ConnectionCtx) -> None:
         self._qr.pop(ctx.id, None)
         p = self._procs.pop(ctx.id, None)
