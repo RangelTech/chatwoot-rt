@@ -354,3 +354,55 @@ describe('ConnectionPanel', () => {
     expect(channelApi.revoke).toHaveBeenCalledWith('c1');
   });
 });
+
+describe('FieldsStep - passos genericos do provedor', () => {
+  it('escolha: select com padrao, emite a opcao e mostra a mensagem do provedor', async () => {
+    const step = {
+      step_id: 'x.dialog',
+      kind: 'choice',
+      instructions: "Can't find account",
+      fields: [
+        {
+          id: 'dialog_action',
+          type: 'select',
+          label: 'Continue login',
+          options: ['Sign up', 'Try again'],
+          default: 'Try again',
+        },
+      ],
+    };
+    const wrapper = mount(FieldsStep, { props: { step }, global });
+    expect(wrapper.find('[data-test="provider-message"]').text()).toContain(
+      "Can't find account"
+    );
+    const sel = wrapper.find('[data-field="dialog_action"]');
+    expect(sel.element.value).toBe('Try again');
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')[0][0]).toEqual({
+      dialog_action: 'Try again',
+    });
+  });
+
+  it('captcha: mostra imagem e audio e envia o texto', async () => {
+    const step = {
+      step_id: 'x.captcha',
+      kind: 'captcha',
+      instructions: 'Type the characters',
+      attachments: [
+        { kind: 'image', mime: 'image/png', data: 'AAAA' },
+        { kind: 'audio', mime: 'audio/ogg', data: 'BBBB' },
+      ],
+      fields: [{ id: 'captcha_code', type: 'captcha_code', label: 'Captcha' }],
+    };
+    const wrapper = mount(FieldsStep, { props: { step }, global });
+    expect(wrapper.find('img').attributes('src')).toBe(
+      'data:image/png;base64,AAAA'
+    );
+    expect(wrapper.find('audio').attributes('src')).toBe(
+      'data:audio/ogg;base64,BBBB'
+    );
+    await wrapper.find('[data-field="captcha_code"]').setValue('abcd');
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')[0][0]).toEqual({ captcha_code: 'abcd' });
+  });
+});

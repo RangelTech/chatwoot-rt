@@ -26,6 +26,9 @@ module UnofficialGatewayChannel
 
     validates :state, inclusion: { in: STATES }, allow_nil: true
     validates :connection_id, uniqueness: true, allow_nil: true
+
+    # tabelas legadas tem webhook_verify_token NOT NULL (sem uso no novo miolo)
+    before_validation { self[:webhook_verify_token] ||= SecureRandom.hex(16) if has_attribute?(:webhook_verify_token) }
   end
 
   def self.channel_class_for_type(channel_type)

@@ -37,7 +37,12 @@ const titleKey = computed(
 );
 const waiting = computed(() => kind.value === STEP_KINDS.AWAIT_APPROVAL);
 const isFields = computed(() =>
-  [STEP_KINDS.CREDENTIALS, STEP_KINDS.CODE_2FA].includes(kind.value)
+  [
+    STEP_KINDS.CREDENTIALS,
+    STEP_KINDS.CODE_2FA,
+    STEP_KINDS.CAPTCHA,
+    STEP_KINDS.CHOICE,
+  ].includes(kind.value)
 );
 const isQr = computed(() =>
   [STEP_KINDS.QR, STEP_KINDS.PAIRING_CODE].includes(kind.value)

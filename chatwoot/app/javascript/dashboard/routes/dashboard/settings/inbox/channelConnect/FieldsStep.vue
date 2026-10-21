@@ -1,5 +1,6 @@
 <script setup>
 import { reactive, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 // Passo "credentials" e "code_2fa". Senha e codigo vivem so neste estado
@@ -12,10 +13,49 @@ const props = defineProps({
 });
 const emit = defineEmits(['submit', 'cancel']);
 
+const { t, te } = useI18n();
 const values = reactive({});
 
 const fields = computed(() => props.step.fields || []);
 const isCode = computed(() => props.step.kind === 'code_2fa');
+const isChoice = computed(() => props.step.kind === 'choice');
+const isCaptcha = computed(() => props.step.kind === 'captcha');
+const images = computed(() =>
+  (props.step.attachments || []).filter(a => a.kind === 'image')
+);
+const audios = computed(() =>
+  (props.step.attachments || []).filter(a => a.kind === 'audio')
+);
+const dataUrl = a => `data:${a.mime};base64,${a.data}`;
+
+// Rotulo: traducao conhecida pelo id do campo; senao o nome que o provedor mandou.
+const fieldLabel = field => {
+  const key = `CHANNEL_CONNECT.FIELDS.${String(field.id).toUpperCase()}`;
+  return te(key) ? t(key) : field.label || field.id;
+};
+const optionLabel = option => {
+  const slug = String(option)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_');
+  const key = `CHANNEL_CONNECT.OPTIONS.${slug}`;
+  return te(key) ? t(key) : option;
+};
+// Selecao ja nasce preenchida (padrao do provedor ou 1a opcao).
+fields.value.forEach(f => {
+  if (f.type === 'select') values[f.id] = f.default || f.options?.[0] || '';
+});
+
+const helpText = computed(() => {
+  if (isCode.value) return t('CHANNEL_CONNECT.STEPS.CODE_HELP');
+  if (isChoice.value) return t('CHANNEL_CONNECT.STEPS.CHOICE_HELP');
+  if (isCaptcha.value) return t('CHANNEL_CONNECT.STEPS.CAPTCHA_HELP');
+  return t('CHANNEL_CONNECT.STEPS.CREDENTIALS_HELP');
+});
+const submitLabel = computed(() => {
+  if (isCode.value || isCaptcha.value) return t('CHANNEL_CONNECT.STEPS.VERIFY');
+  if (isChoice.value) return t('CHANNEL_CONNECT.STEPS.CONTINUE');
+  return t('CHANNEL_CONNECT.STEPS.SIGN_IN');
+});
 const canSubmit = computed(
   () =>
     !props.busy &&
@@ -33,7 +73,10 @@ const onSubmit = () => {
   if (!canSubmit.value) return;
   const data = {};
   fields.value.forEach(f => {
-    data[f.id] = f.type === 'username' ? values[f.id].trim() : values[f.id];
+    data[f.id] =
+      f.type === 'username' || f.type === 'select'
+        ? values[f.id].trim()
+        : values[f.id];
   });
   // limpa ANTES de sair do componente
   Object.keys(values).forEach(k => {
@@ -50,24 +93,61 @@ const onSubmit = () => {
     data-test="fields-step"
     @submit.prevent="onSubmit"
   >
-    <p class="m-0 text-sm text-n-slate-11">
-      {{
-        isCode
-          ? $t('CHANNEL_CONNECT.STEPS.CODE_HELP')
-          : $t('CHANNEL_CONNECT.STEPS.CREDENTIALS_HELP')
-      }}
-    </p>
+    <p class="m-0 text-sm text-n-slate-11">{{ helpText }}</p>
+    <div
+      v-if="step.instructions && (isChoice || isCaptcha || isCode)"
+      class="rounded-lg bg-n-alpha-2 px-3 py-2 text-xs text-n-slate-11"
+      data-test="provider-message"
+    >
+      <span class="font-medium">
+        {{ $t('CHANNEL_CONNECT.STEPS.PROVIDER_MESSAGE') }}:
+      </span>
+      {{ step.instructions }}
+    </div>
+    <div v-if="isCaptcha" class="flex flex-col gap-2" data-test="captcha">
+      <img
+        v-for="(a, idx) in images"
+        :key="idx"
+        :src="dataUrl(a)"
+        :alt="$t('CHANNEL_CONNECT.STEPS.CAPTCHA_ALT')"
+        class="max-w-full self-start rounded-lg border border-solid border-n-weak bg-white"
+      />
+      <audio
+        v-for="(a, idx) in audios"
+        :key="`a${idx}`"
+        :src="dataUrl(a)"
+        controls
+        class="max-w-full"
+        :aria-label="$t('CHANNEL_CONNECT.STEPS.CAPTCHA_AUDIO')"
+      />
+    </div>
     <label
       v-for="field in fields"
       :key="field.id"
       class="flex flex-col gap-1.5 text-sm font-medium text-n-slate-12"
     >
-      {{ $t(field.label_key) }}
+      {{ fieldLabel(field) }}
+      <select
+        v-if="field.type === 'select'"
+        v-model="values[field.id]"
+        :data-field="field.id"
+        :disabled="busy || locked"
+        class="!mb-0 w-full"
+      >
+        <option v-for="o in field.options" :key="o" :value="o">
+          {{ optionLabel(o) }}
+        </option>
+      </select>
       <input
+        v-else
         v-model="values[field.id]"
         :type="inputType(field)"
         :data-field="field.id"
-        :inputmode="field.type === '2fa_code' ? 'numeric' : undefined"
+        :inputmode="
+          field.type === '2fa_code' || field.type === 'phone_number'
+            ? 'numeric'
+            : undefined
+        "
         :maxlength="field.type === '2fa_code' ? 10 : undefined"
         autocomplete="off"
         autocapitalize="off"
@@ -78,7 +158,7 @@ const onSubmit = () => {
         class="!mb-0 w-full"
       />
     </label>
-    <p class="m-0 text-xs text-n-slate-10">
+    <p v-if="!isChoice" class="m-0 text-xs text-n-slate-10">
       {{ $t('CHANNEL_CONNECT.STEPS.PASSWORD_NOT_STORED') }}
     </p>
     <div class="flex flex-wrap items-center gap-3">
@@ -87,11 +167,7 @@ const onSubmit = () => {
         blue
         :is-loading="busy"
         :disabled="!canSubmit"
-        :label="
-          isCode
-            ? $t('CHANNEL_CONNECT.STEPS.VERIFY')
-            : $t('CHANNEL_CONNECT.STEPS.SIGN_IN')
-        "
+        :label="submitLabel"
       />
       <NextButton
         type="button"

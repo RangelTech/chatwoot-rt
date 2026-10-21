@@ -16,6 +16,7 @@ from app.channels.models import (
     Health,
     QrInfo,
     Step,
+    StepAttachment,
     StepField,
     StepView,
     WaitInfo,
@@ -43,7 +44,30 @@ _ERRCODE_MAP = {
     "M_FORBIDDEN": "provider_unavailable",
 }
 
-_FIELD_TYPES = {"username": "username", "password": "password", "2fa_code": "2fa_code"}
+_FIELD_TYPES = {
+    "username": "username",
+    "password": "password",
+    "2fa_code": "2fa_code",
+    "select": "select",
+    "captcha_code": "captcha_code",
+    "phone_number": "phone_number",
+    "email": "email",
+}
+_SECRET_TYPES = ("password", "2fa_code")
+# O bridge devolve erro de login como o MESMO passo de novo com texto (ou como dialogo "Try again").
+_ERROR_HINTS = (
+    ("can't find", "account_not_found"),
+    ("cannot find", "account_not_found"),
+    ("locked", "account_locked"),
+    ("disabled", "account_locked"),
+    ("suspended", "account_locked"),
+    ("checkpoint", "checkpoint_required"),
+    ("incorrect", "wrong_password"),
+    ("wrong", "wrong_password"),
+    ("rejected", "login_rejected"),
+    ("invalid", "login_rejected"),
+    ("expired", "timeout"),
+)
 
 
 def error_code_for(exc: ProvisioningError, hint: str | None = None) -> str:
@@ -66,17 +90,45 @@ def _fields(raw: list[dict[str, Any]]) -> list[StepField]:
                 id=f["id"],
                 type=ftype,
                 label_key=f"channels.field.{f['id']}",
-                secret=ftype in ("password", "2fa_code"),
+                secret=ftype in _SECRET_TYPES,
+                label=f.get("name", "") or "",
+                options=[str(o) for o in (f.get("options") or [])],
+                default=f.get("default_value") or None,
             )
         )
     return out
 
 
+def _attachments(raw: list[dict[str, Any]] | None) -> list[StepAttachment]:
+    out = []
+    for a in raw or []:
+        mime = (a.get("info") or {}).get("mimetype", "")
+        if a.get("content") and (mime.startswith("image/") or mime.startswith("audio/")):
+            out.append(
+                StepAttachment(
+                    kind="image" if mime.startswith("image/") else "audio",
+                    mime=mime,
+                    name=a.get("filename", ""),
+                    data=a["content"],
+                )
+            )
+    return out
+
+
+def error_from_text(text: str) -> str | None:
+    low = (text or "").lower()
+    for needle, code in _ERROR_HINTS:
+        if needle in low:
+            return code
+    return None
+
+
 def translate_step(raw: dict[str, Any], *, now: datetime | None = None) -> StepView:
-    """Passo do bridge -> StepView. Puro, testavel com fixtures."""
+    """Passo do bridge -> StepView. Puro, testavel com fixtures (reais e sinteticas)."""
     now = now or datetime.now(UTC)
     stype = raw.get("type")
     step_id = raw.get("step_id", "")
+    instructions = (raw.get("instructions") or "").strip()
     if stype == "complete":
         return StepView(
             state=State.CONNECTED,
@@ -84,24 +136,28 @@ def translate_step(raw: dict[str, Any], *, now: datetime | None = None) -> StepV
             login_id=raw.get("complete", {}).get("user_login_id"),
         )
     if stype == "user_input":
-        fields = raw.get("user_input", {}).get("fields", [])
-        if any(f.get("type") == "2fa_code" for f in fields):
-            return StepView(
-                state=State.AWAITING_2FA,
-                step=Step(
-                    step_id=step_id,
-                    kind="code_2fa",
-                    instructions_key="channels.step.code_2fa",
-                    fields=_fields(fields),
-                ),
-            )
+        params = raw.get("user_input", {})
+        raw_fields = params.get("fields", [])
+        fields = _fields(raw_fields)
+        types = {f.type for f in fields}
+        atts = _attachments(params.get("attachments"))
+        if "2fa_code" in types:
+            kind, state, key = "code_2fa", State.AWAITING_2FA, "channels.step.code_2fa"
+        elif "captcha_code" in types:
+            kind, state, key = "captcha", State.AWAITING_CHALLENGE, "channels.step.captcha"
+        elif fields and types == {"select"}:
+            kind, state, key = "choice", State.AWAITING_CHALLENGE, "channels.step.choice"
+        else:
+            kind, state, key = "credentials", State.PENDING_AUTH, "channels.step.credentials"
         return StepView(
-            state=State.PENDING_AUTH,
+            state=state,
             step=Step(
                 step_id=step_id,
-                kind="credentials",
-                instructions_key="channels.step.credentials",
-                fields=_fields(fields),
+                kind=kind,  # type: ignore[arg-type]
+                instructions_key=key,
+                instructions=instructions,
+                attachments=atts,
+                fields=fields,
             ),
         )
     if stype == "display_and_wait":
@@ -207,7 +263,51 @@ class MatrixBridgeAdapter:
                 code = "wrong_code"
             raise ProviderError(code) from exc
         raw.setdefault("login_id", cur["process"])
-        return self._remember(conn, raw)
+        return await self._after_submit(conn, cur, kind, raw)
+
+    async def _after_submit(
+        self, conn: ConnectionCtx, prev: dict[str, str], kind: str, raw: dict[str, Any]
+    ) -> StepView:
+        """O bridge real nao devolve HTTP 4xx para senha/codigo errado: repete o passo (ou abre um
+        dialogo "Try again") com o motivo em `instructions`. Aqui isso vira `error_code`."""
+        for _ in range(2):  # dialogo -> "Try again" -> passo novo (no maximo 2 saltos)
+            step_id = raw.get("step_id", "")
+            fields = (raw.get("user_input") or {}).get("fields", [])
+            opts = fields[0].get("options") if len(fields) == 1 else None
+            if (
+                raw.get("type") == "user_input"
+                and step_id.endswith(".dialog")
+                and opts
+                and "Try again" in opts
+            ):
+                hint = error_from_text(raw.get("instructions", "")) or "login_rejected"
+                view = await self._resubmit(conn, raw, {fields[0]["id"]: "Try again"})
+                if view.step and not view.step.error_code and view.state != State.CONNECTED:
+                    view.step.error_code = hint
+                return view
+            break
+        view = self._remember(conn, raw)
+        st = view.step
+        if raw.get("type") == "user_input" and st and st.kind != "choice":
+            repeated = raw.get("step_id") == prev.get("step_id")
+            hinted = error_from_text(st.instructions)
+            if repeated or hinted:
+                by_kind = {"code_2fa": "wrong_code", "captcha": "wrong_captcha"}.get(st.kind)
+                if hinted in (None, "wrong_password") and by_kind:
+                    hinted = by_kind
+                st.error_code = hinted or "wrong_password"
+        return view
+
+    async def _resubmit(self, conn: ConnectionCtx, raw: dict[str, Any], data: dict[str, str]):
+        pid = raw.get("login_id") or self._proc[conn.id]["process"]
+        try:
+            nxt = await self._c.step(
+                self._user(conn), pid, raw["step_id"], "user_input", data, timeout=60
+            )
+        except ProvisioningError as exc:
+            raise ProviderError(error_code_for(exc)) from exc
+        nxt.setdefault("login_id", pid)
+        return self._remember(conn, nxt)
 
     async def poll_step(self, conn: ConnectionCtx) -> StepView:
         cur = self._proc.get(conn.id)

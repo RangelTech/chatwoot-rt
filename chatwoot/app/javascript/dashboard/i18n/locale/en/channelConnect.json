@@ -53,7 +53,13 @@
       "QR_HELP_MESSENGER": "Scan this code with the app.",
       "PAIRING_HELP": "On your phone: WhatsApp > Linked devices > Link with phone number, then type this code.",
       "SYNC_TITLE": "Validating access and syncing",
-      "SYNC_HELP": "Importing your recent conversations. You can keep this page open."
+      "SYNC_HELP": "Importing your recent conversations. You can keep this page open.",
+      "CHOICE_HELP": "The platform asks you to choose how to continue.",
+      "CAPTCHA_HELP": "Type the characters in the image to prove you are not a robot.",
+      "CAPTCHA_AUDIO": "Listen to the audio",
+      "PROVIDER_MESSAGE": "Message from the platform",
+      "CONTINUE": "Continue",
+      "CAPTCHA_ALT": "Verification image"
     },
     "FINALIZE": {
       "HELP": "Almost done. Choose how this inbox will work.",
@@ -85,7 +91,10 @@
       "UNSUPPORTED_STEP": "This sign-in step is not supported. Use the official option or contact support.",
       "GENERIC": "Something went wrong. Try again in a few minutes.",
       "CONSENT_REQUIRED": "Accept the terms to continue.",
-      "ATTEMPTS_LEFT": "Attempts left: {count}"
+      "ATTEMPTS_LEFT": "Attempts left: {count}",
+      "ACCOUNT_NOT_FOUND": "We could not find that account. Check the username or email and try again.",
+      "LOGIN_REJECTED": "The platform rejected the login. Check the details, complete any verification in the official app and try again.",
+      "WRONG_CAPTCHA": "The characters in the image do not match. Try again."
     },
     "STATES": {
       "PENDING_AUTH": "Signing in",
@@ -112,6 +121,30 @@
       "CONFIRM_YES": "Yes, confirm",
       "DISCONNECT_DONE": "Account disconnected.",
       "REVOKE_DONE": "Access revoked."
+    },
+    "FIELDS": {
+      "USERNAME": "Username or email",
+      "PASSWORD": "Password",
+      "VERIFICATION_CODE": "Verification code",
+      "OTP_CODE": "Verification code",
+      "TOTP_CODE": "6-digit code",
+      "SMS_CODE": "Code received by SMS",
+      "WHATSAPP_CODE": "Code received on WhatsApp",
+      "BACKUP_CODE": "Backup code",
+      "CAPTCHA_CODE": "Text in the image",
+      "PHONE_NUMBER": "Number with country code (e.g. 5511999999999)",
+      "DIALOG_ACTION": "How to continue",
+      "MFATYPE": "Verification method",
+      "CONFIRMATION_ACTION": "How to continue",
+      "ACCOUNT": "Account",
+      "CONTACT_POINT": "Send the code to"
+    },
+    "OPTIONS": {
+      "TRY_AGAIN": "Try again",
+      "SIGN_UP": "Sign up",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp",
+      "TRY_ANOTHER_WAY": "Try another way"
     }
   }
 }

@@ -50,6 +50,8 @@ export const UNOFFICIAL_CHANNEL_TYPES = Object.values(PROVIDERS).map(
 export const STEP_KINDS = {
   CREDENTIALS: 'credentials',
   CODE_2FA: 'code_2fa',
+  CAPTCHA: 'captcha',
+  CHOICE: 'choice',
   AWAIT_APPROVAL: 'await_approval',
   QR: 'qr',
   PAIRING_CODE: 'pairing_code',
@@ -60,6 +62,9 @@ export const STEP_KINDS = {
 export const ERROR_CODES = [
   'wrong_password',
   'wrong_code',
+  'wrong_captcha',
+  'account_not_found',
+  'login_rejected',
   'account_locked',
   'checkpoint_required',
   'timeout',

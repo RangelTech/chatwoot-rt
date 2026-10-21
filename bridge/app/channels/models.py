@@ -11,15 +11,44 @@ from app.channels.states import State
 
 Provider = Literal["instagram", "messenger", "whatsapp", "tiktok"]
 StepKind = Literal[
-    "credentials", "code_2fa", "await_approval", "qr", "pairing_code", "syncing", "complete"
+    "credentials",
+    "code_2fa",
+    "captcha",
+    "choice",
+    "await_approval",
+    "qr",
+    "pairing_code",
+    "syncing",
+    "complete",
 ]
 
 
 class StepField(BaseModel):
     id: str
-    type: Literal["username", "password", "2fa_code", "text"]
+    type: Literal[
+        "username",
+        "password",
+        "2fa_code",
+        "text",
+        "select",
+        "captcha_code",
+        "phone_number",
+        "email",
+    ]
     label_key: str
     secret: bool = False
+    label: str = ""  # nome vindo do bridge (ingles); a tela prefere label_key quando traduzido
+    options: list[str] = Field(default_factory=list)
+    default: str | None = None
+
+
+class StepAttachment(BaseModel):
+    """Imagem/audio do passo (ex.: captcha). Nao e segredo: o proprio provedor o mostra."""
+
+    kind: Literal["image", "audio"]
+    mime: str = ""
+    name: str = ""
+    data: str  # base64
 
 
 class QrInfo(BaseModel):
@@ -37,6 +66,8 @@ class Step(BaseModel):
     step_id: str
     kind: StepKind
     instructions_key: str = ""
+    instructions: str = ""  # texto do bridge (ingles), exibido como detalhe quando nao ha traducao
+    attachments: list[StepAttachment] = Field(default_factory=list)
     fields: list[StepField] = Field(default_factory=list)
     qr: QrInfo | None = None
     pairing_code: str | None = None

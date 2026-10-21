@@ -53,7 +53,13 @@
       "QR_HELP_MESSENGER": "Leia este código com o aplicativo.",
       "PAIRING_HELP": "No celular: WhatsApp > Aparelhos conectados > Conectar com número de telefone e digite este código.",
       "SYNC_TITLE": "Validando o acesso e sincronizando",
-      "SYNC_HELP": "Importando suas conversas recentes. Pode manter esta página aberta."
+      "SYNC_HELP": "Importando suas conversas recentes. Pode manter esta página aberta.",
+      "CHOICE_HELP": "A plataforma pede que você escolha como continuar.",
+      "CAPTCHA_HELP": "Digite os caracteres da imagem para provar que você não é um robô.",
+      "CAPTCHA_AUDIO": "Ouvir o áudio",
+      "PROVIDER_MESSAGE": "Mensagem da plataforma (em inglês)",
+      "CONTINUE": "Continuar",
+      "CAPTCHA_ALT": "Imagem de verificação"
     },
     "FINALIZE": {
       "HELP": "Quase pronto. Escolha como esta caixa de entrada vai funcionar.",
@@ -85,7 +91,10 @@
       "UNSUPPORTED_STEP": "Esta etapa de login não é suportada. Use a opção oficial ou fale com o suporte.",
       "GENERIC": "Algo deu errado. Tente de novo em alguns minutos.",
       "CONSENT_REQUIRED": "Aceite os termos para continuar.",
-      "ATTEMPTS_LEFT": "Tentativas restantes: {count}"
+      "ATTEMPTS_LEFT": "Tentativas restantes: {count}",
+      "ACCOUNT_NOT_FOUND": "Não encontramos essa conta. Confira o usuário ou e-mail e tente de novo.",
+      "LOGIN_REJECTED": "A plataforma recusou o login. Confira os dados, conclua qualquer verificação no aplicativo oficial e tente de novo.",
+      "WRONG_CAPTCHA": "Os caracteres da imagem não conferem. Tente de novo."
     },
     "STATES": {
       "PENDING_AUTH": "Entrando",
@@ -112,6 +121,30 @@
       "CONFIRM_YES": "Sim, confirmar",
       "DISCONNECT_DONE": "Conta desconectada.",
       "REVOKE_DONE": "Acesso revogado."
+    },
+    "FIELDS": {
+      "USERNAME": "Usuário ou e-mail",
+      "PASSWORD": "Senha",
+      "VERIFICATION_CODE": "Código de verificação",
+      "OTP_CODE": "Código de verificação",
+      "TOTP_CODE": "Código de 6 dígitos",
+      "SMS_CODE": "Código recebido por SMS",
+      "WHATSAPP_CODE": "Código recebido no WhatsApp",
+      "BACKUP_CODE": "Código de backup",
+      "CAPTCHA_CODE": "Texto da imagem",
+      "PHONE_NUMBER": "Número com DDI (ex.: 5511999999999)",
+      "DIALOG_ACTION": "Como continuar",
+      "MFATYPE": "Método de verificação",
+      "CONFIRMATION_ACTION": "Como continuar",
+      "ACCOUNT": "Conta",
+      "CONTACT_POINT": "Enviar o código para"
+    },
+    "OPTIONS": {
+      "TRY_AGAIN": "Tentar de novo",
+      "SIGN_UP": "Criar conta",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp",
+      "TRY_ANOTHER_WAY": "Tentar outro jeito"
     }
   }
 }
