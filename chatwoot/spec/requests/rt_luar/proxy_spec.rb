@@ -174,7 +174,7 @@ RSpec.describe 'RtLuar::Proxy', type: :request do
     end
 
     it 'aplica 120 req/min por usuário' do
-      allow(Rack::Attack.cache.store).to receive(:increment).and_return(121)
+      allow($velma).to receive(:with).and_return(121)
       luar(:get, 'conversations')
       expect(response).to have_http_status(:too_many_requests)
     end

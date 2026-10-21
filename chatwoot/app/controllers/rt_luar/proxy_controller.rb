@@ -120,9 +120,14 @@ class RtLuar::ProxyController < ActionController::API
   end
 
   def enforce_rate_limit
-    # Rack::Attack expõe um Cache::Store para contadores; Redis::Namespace não
-    # implementa `count`. O incremento com expiração mantém a janela por usuário.
-    count = Rack::Attack.cache.store.increment("rt_luar:#{@claims['user_id']}", 1, expires_in: RATE_PERIOD)
+    # Usa a pool Redis já adotada pela aplicação. O cache interno do Rack::Attack
+    # não aceita a ConnectionPool legada e falha ao tentar chamá-la como Proc.
+    key = "rt_luar:#{@claims['user_id']}"
+    count = $velma.with do |redis|
+      current = redis.incr(key)
+      redis.expire(key, RATE_PERIOD) if current == 1
+      current
+    end
     return if count <= RATE_LIMIT
 
     deny(:too_many_requests, 'luar_rate_limited', 'Limite de requisições excedido')
