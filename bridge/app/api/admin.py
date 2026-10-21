@@ -25,9 +25,7 @@ def require_admin(request: Request) -> None:
         raise HTTPException(status_code=503, detail="ponte sem token administrativo configurado")
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not secrets.compare_digest(
-        token, settings.bridge_admin_token
-    ):
+    if scheme.lower() != "bearer" or not secrets.compare_digest(token, settings.bridge_admin_token):
         raise HTTPException(status_code=401, detail="não autorizado")
 
 

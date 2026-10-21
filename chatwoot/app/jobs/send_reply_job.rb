@@ -10,11 +10,13 @@ class SendReplyJob < ApplicationJob
     'Channel::Sms' => ::Sms::SendOnSmsService,
     'Channel::Wapi' => ::Wapi::SendOnWapiService,
     'Channel::EvolutionApi' => ::Evolution::SendOnEvolutionService,
-    'Channel::InstagramUnofficial' => ::SocialUnofficial::SendOnInstagramUnofficialService,
-    # 25-26/08/2026: via automação de navegador (oauth-browser), não HTTP
-    # puro como Instagram -- ver SendOnFacebookUnofficialService. Nunca
-    # testado com contato real ainda.
-    'Channel::FacebookUnofficial' => ::SocialUnofficial::SendOnFacebookUnofficialService,
+    # Fase CH: canais não oficiais saem pelo gateway (sem cookie, sem polling).
+    'Channel::InstagramUnofficial' => ::Channels::SendOnUnofficialService,
+    'Channel::MessengerUnofficial' => ::Channels::SendOnUnofficialService,
+    'Channel::WhatsappUnofficial' => ::Channels::SendOnUnofficialService,
+    'Channel::TiktokUnofficial' => ::Channels::SendOnUnofficialService,
+    # Legado (cookie): reauth_required, a mensagem falha com código claro em vez de sair.
+    'Channel::FacebookUnofficial' => ::Channels::SendOnUnofficialService,
     'Channel::Instagram' => ::Instagram::SendOnInstagramService,
     'Channel::Tiktok' => ::Tiktok::SendOnTiktokService,
     'Channel::Email' => ::Email::SendOnEmailService,

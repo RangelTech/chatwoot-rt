@@ -433,9 +433,7 @@ def delete_evolution_connection(connection_id: str) -> None:
         conn.execute("DELETE FROM evolution_connections WHERE id = %s", (connection_id,))
 
 
-def mark_evolution_connection(
-    connection_id: str, *, status: str, last_error: str = ""
-) -> dict:
+def mark_evolution_connection(connection_id: str, *, status: str, last_error: str = "") -> dict:
     with get_connection() as conn:
         return conn.execute(
             """UPDATE evolution_connections

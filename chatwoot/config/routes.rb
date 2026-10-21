@@ -79,6 +79,17 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          resources :channel_connections, only: [:create, :show] do
+            get :catalog, on: :collection
+            member do
+              post :step
+              post :cancel
+              post :disconnect
+              post :revoke
+              post :reauth
+              post :finalize
+            end
+          end
           namespace :rt_kanban do
             resource :board, only: [:show, :update]
             resource :metrics, only: [:show]
@@ -761,6 +772,7 @@ Rails.application.routes.draw do
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   post 'webhooks/wapi/:project_id', to: 'webhooks/wapi#process_payload'
+  post 'webhooks/channels/:channel_type/:id', to: 'webhooks/channels#process_payload'
   post 'webhooks/evolution/:instance_name', to: 'webhooks/evolution#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'

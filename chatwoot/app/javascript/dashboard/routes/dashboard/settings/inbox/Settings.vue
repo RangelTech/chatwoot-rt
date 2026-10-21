@@ -16,6 +16,8 @@ import DuplicateInboxBanner from './channels/instagram/DuplicateInboxBanner.vue'
 import MicrosoftReauthorize from './channels/microsoft/Reauthorize.vue';
 import GoogleReauthorize from './channels/google/Reauthorize.vue';
 import WhatsappReauthorize from './channels/whatsapp/Reauthorize.vue';
+import InboxConnectionPanel from './channelConnect/InboxConnectionPanel.vue';
+import { UNOFFICIAL_CHANNEL_TYPES } from './channelConnect/constants';
 import InboxHealthAPI from 'dashboard/api/inboxHealth';
 import PreChatFormSettings from './PreChatForm/Settings.vue';
 import WeeklyAvailability from './components/WeeklyAvailability.vue';
@@ -70,6 +72,7 @@ export default {
     InstagramReauthorize,
     TiktokReauthorize,
     WhatsappReauthorize,
+    InboxConnectionPanel,
     DuplicateInboxBanner,
     Editor,
     Avatar,
@@ -343,6 +346,9 @@ export default {
       )
         return true;
       return false;
+    },
+    isUnofficialConnection() {
+      return UNOFFICIAL_CHANNEL_TYPES.includes(this.inbox.channel_type);
     },
     instagramUnauthorized() {
       return this.isAnInstagramChannel && this.inbox.reauthorization_required;
@@ -780,6 +786,11 @@ export default {
     </SettingIntroBanner>
     <section class="w-full overflow-auto py-8">
       <div class="max-w-7xl mx-auto w-full">
+        <InboxConnectionPanel
+          v-if="isUnofficialConnection"
+          :inbox="inbox"
+          :class="bannerMaxWidth"
+        />
         <MicrosoftReauthorize
           v-if="microsoftUnauthorized"
           :inbox="inbox"

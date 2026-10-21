@@ -140,6 +140,15 @@ if resource.wapi?
   json.project_id resource.channel.project_id if Current.account_user&.administrator?
 end
 
+if resource.unofficial_gateway?
+  json.unofficial_provider resource.channel.provider
+  json.connection_state resource.channel.state
+  json.connection_last_activity_at resource.channel.last_activity_at
+  json.connection_last_error_code resource.channel.last_error_code
+  json.connector_version resource.channel.connector_version
+  json.connection_id resource.channel.connection_id if Current.account_user&.administrator?
+end
+
 if resource.evolution_api?
   json.instance_name resource.channel.instance_name
   json.evolution_qr_code resource.channel.qr_code if Current.account_user&.administrator?
