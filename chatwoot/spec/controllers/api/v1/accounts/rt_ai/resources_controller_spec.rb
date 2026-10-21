@@ -38,6 +38,19 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     end
   end
 
+  it 'reads the tenant quota summary through the Gateway BFF' do
+    tenant_id = Rt::AiAccount.find_by!(account_id: account.id).engine_tenant_id
+    allow(Rt::GatewayClient).to receive(:get).and_return('rpm' => 60, 'requests' => 0)
+
+    get "/api/v1/accounts/#{account.id}/rt_ai/resources/quotas", headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(response.parsed_body).to include('rpm' => 60)
+    expect(Rt::GatewayClient).to have_received(:get).with(
+      account: account, path: "/api/tenants/#{tenant_id}/summary"
+    )
+  end
+
   it 'denies operators provider management' do
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", params: { name: 'x' }, headers: agent.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)

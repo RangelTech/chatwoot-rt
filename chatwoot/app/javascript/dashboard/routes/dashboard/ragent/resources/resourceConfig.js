@@ -29,6 +29,7 @@ export const RESOURCES = {
       { key: 'models', label: 'MODELS', json: true, placeholder: '["gpt-4o-mini"]' },
     ],
   },
+  quotas: { title: 'QUOTAS', columns: [], fields: [] },
   usage: { title: 'USAGE', columns: [], fields: [] },
   runs: {
     title: 'RUNS',
@@ -53,6 +54,7 @@ export const RESOURCES = {
 export const ROUTES = [
   ['providers', 'ai.providers.view'],
   ['combos', 'ai.providers.view'],
+  ['quotas', 'ai.usage.view'],
   ['usage', 'ai.usage.view'],
   ['runs', 'ai.runs.view'],
   ['environment', 'ai.environment.view'],

@@ -177,7 +177,8 @@
       "INTEGRATIONS": "Integrations",
       "RUNS": "Runs",
       "ENVIRONMENT": "Environment",
-      "USAGE": "Usage"
+      "USAGE": "Usage",
+      "QUOTAS": "Limits"
     },
     "RES": {
       "NEW": "New",
@@ -202,6 +203,10 @@
       "USAGE": {
         "TITLE": "AI usage",
         "HELP": "Estimated usage; not a bill."
+      },
+      "QUOTAS": {
+        "TITLE": "AI limits",
+        "HELP": "Current request limit and the resources enabled for your company."
       },
       "RUNS": {
         "TITLE": "Runs",

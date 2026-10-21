@@ -177,7 +177,8 @@
       "INTEGRATIONS": "Integrações",
       "RUNS": "Execuções",
       "ENVIRONMENT": "Ambiente",
-      "USAGE": "Uso"
+      "USAGE": "Uso",
+      "QUOTAS": "Limites"
     },
     "RES": {
       "NEW": "Novo",
@@ -202,6 +203,10 @@
       "USAGE": {
         "TITLE": "Uso de IA",
         "HELP": "Uso estimado; não é cobrança."
+      },
+      "QUOTAS": {
+        "TITLE": "Limites de IA",
+        "HELP": "Limite atual de requisições e recursos habilitados para a sua empresa."
       },
       "RUNS": {
         "TITLE": "Execuções",

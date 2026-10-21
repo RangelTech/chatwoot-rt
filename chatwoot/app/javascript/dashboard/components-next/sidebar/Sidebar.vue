@@ -588,6 +588,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('ragent_usage'),
           activeOn: ['ragent_usage'],
         },
+        {
+          name: 'RagentQuotas',
+          label: t('RAGENT.MENU.QUOTAS'),
+          to: accountScopedRoute('ragent_quotas'),
+          activeOn: ['ragent_quotas'],
+        },
       ],
     },
     ...(isCallsAvailable.value
