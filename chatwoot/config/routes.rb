@@ -121,6 +121,7 @@ Rails.application.routes.draw do
             put 'resources/:key/:id', to: 'resources#update'
             delete 'resources/:key/:id', to: 'resources#destroy'
             post 'resources/:key/actions/:name', to: 'resources#action'
+            post 'resources/:key/:id/actions/:name', to: 'resources#member_action'
             resources :agents, only: [:index, :create, :destroy] do
               member do
                 get :draft

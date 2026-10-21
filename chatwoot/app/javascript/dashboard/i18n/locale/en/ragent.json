@@ -189,8 +189,11 @@
       "ACTIONS": {
         "START": "Start",
         "STOP": "Stop",
-        "BACKUP": "Backup now"
+        "BACKUP": "Backup now",
+        "TEST": "Test connection"
       },
+      "TEST_OK": "Connection works.",
+      "TEST_FAILED": "The connection test failed.",
       "PROVIDERS": {
         "TITLE": "AI providers",
         "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."

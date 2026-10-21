@@ -154,6 +154,23 @@ const runAction = async name => {
     useAlert(t('RAGENT.RES.ERROR'));
   }
 };
+
+const runItemAction = async (item, name) => {
+  busy.value = true;
+  try {
+    const { data } = await axios.post(`${base.value}/${item.id}/actions/${name}`);
+    if (name === 'test' && data.valid === false) {
+      useAlert(data.error || t('RAGENT.RES.TEST_FAILED'));
+    } else {
+      useAlert(t('RAGENT.RES.TEST_OK'));
+    }
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -235,6 +252,15 @@ const runAction = async name => {
               {{ cell(it[c], c) }}
             </td>
             <td v-if="canManage && it.id" class="px-4 py-2 text-end">
+              <Button
+                v-for="a in config.itemActions || []"
+                :key="a"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
+                @click="runItemAction(it, a)"
+              />
               <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
             </td>
           </tr>

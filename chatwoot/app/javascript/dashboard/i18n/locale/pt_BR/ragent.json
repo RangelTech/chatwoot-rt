@@ -189,8 +189,11 @@
       "ACTIONS": {
         "START": "Ligar",
         "STOP": "Parar",
-        "BACKUP": "Fazer backup"
+        "BACKUP": "Fazer backup",
+        "TEST": "Testar conexão"
       },
+      "TEST_OK": "A conexão funciona.",
+      "TEST_FAILED": "O teste de conexão falhou.",
       "PROVIDERS": {
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."

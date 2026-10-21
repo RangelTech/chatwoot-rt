@@ -6,7 +6,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   RESOURCES = {
     'providers' => { gateway: :providers, view: 'ai.providers.view', manage: 'ai.providers.manage',
-                     fields: %w[name provider model api_key api_base] },
+                     fields: %w[name provider model api_key api_base], item_actions: %w[test] },
     'combos' => { gateway: :combos, view: 'ai.providers.view', manage: 'ai.providers.manage', fields: %w[name models] },
     'usage' => { gateway: :usage, view: 'ai.usage.view', manage: nil, fields: [] },
     'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
@@ -20,8 +20,8 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   before_action :find_resource
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index]
-  before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action]
-  before_action :need_id, only: [:update, :destroy]
+  before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
+  before_action :need_id, only: [:update, :destroy, :member_action]
 
   def index
     return render_gateway(gateway_get) if @rt_resource[:gateway]
@@ -56,6 +56,16 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     return head :not_found unless Array(@rt_resource[:actions]).include?(params[:name])
 
     render_engine engine_post("#{@rt_resource[:path]}/#{params[:name]}")
+  end
+
+  # Acao por item (por exemplo, testar um provedor). A allowlist continua no
+  # servidor e o id passa pelo formato restrito; o browser nao escolhe rota do Gateway.
+  def member_action
+    return head :not_found unless Array(@rt_resource[:item_actions]).include?(params[:name])
+
+    return render_gateway(gateway_member_action) if @rt_resource[:gateway]
+
+    head :not_found
   end
 
   private
@@ -113,6 +123,15 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   def gateway_delete
     Rt::GatewayClient.delete(account: Current.account, path: "/api/#{@rt_resource[:gateway]}/#{params[:id]}")
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def gateway_member_action
+    case [@rt_resource[:gateway], params[:name]]
+    when [:providers, 'test']
+      Rt::GatewayClient.post(account: Current.account, path: "/api/providers/#{params[:id]}/test")
+    end
   rescue Rt::GatewayClient::Error => e
     gateway_failed(e)
   end
