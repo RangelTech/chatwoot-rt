@@ -87,7 +87,7 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
   private
 
   def load_binding
-    @binding = Current.account.rt_queue_bindings.find_by!(team_id: params[:id])
+    @binding = Rt::QueueBinding.find_by!(account_id: Current.account.id, team_id: params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { code: 'not_found', message: 'Fila não encontrada' }, status: :not_found
   end

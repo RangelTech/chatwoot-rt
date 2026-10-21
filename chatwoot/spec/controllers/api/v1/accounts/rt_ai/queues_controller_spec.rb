@@ -64,6 +64,20 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Queues', type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it 'updates and deletes a queue of the account, never another one' do
+    post url, params: { name: 'ia x', respondent_kind: 'ia', template_id: 'a1', mode: 'piloto' }, headers: admin.create_new_auth_token, as: :json
+    id = response.parsed_body['id']
+    put "#{url}/#{id}", params: { name: 'ia x', respondent_kind: 'ia', template_id: 'a2', mode: 'piloto' }, headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(Rt::QueueBinding.find_by!(team_id: id).template_id).to eq('a2')
+    foreign = create(:team, account: other_account, name: 'estrangeira')
+    Rt::QueueBinding.create!(account: other_account, team: foreign, respondent_kind: 'humano')
+    put "#{url}/#{foreign.id}", params: { name: 'x', respondent_kind: 'humano' }, headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:not_found)
+    delete "#{url}/#{id}", headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:no_content)
+  end
+
   describe 'GET respondent' do
     let(:ai_team) { create(:team, account: account, name: 'ia atendimento', allow_auto_assign: false) }
     let(:conversation) { create(:conversation, account: account, inbox: inbox) }
