@@ -24,7 +24,11 @@ def configured() -> bool:
 
 
 def _headers() -> dict:
-    return {"Authorization": f"Bearer {settings.rt_internal_token}"}
+    # O Rails de producao forca SSL e a rede interna e http: o cabecalho evita o 301/308.
+    return {
+        "Authorization": f"Bearer {settings.rt_internal_token}",
+        "X-Forwarded-Proto": "https",
+    }
 
 
 def _url(path: str) -> str:
