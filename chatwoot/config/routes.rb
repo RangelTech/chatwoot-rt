@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get '/internal/routing/resolve', to: 'rt_internal/routing#resolve', format: false
   get '/internal/routing/destinations', to: 'rt_internal/routing#destinations', format: false
   post '/internal/routing/handoff', to: 'rt_internal/routing#handoff', format: false
+  get '/internal/routing/pending', to: 'rt_internal/routing#pending', format: false
   get '/internal/routing/history', to: 'rt_internal/routing#history', format: false
   post '/internal/routing/migrate', to: 'rt_internal/routing_migrations#create', format: false
   post '/internal/routing/migrate/rollback', to: 'rt_internal/routing_migrations#rollback', format: false

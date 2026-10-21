@@ -798,3 +798,43 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
 
     background.add_task(_handle_message, tenant_id, int(account_id), payload)
     return {"status": "accepted"}
+
+
+async def recover_unanswered(minutes: int = 15) -> int:
+    """Varredura de startup: reprocessa a ultima mensagem do cliente que ficou sem resposta de IA.
+
+    So roda em modo `filas`. Como ha uma unica instancia da bridge, nada esta em voo ao subir:
+    a reserva antiga (processada pela metade) e liberada e a mensagem e reclamada de novo,
+    o que mantem um unico processamento por mensagem.
+    """
+    if not routing.configured():
+        return 0
+    count = 0
+    for item in await routing.pending(minutes):
+        try:
+            link = _tenant_by_account(int(item["account_id"]))
+            if link is None:
+                continue
+            tenant_id = str(link["tenant_id"])
+            message = item["message"]
+            message_id = int(message["id"])
+            decision = await routing.resolve(int(item["account_id"]), int(item["conversation_id"]))
+            if not decision or decision.get("respondent") != "ia":
+                continue
+            tenants.release_message(tenant_id, message_id)
+            if not tenants.claim_message(tenant_id, message_id):
+                continue
+            payload = {
+                "id": message_id,
+                "content": message.get("content"),
+                "message_type": "incoming",
+                "conversation": {
+                    "id": int(item["conversation_id"]),
+                    "inbox_id": item.get("inbox_id"),
+                },
+            }
+            await _handle_message_filas(tenant_id, int(item["account_id"]), payload, decision)
+            count += 1
+        except Exception:  # noqa: BLE001
+            logger.exception("falha ao recuperar conversa %s", item.get("conversation_id"))
+    return count

@@ -248,3 +248,39 @@ def test_parse_handoff_formatos():
     }
     assert parse_handoff("oi", True)[1] is True
     assert parse_handoff("so resposta") == ("so resposta", False, {"queue": None, "summary": None})
+
+
+def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
+    import asyncio
+
+    from app.api import agent_bot
+
+    calls = {"handled": [], "claimed": set(), "released": []}
+    item = {
+        "account_id": 7, "conversation_id": 3, "inbox_id": 9,
+        "message": {"id": 55, "content": "oi?", "message_type": "incoming"},
+    }
+
+    async def fake_pending(minutes=15):
+        return [item]
+
+    async def fake_resolve(account_id, conversation_id, legacy=None):
+        return {"respondent": "ia", "routing_mode": "filas"}
+
+    async def fake_handle(tenant_id, account_id, payload, decision):
+        calls["handled"].append(payload["id"])
+
+    monkeypatch.setattr(agent_bot.routing, "configured", lambda: True)
+    monkeypatch.setattr(agent_bot.routing, "pending", fake_pending)
+    monkeypatch.setattr(agent_bot.routing, "resolve", fake_resolve)
+    monkeypatch.setattr(agent_bot, "_tenant_by_account", lambda account_id: {"tenant_id": "t1"})
+    monkeypatch.setattr(agent_bot, "_handle_message_filas", fake_handle)
+    released = calls["released"]
+    monkeypatch.setattr(agent_bot.tenants, "release_message", lambda t, m: released.append(m))
+    monkeypatch.setattr(
+        agent_bot.tenants, "claim_message",
+        lambda t, m: calls["claimed"].add(m) or True,
+    )
+    assert asyncio.run(agent_bot.recover_unanswered(15)) == 1
+    assert calls["handled"] == [55]
+    assert calls["released"] == [55] and calls["claimed"] == {55}

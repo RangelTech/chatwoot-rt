@@ -43,6 +43,17 @@ def run_migrations() -> list[str]:
     return applied
 
 
+async def _recover_after_start() -> None:
+    """Apos reiniciar, responde o que o webhook perdido deixou sem resposta (ultimos 15 min)."""
+    await asyncio.sleep(20)
+    try:
+        recovered = await agent_bot.recover_unanswered(15)
+        if recovered:
+            logger.info("recuperadas %s conversas sem resposta", recovered)
+    except Exception:  # noqa: BLE001
+        logger.exception("varredura de startup falhou")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Sem isso, segredo em repouso (integration_key, etc.) seria cifrado com a
@@ -59,9 +70,13 @@ async def lifespan(app: FastAPI):
     worker = None
     if settings.channels_gateway_token:
         worker = asyncio.create_task(channels_api.worker_loop())
+    recovery = asyncio.create_task(_recover_after_start())
     try:
         yield
     finally:
+        recovery.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await recovery
         if worker:
             worker.cancel()
             with contextlib.suppress(asyncio.CancelledError):

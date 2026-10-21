@@ -74,6 +74,12 @@ async def resolve(account_id: int, conversation_id: int, legacy: str | None = No
     return await _get("resolve", params)
 
 
+async def pending(minutes: int = 15) -> list[dict]:
+    """Conversas de IA cuja ultima mensagem do cliente ficou sem resposta (varredura de startup)."""
+    data = await _get("pending", {"minutes": minutes})
+    return (data or {}).get("items") or []
+
+
 async def destinations(account_id: int, conversation_id: int) -> list[dict]:
     data = await _get(
         "destinations", {"account_id": account_id, "conversation_id": conversation_id}
