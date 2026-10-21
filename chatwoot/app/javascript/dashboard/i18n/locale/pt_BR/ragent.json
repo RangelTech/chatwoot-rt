@@ -178,7 +178,8 @@
       "RUNS": "Execuções",
       "ENVIRONMENT": "Ambiente",
       "USAGE": "Uso",
-      "QUOTAS": "Limites"
+      "QUOTAS": "Limites",
+      "REQUESTS": "Requisições"
     },
     "RES": {
       "NEW": "Novo",
@@ -207,6 +208,10 @@
       "QUOTAS": {
         "TITLE": "Limites de IA",
         "HELP": "Limite atual de requisições e recursos habilitados para a sua empresa."
+      },
+      "REQUESTS": {
+        "TITLE": "Requisições de IA",
+        "HELP": "As últimas requisições da sua empresa. Chaves e conteúdo dos pedidos nunca aparecem aqui."
       },
       "RUNS": {
         "TITLE": "Execuções",
@@ -269,7 +274,11 @@
         "TITLE": "Título",
         "DEVICE_NAME": "Dispositivo",
         "LAST_ACTIVITY_AT": "Última atividade",
-        "KEY_PREFIX": "Chave"
+        "KEY_PREFIX": "Chave",
+        "TIMESTAMP": "Horário",
+        "REQUESTEDMODEL": "Modelo solicitado",
+        "ENDPOINT": "Endpoint",
+        "COST": "Custo estimado"
       },
       "LOAD_ERROR": "Não foi possível carregar esta tela agora. Tente novamente em instantes.",
       "RETRY": "Tentar de novo",

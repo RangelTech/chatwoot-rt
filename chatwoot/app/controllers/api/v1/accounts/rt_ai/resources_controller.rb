@@ -10,6 +10,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'combos' => { gateway: :combos, view: 'ai.providers.view', manage: 'ai.providers.manage', fields: %w[name models] },
     'quotas' => { gateway: :summary, view: 'ai.usage.view', manage: nil, fields: [] },
     'usage' => { gateway: :usage, view: 'ai.usage.view', manage: nil, fields: [] },
+    'requests' => { gateway: :requests, view: 'ai.usage.view', manage: nil, fields: [] },
     'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
                        actions: %w[start stop backup] },
@@ -88,9 +89,9 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     case @rt_resource[:gateway]
     when :providers then Rt::GatewayClient.get(account: Current.account, path: '/api/providers')['connections'] || []
     when :combos then Rt::GatewayClient.get(account: Current.account, path: '/api/combos')['combos'] || []
-    when :summary, :usage
+    when :summary, :usage, :requests
       tenant_id = Rt::AiAccount.find_by!(account_id: Current.account.id).engine_tenant_id
-      suffix = @rt_resource[:gateway] == :summary ? 'summary' : 'usage'
+      suffix = { summary: 'summary', usage: 'usage', requests: 'requests?limit=50' }.fetch(@rt_resource[:gateway])
       Rt::GatewayClient.get(account: Current.account, path: "/api/tenants/#{tenant_id}/#{suffix}")
     end
   rescue Rt::GatewayClient::Error => e

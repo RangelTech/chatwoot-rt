@@ -51,6 +51,18 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     )
   end
 
+  it 'lists only the logged-in tenant request log through the Gateway BFF' do
+    tenant_id = Rt::AiAccount.find_by!(account_id: account.id).engine_tenant_id
+    allow(Rt::GatewayClient).to receive(:get).and_return('requests' => [])
+
+    get "/api/v1/accounts/#{account.id}/rt_ai/resources/requests", headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(Rt::GatewayClient).to have_received(:get).with(
+      account: account, path: "/api/tenants/#{tenant_id}/requests?limit=50"
+    )
+  end
+
   it 'denies operators provider management' do
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", params: { name: 'x' }, headers: agent.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)

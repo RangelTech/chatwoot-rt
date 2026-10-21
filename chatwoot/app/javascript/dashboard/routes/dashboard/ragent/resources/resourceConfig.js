@@ -31,6 +31,11 @@ export const RESOURCES = {
   },
   quotas: { title: 'QUOTAS', columns: [], fields: [] },
   usage: { title: 'USAGE', columns: [], fields: [] },
+  requests: {
+    title: 'REQUESTS',
+    columns: ['timestamp', 'provider', 'model', 'requestedModel', 'endpoint', 'status', 'cost'],
+    fields: [],
+  },
   runs: {
     title: 'RUNS',
     columns: ['title', 'status', 'device_name', 'last_activity_at'],
@@ -56,6 +61,7 @@ export const ROUTES = [
   ['combos', 'ai.providers.view'],
   ['quotas', 'ai.usage.view'],
   ['usage', 'ai.usage.view'],
+  ['requests', 'ai.usage.view'],
   ['runs', 'ai.runs.view'],
   ['environment', 'ai.environment.view'],
   ['integrations', 'ai.integrations.view'],

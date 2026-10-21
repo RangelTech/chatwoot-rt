@@ -178,7 +178,8 @@
       "RUNS": "Runs",
       "ENVIRONMENT": "Environment",
       "USAGE": "Usage",
-      "QUOTAS": "Limits"
+      "QUOTAS": "Limits",
+      "REQUESTS": "Requests"
     },
     "RES": {
       "NEW": "New",
@@ -207,6 +208,10 @@
       "QUOTAS": {
         "TITLE": "AI limits",
         "HELP": "Current request limit and the resources enabled for your company."
+      },
+      "REQUESTS": {
+        "TITLE": "AI requests",
+        "HELP": "The latest requests from your company. Keys and prompt content are never shown here."
       },
       "RUNS": {
         "TITLE": "Runs",
@@ -269,7 +274,11 @@
         "TITLE": "Title",
         "DEVICE_NAME": "Device",
         "LAST_ACTIVITY_AT": "Last activity",
-        "KEY_PREFIX": "Key"
+        "KEY_PREFIX": "Key",
+        "TIMESTAMP": "Time",
+        "REQUESTEDMODEL": "Requested model",
+        "ENDPOINT": "Endpoint",
+        "COST": "Estimated cost"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
       "RETRY": "Try again",

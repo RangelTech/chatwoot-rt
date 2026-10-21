@@ -84,7 +84,7 @@ const load = async () => {
     const { data } = await axios.get(base.value);
     const list = Array.isArray(data)
       ? data
-      : data.items || data.sessions || data.charges || data.records;
+      : data.items || data.sessions || data.charges || data.records || data.requests;
     if (Array.isArray(list)) {
       items.value = list;
       raw.value = null;
