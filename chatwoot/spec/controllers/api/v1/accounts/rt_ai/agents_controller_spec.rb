@@ -40,6 +40,65 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Agents', type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  describe 'template model combo' do
+    let(:id) { SecureRandom.uuid }
+    let(:base) { "/api/v1/accounts/#{account.id}/rt_ai/agents/#{id}" }
+    let(:manifest) { { model: { combo: 'atendimento-principal' }, tools: [] } }
+
+    before do
+      allow(Rt::GatewayClient).to receive(:get).and_return(
+        'combos' => [{ 'name' => 'atendimento-principal' }]
+      )
+      allow(Rt::EngineClient).to receive(:put).and_return('ok' => true)
+      allow(Rt::EngineClient).to receive(:post).and_return('id' => 'version-1')
+    end
+
+    it 'stores only a combo returned for the authenticated account' do
+      put "#{base}/update_draft", params: { files: [], manifest: manifest }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(Rt::GatewayClient).to have_received(:get).with(account: account, path: '/api/combos')
+      expect(Rt::EngineClient).to have_received(:put).with(
+        "/api/templates/#{id}/draft", hash_including(manifest: hash_including('model' => hash_including('combo' => 'atendimento-principal'))), anything
+      )
+    end
+
+    it 'rejects a combo not listed for the account before saving the draft' do
+      allow(Rt::GatewayClient).to receive(:get).and_return('combos' => [{ 'name' => 'outro-tenant' }])
+
+      put "#{base}/update_draft", params: { files: [], manifest: manifest }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['code']).to eq('invalid_combo')
+      expect(Rt::EngineClient).not_to have_received(:put)
+    end
+
+    it 'revalidates the saved draft combo before creating a publishable version' do
+      allow(Rt::EngineClient).to receive(:get).and_return('manifest' => manifest.deep_stringify_keys)
+
+      post "#{base}/create_version", headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(Rt::GatewayClient).to have_received(:get).with(account: account, path: '/api/combos')
+      expect(Rt::EngineClient).to have_received(:post).with(
+        "/api/templates/#{id}/versions", hash_including(source: 'draft'), anything
+      )
+    end
+
+    it 'revalidates the immutable version immediately before deployment' do
+      version_id = SecureRandom.uuid
+      allow(Rt::EngineClient).to receive(:get).and_return('manifest' => manifest.deep_stringify_keys)
+
+      post "#{base}/publish", params: { version_id: version_id }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(Rt::GatewayClient).to have_received(:get).with(account: account, path: '/api/combos')
+      expect(Rt::EngineClient).to have_received(:post).with(
+        "/api/templates/#{id}/deploy", hash_including(version_id: version_id), anything
+      )
+    end
+  end
+
   describe 'arquivos do pacote' do
     let(:id) { SecureRandom.uuid }
     let(:base) { "/api/v1/accounts/#{account.id}/rt_ai/agents/#{id}" }
