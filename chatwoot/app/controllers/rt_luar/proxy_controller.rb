@@ -120,7 +120,9 @@ class RtLuar::ProxyController < ActionController::API
   end
 
   def enforce_rate_limit
-    count = Rack::Attack.cache.count("rt_luar:#{@claims['user_id']}", RATE_PERIOD)
+    # Rack::Attack expõe um Cache::Store para contadores; Redis::Namespace não
+    # implementa `count`. O incremento com expiração mantém a janela por usuário.
+    count = Rack::Attack.cache.store.increment("rt_luar:#{@claims['user_id']}", 1, expires_in: RATE_PERIOD)
     return if count <= RATE_LIMIT
 
     deny(:too_many_requests, 'luar_rate_limited', 'Limite de requisições excedido')
