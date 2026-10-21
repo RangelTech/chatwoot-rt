@@ -1,6 +1,6 @@
 <script setup>
 // Fase F (F-8d): indicador de quem responde a conversa. Só leitura; em modo legado não renderiza nada.
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -24,7 +24,18 @@ const load = async () => {
     info.value = null;
   }
 };
-watch(() => [props.conversationId, props.version], load, { immediate: true });
+// A store muda antes de o servidor gravar: espera um instante e consulta de novo para nao mostrar o estado anterior.
+let timer = null;
+watch(
+  () => [props.conversationId, props.version],
+  () => {
+    load();
+    clearTimeout(timer);
+    timer = setTimeout(load, 1500);
+  },
+  { immediate: true }
+);
+onBeforeUnmount(() => clearTimeout(timer));
 
 const label = computed(() => {
   const i = info.value;
