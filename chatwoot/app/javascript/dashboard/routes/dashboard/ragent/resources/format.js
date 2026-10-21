@@ -7,7 +7,7 @@ export const USD_BRL_ESTIMATE = 5.5;
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
-export const isDateKey = key => /(_at|_date)$/.test(key) || key === 'day';
+export const isDateKey = key => /(_at|_date)$/.test(key) || key === 'day' || key === 'timestamp';
 
 export const formatDate = value => {
   if (!value) return '—';
