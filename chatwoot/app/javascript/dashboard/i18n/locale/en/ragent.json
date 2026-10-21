@@ -194,10 +194,12 @@
         "STOP": "Stop",
         "BACKUP": "Backup now",
         "TEST": "Test connection",
+        "MODELS": "View models",
         "ACTIVATE": "Activate",
         "DEACTIVATE": "Deactivate"
       },
       "TEST_OK": "Connection works.",
+      "AVAILABLE_MODELS": "Models available from this provider",
       "TEST_FAILED": "The connection test failed.",
       "PROVIDERS": {
         "TITLE": "AI providers",

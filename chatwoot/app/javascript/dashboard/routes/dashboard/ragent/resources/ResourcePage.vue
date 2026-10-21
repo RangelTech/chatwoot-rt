@@ -30,6 +30,7 @@ const form = ref({});
 const busy = ref(false);
 // Chave de integração: o servidor a devolve uma única vez, na criação.
 const newKey = ref('');
+const providerModels = ref([]);
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
@@ -187,6 +188,19 @@ const toggleActive = async item => {
     busy.value = false;
   }
 };
+
+const loadProviderModels = async item => {
+  busy.value = true;
+  try {
+    const { data } = await axios.get(`${base.value}/${item.id}/models`);
+    providerModels.value = Array.isArray(data?.models) ? data.models : [];
+  } catch (error) {
+    providerModels.value = [];
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -278,6 +292,15 @@ const toggleActive = async item => {
                 @click="runItemAction(it, a)"
               />
               <Button
+                v-for="a in config.itemReads || []"
+                :key="a"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
+                @click="loadProviderModels(it)"
+              />
+              <Button
                 v-if="key === 'providers'"
                 size="sm"
                 variant="faded"
@@ -291,6 +314,12 @@ const toggleActive = async item => {
         </tbody>
       </table>
     </div>
+    <section v-if="providerModels.length" class="rounded-xl border border-n-weak p-4">
+      <h2 class="mb-2 text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
+      <ul class="grid gap-1 text-body-main text-n-slate-11 sm:grid-cols-2">
+        <li v-for="model in providerModels" :key="model.id || model.name">{{ model.name || model.id }}</li>
+      </ul>
+    </section>
     <UsagePanel v-else-if="raw && key === 'usage'" :data="raw" />
     <EnvironmentPanel v-else-if="raw && key === 'environment'" :data="raw" />
     <dl

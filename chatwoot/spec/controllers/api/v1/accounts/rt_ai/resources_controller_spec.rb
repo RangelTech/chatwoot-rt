@@ -82,6 +82,20 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     )
   end
 
+  it 'lists provider models only through the tenant-scoped gateway BFF route' do
+    provider_id = SecureRandom.uuid
+    allow(Rt::GatewayClient).to receive(:get).and_return('models' => [{ 'id' => 'model-a', 'name' => 'Model A' }])
+
+    get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/#{provider_id}/models",
+        headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(response.parsed_body).to include('models' => include('id' => 'model-a'))
+    expect(Rt::GatewayClient).to have_received(:get).with(
+      account: account, path: "/api/providers/#{provider_id}/models"
+    )
+  end
+
   it 'lists a provider active state and changes it only through the tenant-scoped BFF' do
     provider_id = SecureRandom.uuid
     allow(Rt::GatewayClient).to receive(:get).and_return('connections' => [{ 'id' => provider_id, 'isActive' => true }])
