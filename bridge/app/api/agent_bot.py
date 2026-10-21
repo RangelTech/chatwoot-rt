@@ -804,7 +804,7 @@ async def recover_unanswered(minutes: int = 15) -> int:
     """Varredura de startup: reprocessa a ultima mensagem do cliente que ficou sem resposta de IA.
 
     So roda em modo `filas`. Como ha uma unica instancia da bridge, nada esta em voo ao subir:
-    a reserva antiga da mensagem (processada pela metade) e liberada e a mensagem e reclamada de novo,
+    a reserva antiga (processada pela metade) e liberada e a mensagem e reclamada de novo,
     o que mantem um unico processamento por mensagem.
     """
     if not routing.configured():
