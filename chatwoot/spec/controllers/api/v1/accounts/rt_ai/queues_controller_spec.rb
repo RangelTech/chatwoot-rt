@@ -57,15 +57,15 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Queues', type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
   end
 
-  it 'allows viewing but not queue management by an operator' do
+  it 'denies both viewing and managing queues to an operator without the routing permissions' do
     get url, headers: agent.create_new_auth_token, as: :json
-    expect(response).to have_http_status(:ok)
+    expect(response).to have_http_status(:forbidden)
     post url, params: { name: 'nao', respondent_kind: 'humano' }, headers: agent.create_new_auth_token, as: :json
     expect(response).to have_http_status(:forbidden)
   end
 
   describe 'GET respondent' do
-    let(:ai_team) { create(:team, account: account, name: 'ia atendimento') }
+    let(:ai_team) { create(:team, account: account, name: 'ia atendimento', allow_auto_assign: false) }
     let(:conversation) { create(:conversation, account: account, inbox: inbox) }
 
     before do

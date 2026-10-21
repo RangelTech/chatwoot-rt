@@ -63,7 +63,7 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
   def entry
     inbox = Current.account.inboxes.find(params.require(:inbox_id))
     record = Rt::InboxEntryQueue.find_or_initialize_by(inbox: inbox)
-    record.assign_attributes(routing_mode: params.require(:routing_mode), team_id: params[:team_id].presence)
+    record.assign_attributes(account: Current.account, routing_mode: params.require(:routing_mode), team_id: params[:team_id].presence)
     record.save!
     render json: inbox_json(inbox, record)
   rescue ActiveRecord::RecordNotFound
