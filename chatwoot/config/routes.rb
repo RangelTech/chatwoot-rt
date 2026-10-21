@@ -121,6 +121,7 @@ Rails.application.routes.draw do
               collection do
                 put :entry
                 get :respondent
+                get :shadow
               end
             end
             # Leitura por item explicitamente allowlisted; o browser não informa URL do Gateway.

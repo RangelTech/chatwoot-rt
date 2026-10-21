@@ -87,8 +87,8 @@ RSpec.describe 'Fase F: fluxo de roteamento', type: :request do
       expect(conversation.reload.assignee_id).to be_nil
     end
 
-    it 'fora do modo filas nao marca assuncao' do
-      Rt::InboxEntryQueue.find_by(inbox_id: inbox.id).update!(routing_mode: 'sombra')
+    it 'em modo legado nao marca assuncao' do
+      Rt::InboxEntryQueue.find_by(inbox_id: inbox.id).update!(routing_mode: 'legado')
       human_reply
       expect(conversation.reload.assignee_id).to be_nil
     end

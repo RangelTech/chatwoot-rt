@@ -1,8 +1,8 @@
 # Fase F-8: configuracao de filas pertence ao Chatwoot. O browser nunca envia
 # account_id: toda consulta e escrita e limitada a Current.account.
 class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseController
-  before_action -> { require_permission('ai.inbox_routing.view') }, only: :index
-  before_action -> { require_permission('ai.inbox_routing.manage') }, except: [:index, :respondent]
+  before_action -> { require_permission('ai.inbox_routing.view') }, only: [:index, :shadow]
+  before_action -> { require_permission('ai.inbox_routing.manage') }, except: [:index, :respondent, :shadow]
   before_action :load_binding, only: [:update, :destroy]
 
   def index
@@ -47,6 +47,18 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
   rescue ActiveRecord::RecordNotDestroyed, ActiveRecord::RecordInvalid => e
     messages = e.respond_to?(:record) ? e.record.errors.full_messages : [e.message]
     render json: { code: 'queue_not_removed', message: messages.to_sentence }, status: :unprocessable_entity
+  end
+
+  # Gate F-7: divergencias do modo sombra desta conta (so leitura).
+  def shadow
+    logs = Rt::RoutingShadowLog.where(account_id: Current.account.id)
+    logs = logs.where('created_at >= ?', Time.zone.parse(params[:since])) if params[:since].present?
+    render json: {
+      total: logs.count, diverged: logs.diverged.count, conversations: logs.distinct.count(:conversation_id),
+      recent_divergences: logs.diverged.order(id: :desc).limit(20).map do |l|
+        { conversation_id: l.conversation_id, legacy: l.legacy_decision, derived: l.derived_decision, at: l.created_at }
+      end
+    }
   end
 
   # Indicador do cabecalho da conversa (qualquer operador com acesso a conversa): so leitura, nunca aplica nada.

@@ -16,11 +16,15 @@ module Rt::MessageHumanTakeover
 
     conversation = self.conversation
     return if conversation.assignee_id.present? || conversation.resolved?
-    return unless Rt::InboxEntryQueue.mode_for(conversation.inbox_id) == 'filas'
-    return unless conversation.team_id && Rt::QueueBinding.ia.exists?(team_id: conversation.team_id)
+    entry = Rt::InboxEntryQueue.find_by(inbox_id: conversation.inbox_id)
+    # `sombra` tambem registra a assuncao: e o que torna a decisao derivada comparavel com a do legado.
+    return unless %w[sombra filas].include?(entry&.routing_mode)
+
+    queue_id = conversation.team_id || entry.team_id
+    return unless queue_id && Rt::QueueBinding.ia.exists?(team_id: queue_id)
 
     conversation.update!(assignee_id: sender_id)
-    Rt::RoutingEvent.record!(conversation: conversation, from_team_id: conversation.team_id, to_team_id: conversation.team_id,
+    Rt::RoutingEvent.record!(conversation: conversation, from_team_id: queue_id, to_team_id: queue_id,
                              actor_kind: 'human', actor_id: sender_id, reason: 'assuncao_humana')
   end
 
