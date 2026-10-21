@@ -3,6 +3,8 @@
     "CHAT": {
       "TITLE": "AI Chat",
       "NEW": "New chat",
+      "HISTORY": "History",
+      "CLOSE_HISTORY": "Close history",
       "UNTITLED": "Untitled chat",
       "NOT_SENT_TO_CUSTOMER": "Test chat - not sent to the customer",
       "AGENT": "Agent",
