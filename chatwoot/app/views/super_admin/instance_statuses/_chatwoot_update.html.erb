@@ -1,0 +1,39 @@
+<% snapshot = Rt::UpgradeStatus.snapshot %>
+<% latest = snapshot[:latest] %>
+<% rehearsal = snapshot[:last_rehearsal] %>
+<div class="rt-upgrade-card" style="margin-bottom: 24px;">
+  <h3>Atualização do Chatwoot</h3>
+  <table>
+    <tr><td>Versão base</td><td><%= snapshot[:base_version] %></td></tr>
+    <tr>
+      <td>Última estável do upstream</td>
+      <td>
+        <%= latest ? latest['version'] : 'ainda não verificada' %>
+        <% if snapshot[:update_available] %> (há atualização disponível)<% end %>
+      </td>
+    </tr>
+    <tr><td>Última verificação</td><td><%= latest ? latest['checked_at'] : '-' %></td></tr>
+    <tr>
+      <td>Último ensaio de mesclagem</td>
+      <td>
+        <% if rehearsal %>
+          <%= rehearsal['target'] %>: <%= rehearsal['status'] %>, <%= rehearsal['conflicts'] %> conflito(s), <%= rehearsal['files'] %> arquivo(s)
+          em <%= rehearsal['at'] %>
+          <% if rehearsal['summary_url'].to_s.start_with?('https://') %>(<%= link_to 'resumo', rehearsal['summary_url'], rel: 'noopener', target: '_blank' %>)<% end %>
+        <% else %>
+          nenhum ensaio registrado
+        <% end %>
+      </td>
+    </tr>
+  </table>
+  <% if snapshot[:rehearsals].size > 1 %>
+    <details>
+      <summary>Histórico de ensaios</summary>
+      <ul>
+        <% snapshot[:rehearsals].each do |r| %>
+          <li><%= r['at'] %> - <%= r['target'] %> - <%= r['status'] %> - <%= r['conflicts'] %> conflito(s)</li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</div>

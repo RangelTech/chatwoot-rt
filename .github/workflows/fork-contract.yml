@@ -1,0 +1,75 @@
+name: Fork contract suite
+
+# Suite de contrato do fork (spec 10, UPG-3): roda em todo PR que toca chatwoot/ e em todo upgrade.
+# Lista em chatwoot/spec/fork_contract/CONTRACT_SPECS.txt. Falha => o upgrade nao prossegue.
+
+on:
+  pull_request:
+    paths:
+      - 'chatwoot/**'
+      - '.github/workflows/fork-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'chatwoot/**'
+
+permissions:
+  contents: read
+
+jobs:
+  contract-rspec:
+    name: Contract specs (rspec)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_URL: redis://localhost:6379
+      RT_UI_CONTEXT_SECRET: test
+    defaults:
+      run:
+        working-directory: chatwoot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.4'
+          bundler-cache: true
+          working-directory: chatwoot
+      - name: Prepare database
+        run: bundle exec rails db:create db:schema:load
+      - name: Run contract specs
+        run: bundle exec rspec $(grep -v '^#' spec/fork_contract/CONTRACT_SPECS.txt | grep -v '^$')
+
+  contract-vitest:
+    name: Contract specs (vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatwoot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: chatwoot/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: chatwoot/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Vitest (Ragent, Kanban, rotas e permissoes)
+        run: pnpm exec vitest run app/javascript/dashboard/routes/dashboard/ragent app/javascript/dashboard/routes/dashboard/kanban app/javascript/dashboard/routes/index.spec.js app/javascript/v3/helpers

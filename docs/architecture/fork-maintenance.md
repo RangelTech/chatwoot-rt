@@ -13,6 +13,9 @@ validado por `scripts/verify_fork_extensions.rb`.
 | `Channel::Wapi` | arquivos aditivos + pontos de registro | `Account`, controller/helper de inbox e rota de webhook |
 | Evolution API | arquivos aditivos + estado persistido | `Account`, inbox API/helper, envio de resposta e rota de webhook |
 | Branding e entrypoints | overlay/entrypoints próprios | `Dockerfile` e scripts RT |
+| Unificação de IA (`rt_ai_unification`, `rt_ai_ui_touchpoints`) | arquivos em `rt/`, `ragent/`, `kanban/` + pontos de registro | menu lateral, rotas, permissões `ai.*`, listener do Kanban, partials do Super Admin |
+| Canais (UI), endurecimento e marca LUAR | pontos de registro / script de marca | ver `channels_ui_touchpoints`, `platform_hardening`, `brand_luar_touchpoints` |
+| Ciclo de atualização (`upgrade_cycle`) | aditivo + 4 pontos de contato | telemetria desligada, cartão do Super Admin, `schedule.yml` |
 
 Arquivos de canais devem permanecer aditivos. Alterações em arquivos do core
 precisam entrar no manifest como `touchpoints`, junto de um marcador que torne
@@ -63,3 +66,13 @@ bundle exec rspec chatwoot/spec/models/channel/evolution_api_spec.rb \
 
 O validador é deliberadamente independente de Rails e gems do aplicativo:
 assim ele pode ser executado antes do build completo e também no CI.
+
+## Ciclo mensal (Fase UP)
+
+O processo completo (importar o upstream, mesclar, ensaiar, canário, produção e rollback) está em
+[`docs/runbooks/upgrade-mensal.md`](../runbooks/upgrade-mensal.md). Regras que o verificador impõe:
+
+- todo `touchpoint` precisa de um marcador em `markers`;
+- `upstream_version` precisa igualar `chatwoot/VERSION_CW`;
+- `python scripts/upgrade/divergence.py --fail-on-unmarked` falha se um arquivo do núcleo foi modificado
+  em relação ao upstream importado (`upstream-import`) sem estar no contrato.

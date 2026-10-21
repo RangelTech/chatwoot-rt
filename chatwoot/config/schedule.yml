@@ -102,3 +102,9 @@ rt_outbox_job:
   cron: '* * * * *'
   class: 'Rt::OutboxJob'
   queue: low
+
+# spec 10 (UPG-0): verificacao propria da ultima versao estavel do upstream (so aparece no Super Admin)
+rt_upstream_version_check_job:
+  cron: '15 6 * * *'
+  class: 'Rt::UpstreamVersionCheckJob'
+  queue: low

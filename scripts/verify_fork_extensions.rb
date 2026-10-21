@@ -51,6 +51,11 @@ end
 extension_ids = manifest['extensions'].map { |extension| extension['id'] }
 fail_with(errors, 'manifest: extension ids must be unique') if extension_ids.uniq.length != extension_ids.length
 
+version_file = CHATWOOT_ROOT.join('VERSION_CW')
+if version_file.file? && version_file.read.strip != manifest['upstream_version'].to_s
+  fail_with(errors, "manifest: upstream_version #{manifest['upstream_version'].inspect} differs from VERSION_CW #{version_file.read.strip.inspect}")
+end
+
 manifest['extensions'].each do |extension|
   id = extension['id']
   status = extension['status']
@@ -71,6 +76,10 @@ manifest['extensions'].each do |extension|
   Array(extension['required_paths']).each { |path| verify_path(path, errors, id) }
   Array(extension['touchpoints']).each { |path| verify_path(path, errors, id) }
   (extension['markers'] || {}).each { |path, marker| verify_marker(path, marker, errors, id) }
+  # Todo ponto de contato com o nucleo precisa de marcador: sem ele a remocao acidental passa em silencio.
+  Array(extension['touchpoints']).each do |path|
+    fail_with(errors, "#{id}: touchpoint without marker #{path}") unless (extension['markers'] || {}).key?(path)
+  end
   puts "PASS  #{id}"
 end
 

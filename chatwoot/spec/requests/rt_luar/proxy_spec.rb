@@ -62,7 +62,7 @@ RSpec.describe 'RtLuar::Proxy', type: :request do
       token = ctx
       2.times do
         luar(:get, 'conversations', token: token)
-        expect(response).to have_http_status(:success)
+        expect(response).to have_http_status(:success), response.body
       end
     end
   end
@@ -95,6 +95,7 @@ RSpec.describe 'RtLuar::Proxy', type: :request do
       luar(:get, "conversations/#{other.display_id}")
       expect(response).to have_http_status(:unauthorized).or have_http_status(:forbidden).or have_http_status(:not_found)
       luar(:get, 'conversations')
+      expect(response.parsed_body).to be_a(Hash), response.body
       expect(response.parsed_body.dig('data', 'payload').pluck('id')).not_to include(other.display_id)
     end
 
@@ -173,7 +174,7 @@ RSpec.describe 'RtLuar::Proxy', type: :request do
     end
 
     it 'aplica 120 req/min por usuário' do
-      allow(Rack::Attack.cache).to receive(:count).and_return(121)
+      allow($velma).to receive(:with).and_return(121)
       luar(:get, 'conversations')
       expect(response).to have_http_status(:too_many_requests)
     end

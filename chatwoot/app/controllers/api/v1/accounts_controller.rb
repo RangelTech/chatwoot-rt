@@ -18,7 +18,8 @@ class Api::V1::AccountsController < Api::BaseController
               with: :render_error_response
 
   def show
-    @latest_chatwoot_version = ::Redis::Alfred.get(::Redis::Alfred::LATEST_CHATWOOT_VERSION)
+    # Fork LUAR (UPG-0): o aviso de versao do Chatwoot nao chega ao usuario; so o Super Admin mostra a versao (Rt::UpgradeStatus).
+    @latest_chatwoot_version = nil
     render 'api/v1/accounts/show', format: :json
   end
 

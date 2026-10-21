@@ -5,6 +5,10 @@ FactoryBot.define do
     status { 'open' }
     agent_last_seen_at { Time.current }
     identifier { SecureRandom.hex }
+    # O banco de producao atribui este valor pela sequencia por Account. A
+    # suite de contrato carrega o schema limpo, sem a trigger por Account;
+    # portanto a fabrica precisa fornecer um valor valido por conta.
+    sequence(:display_id) { |n| n }
 
     after(:build) do |conversation|
       conversation.account ||= create(:account)

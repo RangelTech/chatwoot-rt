@@ -5,6 +5,7 @@ on:
     paths:
       - 'chatwoot/**'
       - 'scripts/verify_fork_extensions.rb'
+      - 'scripts/upgrade/**'
       - 'docs/architecture/fork-maintenance.md'
       - '.github/workflows/fork-maintenance.yml'
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'chatwoot/**'
       - 'scripts/verify_fork_extensions.rb'
+      - 'scripts/upgrade/**'
       - 'docs/architecture/fork-maintenance.md'
       - '.github/workflows/fork-maintenance.yml'
 
@@ -24,7 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
       - run: ruby scripts/verify_fork_extensions.rb
+      - name: Divergencia medida contra o upstream importado
+        run: |
+          git fetch origin upstream-import:upstream-import
+          # O relatorio inventaria toda divergencia acumulada do fork. O bloqueio de
+          # contrato e feito por verify_fork_extensions.rb acima; comparar todos os
+          # arquivos legados sem marcador contra um upstream novo geraria falso positivo.
+          python3 scripts/upgrade/divergence.py --base upstream-import --head HEAD
