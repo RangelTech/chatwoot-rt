@@ -21,7 +21,12 @@ export const RESOURCES = {
     title: 'COMBOS',
     manage: 'ai.providers.manage',
     columns: ['name', 'models'],
-    fields: [{ key: 'name', label: 'NAME' }, { key: 'models', label: 'MODELS' }],
+    // O Gateway recebe uma lista ordenada de modelos; mantemos o JSON no campo
+    // para não transformar uma lista em texto no BFF.
+    fields: [
+      { key: 'name', label: 'NAME' },
+      { key: 'models', label: 'MODELS', json: true, placeholder: '["gpt-4o-mini"]' },
+    ],
   },
   usage: { title: 'USAGE', columns: [], fields: [] },
   runs: {

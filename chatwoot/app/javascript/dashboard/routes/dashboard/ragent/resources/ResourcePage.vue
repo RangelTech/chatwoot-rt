@@ -35,6 +35,9 @@ const newKey = ref('');
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
+  // Combos exibem uma lista de modelos. Objetos continuam ocultos para não
+  // despejar estruturas internas cruas na tela.
+  if (Array.isArray(value)) return value.map(item => String(item)).join(', ') || '—';
   if (typeof value === 'object') return '—';
   if (isDateKey(column)) return formatDate(value);
   if (column === 'size_bytes') return formatBytes(value);
@@ -204,7 +207,7 @@ const runAction = async name => {
         <select v-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
           <option v-for="o in f.options" :key="o" :value="o">{{ o }}</option>
         </select>
-        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" placeholder="{}" />
+        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" :placeholder="f.placeholder || '{}'" />
         <input
           v-else
           v-model="form[f.key]"
