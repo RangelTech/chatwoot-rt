@@ -8,8 +8,8 @@ class RtInternal::RoutingMigrationsController < ActionController::API
 
     result = Rt::Routing::LegacyMigration.apply(
       account: account,
-      configurations: Array(params[:configurations]),
-      conversations: Array(params[:conversations])
+      configurations: Array(params.to_unsafe_h[:configurations]),
+      conversations: Array(params.to_unsafe_h[:conversations])
     )
     render json: result
   rescue ArgumentError, ActiveRecord::RecordInvalid => e
