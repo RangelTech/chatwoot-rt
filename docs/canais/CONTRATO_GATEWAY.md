@@ -9,7 +9,7 @@ Rede interna apenas. Autenticação Rails -> gateway: `Authorization: Bearer <CH
 |---|---|---|---|
 | instagram | `android` (mautrix-instagram v26.10) | usuário+senha, 2FA, verificação | `instagram` (cookies) e `instagram-password` (webview) NUNCA usados |
 | messenger | `messenger-lite` (iOS) / `messenger-lite-android` (mautrix-meta v26.10) | usuário+senha, 2FA | `facebook`/`messenger` (cookies) NUNCA usados |
-| whatsapp | `qr` / `pairing-code` (mautrix-whatsapp) | QR com renovação ou código de pareamento | substitui Evolution |
+| whatsapp | `qr` / `phone` (mautrix-whatsapp) | QR com renovação ou código de pareamento | substitui Evolution |
 | tiktok | worker ReLttk | QR (+ código de verificação) | 1 worker por conta |
 
 ## Estados (`state`)
