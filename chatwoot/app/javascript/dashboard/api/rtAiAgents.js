@@ -10,6 +10,10 @@ class RtAiAgents extends ApiClient {
     return axios.get(`${this.url}/${id}/draft`);
   }
 
+  combos() {
+    return axios.get(`${this.baseUrl()}/rt_ai/resources/combos`);
+  }
+
   saveDraft(id, payload) {
     return axios.put(`${this.url}/${id}/update_draft`, payload);
   }
