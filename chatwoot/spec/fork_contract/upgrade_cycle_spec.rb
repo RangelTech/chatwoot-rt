@@ -67,7 +67,7 @@ RSpec.describe 'Fork contract: ciclo de atualizacao', type: :request do
     end
 
     it 'registra a ultima versao estavel sem enviar dados da instalacao' do
-      stub = stub_release(tag_name: 'v4.19.0', html_url: 'https://github.com/chatwoot/chatwoot/releases/tag/v4.19.0')
+      stub = stub_release({ tag_name: 'v4.19.0', html_url: 'https://github.com/chatwoot/chatwoot/releases/tag/v4.19.0' })
 
       described_class.call
 
@@ -77,11 +77,11 @@ RSpec.describe 'Fork contract: ciclo de atualizacao', type: :request do
     end
 
     it 'ignora pre-lancamentos e tags nao estaveis' do
-      stub_release(tag_name: 'v4.20.0-rc1', prerelease: true)
+      stub_release({ tag_name: 'v4.20.0-rc1', prerelease: true })
       described_class.call
       expect(Rt::UpgradeStatus.latest).to be_nil
 
-      stub_release(tag_name: 'v4.20.0-beta')
+      stub_release({ tag_name: 'v4.20.0-beta' })
       described_class.call
       expect(Rt::UpgradeStatus.latest).to be_nil
     end
