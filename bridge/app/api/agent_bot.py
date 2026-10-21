@@ -319,7 +319,8 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
         elif not content:
             content = "(o cliente enviou um arquivo, mas não foi possível baixá-lo)"
 
-    placeholder = "(arquivo recebido)" if file_attachments and audio_attachment is None else "(áudio recebido)"
+    only_files = bool(file_attachments) and audio_attachment is None
+    placeholder = "(arquivo recebido)" if only_files else "(áudio recebido)"
     session_id = (state_row or {}).get("session_id") or tenants.new_session_id()
     if config.get("show_progress"):
         await _send_progress(tenant_id, account_id, conversation_id)
