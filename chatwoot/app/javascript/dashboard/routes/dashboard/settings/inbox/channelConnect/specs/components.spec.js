@@ -1,5 +1,4 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import { createStore } from 'vuex';
 import FieldsStep from '../FieldsStep.vue';
 import QrStep from '../QrStep.vue';
 import ErrorNotice from '../ErrorNotice.vue';
@@ -12,8 +11,7 @@ import enChannelConnect from 'dashboard/i18n/locale/en/channelConnect.json';
 import ptChannelConnect from 'dashboard/i18n/locale/pt_BR/channelConnect.json';
 
 const PASSWORD = 'S3nh4-Super-Secreta';
-const $t = (key, params) =>
-  params ? `${key}:${JSON.stringify(params)}` : key;
+const $t = (key, params) => (params ? `${key}:${JSON.stringify(params)}` : key);
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: k => k, te: () => false, locale: { value: 'en' } }),
@@ -172,9 +170,7 @@ describe('QrStep', () => {
       },
       global,
     });
-    expect(pairing.find('[data-test="pairing-code"]').text()).toBe(
-      'ABCD-1234'
-    );
+    expect(pairing.find('[data-test="pairing-code"]').text()).toBe('ABCD-1234');
   });
 });
 
@@ -196,7 +192,9 @@ describe('ErrorNotice e codigos de erro', () => {
       Object.entries(o).flatMap(([k, v]) =>
         typeof v === 'object' ? flat(v, `${p}${k}.`) : [`${p}${k}`]
       );
-    expect(flat(ptChannelConnect).sort()).toEqual(flat(enChannelConnect).sort());
+    expect(flat(ptChannelConnect).sort()).toEqual(
+      flat(enChannelConnect).sort()
+    );
   });
 
   it('mostra attempts_left', () => {
@@ -356,6 +354,3 @@ describe('ConnectionPanel', () => {
     expect(channelApi.revoke).toHaveBeenCalledWith('c1');
   });
 });
-
-// evita aviso de import nao usado do createStore em alguns lints
-void createStore;

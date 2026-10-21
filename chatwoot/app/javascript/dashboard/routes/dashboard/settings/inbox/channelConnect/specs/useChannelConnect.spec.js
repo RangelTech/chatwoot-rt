@@ -201,7 +201,11 @@ describe('useChannelConnect', () => {
     api.start.mockResolvedValue({
       data: {
         connection: conn('awaiting_challenge'),
-        step: { step_id: 'a', kind: 'await_approval', wait: { poll_after_s: 2 } },
+        step: {
+          step_id: 'a',
+          kind: 'await_approval',
+          wait: { poll_after_s: 2 },
+        },
       },
     });
     await w.start({ provider: 'messenger', consent: true });
@@ -279,7 +283,11 @@ describe('useChannelConnect', () => {
         step: {
           step_id: 'q',
           kind: 'qr',
-          qr: { data: 'QR', expires_at: '2026-10-20T12:01:00Z', refresh_after_s: 5 },
+          qr: {
+            data: 'QR',
+            expires_at: '2026-10-20T12:01:00Z',
+            refresh_after_s: 5,
+          },
         },
       },
     });

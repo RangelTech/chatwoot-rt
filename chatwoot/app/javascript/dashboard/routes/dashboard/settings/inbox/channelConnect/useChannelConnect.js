@@ -46,7 +46,9 @@ export function useChannelConnect({
   let failures = 0;
 
   const kind = computed(() => step.value?.kind || null);
-  const locked = computed(() => !!error.value && isTerminalError(error.value.code));
+  const locked = computed(
+    () => !!error.value && isTerminalError(error.value.code)
+  );
 
   const stopPolling = () => {
     pollToken += 1;
@@ -120,7 +122,10 @@ export function useChannelConnect({
       phase.value = PHASES.CANCELLED;
       return;
     }
-    if (nextStep?.kind === STEP_KINDS.COMPLETE || (!nextStep && state === 'connected')) {
+    if (
+      nextStep?.kind === STEP_KINDS.COMPLETE ||
+      (!nextStep && state === 'connected')
+    ) {
       stopPolling();
       phase.value = skipFinalize ? PHASES.DONE : PHASES.FINALIZE;
       return;
