@@ -9,7 +9,7 @@ Fontes lidas: `bridge/app/services/evolution.py`, `chatwoot/app/services/evoluti
 |---|---|---|---|---|
 | 1 | Isolamento por tenant | 3 containers por conexao (Evolution + Redis + Postgres), nome derivado do tenant | 1 processo compartilhado; 1 usuario Matrix por conexao (`@luar_t<conta>_c<id>`) | pendente de teste conjunto (2 contas no mesmo processo sem cruzar) |
 | 2 | Conectar por QR | `GET /instance/connect`, QR devolvido ao Luar | `login/start` flow `qr` (renova, contagem regressiva) | pendente de teste conjunto |
-| 3 | Conectar por codigo de pareamento | nao usado no Luar hoje | flow `pairing-code` | pendente de teste conjunto |
+| 3 | Conectar por codigo de pareamento | nao usado no Luar hoje | flow `phone` (medido: pede phone_number) | pendente de teste conjunto |
 | 4 | Estado da conexao | `connection.update` (webhook) e `connection_state` | estados `connected/degraded/reauth_required/...` + health em 3 niveis | pendente de teste conjunto |
 | 5 | Reconexao | `reconnect` (novo QR) | `reauth` no assistente (QR novamente) | pendente de teste conjunto |
 | 6 | Texto de entrada | `messages.upsert`; le `conversation` e `extendedTextMessage.text`; ignora `fromMe` duplicado por `source_id` | evento normalizado `message.created`, `source_id = external_id` | pendente de teste conjunto |
