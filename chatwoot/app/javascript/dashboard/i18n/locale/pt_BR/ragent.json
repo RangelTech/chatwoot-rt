@@ -485,7 +485,18 @@
       "AUTOPILOT": "Responder automaticamente",
       "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes.",
       "SHOW_PROGRESS": "Avisar que está trabalhando",
-      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final."
+      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final.",
+      "BADGE_AI": "Atendida por IA · {queue}",
+      "BADGE_PERSON": "Em atendimento: {name}",
+      "BADGE_HUMAN": "Fila de pessoas · {queue}",
+      "BADGE_NONE": "Sem respondente",
+      "BADGE_AI_OFF": "Fila de IA pausada · {queue}",
+      "TEAM_AI_BADGE": "Gerenciada por IA",
+      "TEAM_AI_BLOCKED": "Esta equipe é gerenciada por IA e não pode ter membros humanos. Altere a fila em Filas de atendimento.",
+      "SERVICE_AGENT": "Agente de atendimento",
+      "SERVICE_AGENT_HELP": "Atalho: cria ou reaproveita a fila de IA do agente e a define como fila de entrada.",
+      "PICK_SERVICE_AGENT": "Escolher um agente (atalho)",
+      "SHORTCUT_FAILED": "Não foi possível preparar a fila do agente"
     },
     "ROUTINE": {
       "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",

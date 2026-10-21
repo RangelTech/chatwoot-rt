@@ -485,7 +485,18 @@
       "AUTOPILOT": "Answer automatically",
       "DEGRADED": "Link saved, but automatic replies were not updated on this inbox yet. Save again in a moment.",
       "SHOW_PROGRESS": "Notify that it is working",
-      "SHOW_PROGRESS_HELP": "Sends a single short message (\"Thinking…\") before the reply. When off, the customer only receives the final reply."
+      "SHOW_PROGRESS_HELP": "Sends a single short message (\"Thinking…\") before the reply. When off, the customer only receives the final reply.",
+      "BADGE_AI": "Handled by AI · {queue}",
+      "BADGE_PERSON": "In service: {name}",
+      "BADGE_HUMAN": "Human queue · {queue}",
+      "BADGE_NONE": "No respondent",
+      "BADGE_AI_OFF": "AI queue paused · {queue}",
+      "TEAM_AI_BADGE": "Managed by AI",
+      "TEAM_AI_BLOCKED": "This team is managed by AI and cannot have human members. Change the queue in Service queues.",
+      "SERVICE_AGENT": "Service agent",
+      "SERVICE_AGENT_HELP": "Shortcut: creates or reuses the AI queue of the agent and sets it as the entry queue.",
+      "PICK_SERVICE_AGENT": "Choose an agent (shortcut)",
+      "SHORTCUT_FAILED": "Could not prepare the agent queue"
     },
     "ROUTINE": {
       "HELP": "Routines wake the agent at a set time and run the instruction you wrote. The result lands in the history and becomes a conversation.",

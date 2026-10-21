@@ -1,8 +1,8 @@
 # Fase F-8: configuracao de filas pertence ao Chatwoot. O browser nunca envia
 # account_id: toda consulta e escrita e limitada a Current.account.
 class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseController
-  before_action -> { require_permission('ai.inbox_routing.view') }, only: :index
-  before_action -> { require_permission('ai.inbox_routing.manage') }, except: :index
+  before_action -> { require_permission('ai.inbox_routing.view') }, only: [:index, :shadow]
+  before_action -> { require_permission('ai.inbox_routing.manage') }, except: [:index, :respondent, :shadow]
   before_action :load_binding, only: [:update, :destroy]
 
   def index
@@ -49,12 +49,33 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
     render json: { code: 'queue_not_removed', message: messages.to_sentence }, status: :unprocessable_entity
   end
 
+  # Gate F-7: divergencias do modo sombra desta conta (so leitura).
+  def shadow
+    logs = Rt::RoutingShadowLog.where(account_id: Current.account.id)
+    logs = logs.where('created_at >= ?', Time.zone.parse(params[:since])) if params[:since].present?
+    render json: {
+      total: logs.count, diverged: logs.diverged.count, conversations: logs.distinct.count(:conversation_id),
+      recent_divergences: logs.diverged.order(id: :desc).limit(20).map do |l|
+        { conversation_id: l.conversation_id, legacy: l.legacy_decision, derived: l.derived_decision, at: l.created_at }
+      end
+    }
+  end
+
+  # Indicador do cabecalho da conversa (qualquer operador com acesso a conversa): so leitura, nunca aplica nada.
+  def respondent
+    conversation = Current.account.conversations.find_by!(display_id: params.require(:conversation_id))
+    authorize conversation, :show?
+    render json: Rt::Routing::RespondentView.call(conversation)
+  rescue ActiveRecord::RecordNotFound
+    render json: { code: 'not_found', message: 'Conversa não encontrada' }, status: :not_found
+  end
+
   # Cada caixa tem seu proprio interruptor: legado, sombra ou filas, e uma
   # fila de entrada obrigatoria fora do legado. Isso permite volta imediata.
   def entry
     inbox = Current.account.inboxes.find(params.require(:inbox_id))
     record = Rt::InboxEntryQueue.find_or_initialize_by(inbox: inbox)
-    record.assign_attributes(routing_mode: params.require(:routing_mode), team_id: params[:team_id].presence)
+    record.assign_attributes(account: Current.account, routing_mode: params.require(:routing_mode), team_id: params[:team_id].presence)
     record.save!
     render json: inbox_json(inbox, record)
   rescue ActiveRecord::RecordNotFound

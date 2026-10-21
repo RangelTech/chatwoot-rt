@@ -36,6 +36,23 @@ const saveEntry = async inbox => {
     useAlert(t('RAGENT.INBOXES.SAVED'));
   } catch (error) { useAlert(errorMessage(error)); } finally { busy.value = ''; }
 };
+// Atalho: agente de atendimento => cria/reaproveita a fila de IA do agente e a torna a fila de entrada da caixa.
+const pickServiceAgent = async (inbox, templateId) => {
+  if (!templateId) return;
+  busy.value = 'entry-' + inbox.id;
+  try {
+    let queue = queues.value.find(item => item.respondent_kind === 'ia' && item.template_id === templateId);
+    if (!queue) {
+      const template = templates.value.find(item => item.id === templateId);
+      const { data } = await axios.post(base + '/queues', { name: 'IA · ' + (template?.name || ''), description: template?.name || '', respondent_kind: 'ia', template_id: templateId, mode: 'piloto', destination_team_ids: [] });
+      queues.value.push(data);
+      queue = data;
+    }
+    inbox.entry_team_id = queue.id;
+    if (inbox.routing_mode === 'legado') inbox.routing_mode = 'sombra';
+    await saveEntry(inbox);
+  } catch (error) { useAlert(errorMessage(error) || t('RAGENT.INBOXES.SHORTCUT_FAILED')); } finally { busy.value = ''; }
+};
 const createQueue = async () => {
   busy.value = 'new';
   try {
@@ -78,6 +95,7 @@ onMounted(load);
             <div class="min-w-40 flex-1"><p class="text-body-main text-n-slate-12">{{ inbox.name }}</p><p class="text-sm text-n-slate-11">{{ inbox.channel_type }}</p></div>
             <select v-model="inbox.routing_mode" class="!mb-0 w-36" :aria-label="inbox.name + ' ' + t('RAGENT.INBOXES.ROUTING_MODE')"><option value="legado">{{ t('RAGENT.INBOXES.MODE_LEGACY') }}</option><option value="sombra">{{ t('RAGENT.INBOXES.MODE_SHADOW') }}</option><option value="filas">{{ t('RAGENT.INBOXES.MODE_QUEUES') }}</option></select>
             <select v-model="inbox.entry_team_id" class="!mb-0 w-56" :disabled="inbox.routing_mode === 'legado'" :aria-label="inbox.name + ' ' + t('RAGENT.INBOXES.ENTRY_QUEUE')"><option :value="null">{{ t('RAGENT.INBOXES.SELECT_QUEUE') }}</option><option v-for="queue in queues" :key="queue.id" :value="queue.id">{{ queue.name }}</option></select>
+            <select class="!mb-0 w-56" :value="''" :title="t('RAGENT.INBOXES.SERVICE_AGENT_HELP')" :aria-label="inbox.name + ' ' + t('RAGENT.INBOXES.SERVICE_AGENT')" @change="pickServiceAgent(inbox, $event.target.value)"><option value="">{{ t('RAGENT.INBOXES.PICK_SERVICE_AGENT') }}</option><option v-for="template in templates" :key="template.id" :value="template.id">{{ template.name }}</option></select>
             <Button size="sm" :label="t('RAGENT.RES.SAVE')" :disabled="busy === 'entry-' + inbox.id" @click="saveEntry(inbox)" />
           </li>
           <li v-if="!inboxes.length" class="py-4 text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</li>
