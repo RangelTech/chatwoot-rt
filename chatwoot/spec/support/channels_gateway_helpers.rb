@@ -26,7 +26,7 @@ module ChannelsGatewayHelpers
       'CONTENT_TYPE' => 'application/json' }
   end
 
-  def message_event(external_id: 'm-1', text: 'olá', direction: 'incoming', conversation: 'thread-1', **extra)
+  def gateway_message_event(external_id: 'm-1', text: 'olá', direction: 'incoming', conversation: 'thread-1', **extra)
     {
       event_id: SecureRandom.uuid, type: 'message.created', account_id: 1, connection_id: SecureRandom.uuid,
       channel: 'instagram', provider_mode: 'experimental', occurred_at: Time.current.iso8601,
