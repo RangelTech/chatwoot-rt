@@ -201,7 +201,7 @@ class Gateway:
                 )
                 attempts = max(0, settings.channels_login_attempts_per_hour - used)
             row = store.update_connection(row["id"], last_error_code=exc.error_code)
-            # mantem os campos do passo para o usuario tentar de novo (sem isso a tela fica sem inputs)
+            # mantem os campos do passo para tentar de novo (senao a tela fica sem inputs)
             last = getattr(adapter, "last_step", lambda _c: None)(_ctx(row))
             if last is not None:
                 err_step = last.model_copy(
