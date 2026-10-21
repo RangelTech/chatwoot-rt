@@ -15,6 +15,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 TIMEOUT = 10.0
+LONG_TIMEOUT = 120.0
 
 INTERNAL_NOTE_TAG = "nota interna - nao repetir ao cliente"
 
@@ -50,11 +51,11 @@ async def _get(path: str, params: dict) -> dict | None:
         return None
 
 
-async def _post(path: str, body: dict) -> dict | None:
+async def _post(path: str, body: dict, timeout: float = TIMEOUT) -> dict | None:
     if not configured():
         return None
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(_url(path), headers=_headers(), json=body)
         if response.status_code >= 400:
             logger.warning("rota interna %s respondeu %s", path, response.status_code)
@@ -117,12 +118,14 @@ async def handoff(
 
 async def migrate_legacy(payload: dict) -> dict | None:
     """Executa a F-4 no Chatwoot com configuracao sem segredos da bridge."""
-    return await _post("migrate", payload)
+    return await _post("migrate", payload, LONG_TIMEOUT)
 
 
 async def rollback_legacy(account_id: int, inbox_id: int) -> dict | None:
     """Volta uma caixa ao comportamento legado sem apagar os registros Rt."""
-    return await _post("migrate/rollback", {"account_id": account_id, "inbox_id": inbox_id})
+    return await _post(
+        "migrate/rollback", {"account_id": account_id, "inbox_id": inbox_id}, LONG_TIMEOUT
+    )
 
 
 def destinations_block(items: list[dict]) -> str:

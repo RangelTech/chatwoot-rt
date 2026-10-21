@@ -69,7 +69,8 @@ class Rt::Routing::LegacyMigration
       conversation = @account.conversations.find_by(id: conversation_id)
       next unless conversation
 
-      conversation.update!(team_id: team_id)
+      # Sem callbacks: restaurar centenas de conversas nao pode disparar centenas de eventos/jobs.
+      conversation.update_columns(team_id: team_id, updated_at: Time.current)
       restored += 1
     end
 
@@ -104,6 +105,8 @@ class Rt::Routing::LegacyMigration
   end
 
   def migrate_conversations!(inbox, ai_team, handoff_team, entry, result)
+    snapshot = entry.legacy_snapshot.deep_dup
+    snapshot['conversation_teams'] ||= {}
     @conversations.each do |raw|
       state = raw.to_h.stringify_keys
       conversation = @account.conversations.find_by(id: state['conversation_id']) ||
@@ -117,14 +120,12 @@ class Rt::Routing::LegacyMigration
         next
       end
 
-      snapshot = entry.legacy_snapshot.deep_dup
-      snapshot['conversation_teams'] ||= {}
       snapshot['conversation_teams'][conversation.id.to_s] ||= conversation.team_id
-      entry.update!(legacy_snapshot: snapshot) if entry.legacy_snapshot != snapshot
       next if conversation.team_id == destination.id
 
-      conversation.update!(team_id: destination.id)
+      conversation.update_columns(team_id: destination.id, updated_at: Time.current)
       result[:conversations_migrated] += 1
     end
+    entry.update!(legacy_snapshot: snapshot) if entry.legacy_snapshot != snapshot
   end
 end
