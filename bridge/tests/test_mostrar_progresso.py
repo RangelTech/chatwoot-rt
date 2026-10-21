@@ -46,8 +46,11 @@ def _rodar(tenant_id, monkeypatch, *, show_progress):
     monkeypatch.setattr(kernel, "ask", falso_ask)
     _tenant_pronto(tenant_id)
     tenants.upsert_ai_config(
-        tenant_id=tenant_id, chatwoot_inbox_id=11, template_id=TEMPLATE,
-        integration_key="chave", show_progress=show_progress,
+        tenant_id=tenant_id,
+        chatwoot_inbox_id=11,
+        template_id=TEMPLATE,
+        integration_key="chave",
+        show_progress=show_progress,
     )
     payload = {"conversation": {"id": 5001, "inbox_id": 11}, "content": "oi"}
     asyncio.run(_handle_message(tenant_id, 7, payload))
@@ -58,9 +61,7 @@ def test_padrao_corta_o_progresso_e_entrega_so_a_resposta(client, tenant_id, mon
     assert _rodar(tenant_id, monkeypatch, show_progress=None) == ["resposta final"]
 
 
-def test_com_permissao_envia_uma_mensagem_de_progresso_e_a_resposta(
-    client, tenant_id, monkeypatch
-):
+def test_com_permissao_envia_uma_mensagem_de_progresso_e_a_resposta(client, tenant_id, monkeypatch):
     enviados = _rodar(tenant_id, monkeypatch, show_progress=True)
     assert len(enviados) == 2
     assert enviados[0].startswith("Pensando") and enviados[1] == "resposta final"
@@ -70,8 +71,12 @@ def test_admin_grava_e_lista_show_progress_sem_resetar(client, admin_auth, tenan
     from app.services import tenants
 
     _tenant_pronto(tenant_id)
-    base = {"tenant_id": tenant_id, "chatwoot_inbox_id": 11, "template_id": TEMPLATE,
-            "integration_key": "chave"}
+    base = {
+        "tenant_id": tenant_id,
+        "chatwoot_inbox_id": 11,
+        "template_id": TEMPLATE,
+        "integration_key": "chave",
+    }
     r = client.post("/admin/ai-config", headers=admin_auth, json={**base, "show_progress": True})
     assert r.status_code == 200, r.text
     assert tenants.ai_config_for(tenant_id, 11)["show_progress"] is True

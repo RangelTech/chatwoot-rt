@@ -51,4 +51,3 @@ def test_agent_bot_ignores_events_from_unknown_accounts(client):
         json={"event": "message_created", "account": {"id": 999999}, "message_type": "incoming"},
     )
     assert r.json()["status"] == "unknown_account"
-

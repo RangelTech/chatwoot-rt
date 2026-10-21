@@ -40,12 +40,8 @@ def test_auth_obrigatoria(env, api):
 
 def test_catalogo_so_experimental_sem_cookie(env, api):
     cat = api.get("/internal/channels/catalog").json()
-    assert {p["provider"] for p in cat["providers"]} == {
-        "instagram",
-        "messenger",
-        "tiktok",
-        "whatsapp",
-    }
+    # so o que esta ligado neste gateway (TikTok depende do worker)
+    assert {p["provider"] for p in cat["providers"]} == {"instagram", "messenger", "whatsapp"}
     assert "cookie" not in json.dumps(cat).lower()
 
 

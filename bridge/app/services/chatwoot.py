@@ -116,9 +116,7 @@ async def create_account(name: str) -> dict:
 
 
 async def get_account(account_id: int) -> dict:
-    return await _request(
-        "GET", f"/platform/api/v1/accounts/{account_id}", token=_platform_token()
-    )
+    return await _request("GET", f"/platform/api/v1/accounts/{account_id}", token=_platform_token())
 
 
 async def update_account_branding(account_id: int, *, name: str, custom_attributes: dict) -> dict:

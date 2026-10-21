@@ -40,15 +40,17 @@ def matrix_user_for(account_id: int, connection_id: str) -> str:
     return f"@luar_t{account_id}_c{short}:{settings.matrix_server_name}"
 
 
-def catalog() -> dict:
+def catalog(available: set[str] | None = None) -> dict:
+    """Provedores oferecidos. `available` = adaptadores realmente ligados neste gateway."""
+    all_providers = [
+        {"provider": "instagram", "modes": [{"mode": "experimental", "login": "password"}]},
+        {"provider": "messenger", "modes": [{"mode": "experimental", "login": "password"}]},
+        {"provider": "tiktok", "modes": [{"mode": "experimental", "login": "qr"}]},
+        {"provider": "whatsapp", "modes": [{"mode": "experimental", "login": "qr"}]},
+    ]
     return {
         "risk_notice_version": RISK_NOTICE_VERSION,
-        "providers": [
-            {"provider": "instagram", "modes": [{"mode": "experimental", "login": "password"}]},
-            {"provider": "messenger", "modes": [{"mode": "experimental", "login": "password"}]},
-            {"provider": "tiktok", "modes": [{"mode": "experimental", "login": "qr"}]},
-            {"provider": "whatsapp", "modes": [{"mode": "experimental", "login": "qr"}]},
-        ],
+        "providers": [p for p in all_providers if available is None or p["provider"] in available],
     }
 
 

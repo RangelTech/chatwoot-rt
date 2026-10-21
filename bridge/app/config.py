@@ -68,6 +68,17 @@ class Settings(BaseSettings):
     channels_login_attempts_per_tenant_hour: int = 20
     channels_webhook_max_attempts: int = 8
     channels_webhook_tolerance_s: int = 300
+    # TikTok: worker por conta. "" = desligado; "fake" = simulador; "relttk" = subprocesso real;
+    # "docker" = um container por conta (exige proxy de socket restrito, ver stacks/canais).
+    tiktok_launcher: str = ""
+    tiktok_sessions_dir: str = "/var/lib/luar/tiktok-sessions"
+    tiktok_worker_image: str = ""
+    tiktok_host_sessions: str = ""
+    tiktok_network: str = "canais_net"
+    # QA/CDP: passos de login deterministicos, sem rede e sem conta real. NUNCA em producao real.
+    channels_simulator: bool = False
+    channels_sim_scan_after_s: float = 20.0
+    channels_sim_approve_after_s: float = 8.0
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
