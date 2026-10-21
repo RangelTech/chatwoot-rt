@@ -43,6 +43,20 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it 'tests a provider only through the tenant-scoped gateway BFF route' do
+    provider_id = SecureRandom.uuid
+    allow(Rt::GatewayClient).to receive(:post).and_return('valid' => true, 'refreshed' => false)
+
+    post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/#{provider_id}/actions/test",
+         headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(response.parsed_body).to include('valid' => true)
+    expect(Rt::GatewayClient).to have_received(:post).with(
+      account: account, path: "/api/providers/#{provider_id}/test"
+    )
+  end
+
   it 'restricts environment actions to the allowlist and to environment managers' do
     allow(Rt::EngineClient).to receive(:post).and_return('ok' => true)
     post "/api/v1/accounts/#{account.id}/rt_ai/resources/environment/actions/start", headers: admin.create_new_auth_token, as: :json

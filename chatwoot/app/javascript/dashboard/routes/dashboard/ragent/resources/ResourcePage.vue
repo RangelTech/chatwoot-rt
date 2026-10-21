@@ -35,6 +35,9 @@ const newKey = ref('');
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
+  // Combos exibem uma lista de modelos. Objetos continuam ocultos para não
+  // despejar estruturas internas cruas na tela.
+  if (Array.isArray(value)) return value.map(item => String(item)).join(', ') || '—';
   if (typeof value === 'object') return '—';
   if (isDateKey(column)) return formatDate(value);
   if (column === 'size_bytes') return formatBytes(value);
@@ -151,6 +154,23 @@ const runAction = async name => {
     useAlert(t('RAGENT.RES.ERROR'));
   }
 };
+
+const runItemAction = async (item, name) => {
+  busy.value = true;
+  try {
+    const { data } = await axios.post(`${base.value}/${item.id}/actions/${name}`);
+    if (name === 'test' && data.valid === false) {
+      useAlert(data.error || t('RAGENT.RES.TEST_FAILED'));
+    } else {
+      useAlert(t('RAGENT.RES.TEST_OK'));
+    }
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -204,7 +224,7 @@ const runAction = async name => {
         <select v-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
           <option v-for="o in f.options" :key="o" :value="o">{{ o }}</option>
         </select>
-        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" placeholder="{}" />
+        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" :placeholder="f.placeholder || '{}'" />
         <input
           v-else
           v-model="form[f.key]"
@@ -232,6 +252,15 @@ const runAction = async name => {
               {{ cell(it[c], c) }}
             </td>
             <td v-if="canManage && it.id" class="px-4 py-2 text-end">
+              <Button
+                v-for="a in config.itemActions || []"
+                :key="a"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
+                @click="runItemAction(it, a)"
+              />
               <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
             </td>
           </tr>
