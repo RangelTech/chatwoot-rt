@@ -363,7 +363,58 @@
         "NO_DOMAINS": "Nenhum domínio conectado.",
         "DOMAIN": "Domínio"
       },
-      "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo."
+      "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo.",
+      "GW": {
+        "CANCEL": "Cancelar",
+        "OAUTH": {
+          "BUTTON": "Conectar com login",
+          "TITLE": "Conectar um provedor com login",
+          "HELP": "Entre no provedor e cole o endereço para onde ele levar você. A conexão pertence só à sua empresa.",
+          "START": "Começar",
+          "STEP_OPEN": "1. Abra a página do provedor e autorize o acesso.",
+          "OPEN": "Abrir página do provedor",
+          "PASTE": "2. Cole o endereço de retorno que o provedor mostrou",
+          "FINISH": "Concluir conexão",
+          "STEP_DEVICE": "Digite este código no endereço abaixo e depois verifique a conexão.",
+          "CHECK": "Verificar conexão",
+          "WAITING": "Ainda aguardando a aprovação.",
+          "CONNECTED": "Conectado: {name}.",
+          "SIMULATOR": "Modo simulação: nenhuma conta real é usada.",
+          "AUTHORIZE_SIM": "Autorizar (simulação)"
+        },
+        "QUOTA": {
+          "BUTTON": "Limites",
+          "TITLE": "Limites de {name}",
+          "UNAVAILABLE": "Este provedor não informa limites."
+        },
+        "COMBO": {
+          "EDIT": "Editar",
+          "STRATEGY": "Quando um modelo falha",
+          "FALLBACK": "Tentar o próximo modelo da ordem",
+          "ROUND_ROBIN": "Distribuir as chamadas entre os modelos",
+          "ORDER": "Modelos, na ordem de uso",
+          "ADD": "Adicionar",
+          "ADD_PLACEHOLDER": "provedor/modelo ou outro combo"
+        },
+        "COST": {
+          "EMPTY": "Nenhum uso de provedor registrado ainda.",
+          "REQUESTS": "Chamadas",
+          "PROMPT_TOKENS": "Tokens enviados",
+          "COMPLETION_TOKENS": "Tokens recebidos",
+          "ERRORS": "Erros",
+          "COST": "Custo (estimado)",
+          "TOKENS": "Tokens",
+          "BY_PROVIDER": "Por provedor",
+          "BY_MODEL": "Por modelo",
+          "BY_COMBO": "Por combo",
+          "BY_DAY": "Por dia",
+          "COL_PROVIDER": "Provedor",
+          "COL_MODEL": "Provedor / modelo",
+          "COL_COMBO": "Combo",
+          "COL_DAY": "Dia",
+          "NOTE": "Custo estimado em reais (cotação de referência de R$ {rate} por dólar); não é cobrança."
+        }
+      }
     },
     "CRED": {
       "TITLE": "Credenciais",
@@ -485,7 +536,18 @@
       "AUTOPILOT": "Responder automaticamente",
       "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes.",
       "SHOW_PROGRESS": "Avisar que está trabalhando",
-      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final."
+      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final.",
+      "BADGE_AI": "Atendida por IA · {queue}",
+      "BADGE_PERSON": "Em atendimento: {name}",
+      "BADGE_HUMAN": "Fila de pessoas · {queue}",
+      "BADGE_NONE": "Sem respondente",
+      "BADGE_AI_OFF": "Fila de IA pausada · {queue}",
+      "TEAM_AI_BADGE": "Gerenciada por IA",
+      "TEAM_AI_BLOCKED": "Esta equipe é gerenciada por IA e não pode ter membros humanos. Altere a fila em Filas de atendimento.",
+      "SERVICE_AGENT": "Agente de atendimento",
+      "SERVICE_AGENT_HELP": "Atalho: cria ou reaproveita a fila de IA do agente e a define como fila de entrada.",
+      "PICK_SERVICE_AGENT": "Escolher um agente (atalho)",
+      "SHORTCUT_FAILED": "Não foi possível preparar a fila do agente"
     },
     "ROUTINE": {
       "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",

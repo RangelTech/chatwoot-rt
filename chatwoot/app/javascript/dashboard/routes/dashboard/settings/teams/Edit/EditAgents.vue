@@ -110,7 +110,16 @@ export default {
         :header-content="$t('TEAMS_SETTINGS.EDIT_FLOW.AGENTS.DESC')"
       />
 
-      <div class="w-full h-full">
+      <div
+        v-if="currentTeam.rt_ai_queue"
+        data-testid="team-ai-blocked"
+        class="w-full rounded-lg border border-n-iris-6 bg-n-iris-3 p-4 text-n-iris-11"
+      >
+        <!-- LUAR Fase F: fila de IA nao aceita membro humano -->
+        <span class="mr-2 font-medium">{{ $t('RAGENT.INBOXES.TEAM_AI_BADGE') }}</span>
+        {{ $t('RAGENT.INBOXES.TEAM_AI_BLOCKED') }}
+      </div>
+      <div v-else class="w-full h-full">
         <div v-if="v$.selectedAgents.$error">
           <p class="error-message pb-2">
             {{ $t('TEAMS_SETTINGS.ADD.AGENT_VALIDATION_ERROR') }}

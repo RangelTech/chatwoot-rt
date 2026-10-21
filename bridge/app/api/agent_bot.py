@@ -14,6 +14,8 @@ Enquanto o estado não for `ai_active`, o bot não responde. Ponto.
 import asyncio
 import base64
 import logging
+import mimetypes
+from urllib.parse import unquote
 
 from fastapi import APIRouter, BackgroundTasks, Request
 
@@ -84,6 +86,54 @@ _AUDIO_CONTENT_TYPES = {
     "webm": "audio/webm",
     "aac": "audio/aac",
 }
+
+
+MAX_FILE_ATTACHMENTS = 5
+
+
+def _extract_file_attachments(payload: dict) -> list[dict]:
+    """Anexos que NAO sao audio (imagem, PDF, planilha...) com `data_url`, no maximo 5.
+
+    Antes, so o audio era repassado: o cliente mandava uma planilha pelo Chatwoot e o
+    agente respondia "nao encontrei nenhum anexo".
+    """
+    out = []
+    for attachment in payload.get("attachments") or []:
+        if attachment.get("file_type") in _AUDIO_FILE_TYPES or not attachment.get("data_url"):
+            continue
+        out.append(attachment)
+        if len(out) >= MAX_FILE_ATTACHMENTS:
+            break
+    return out
+
+
+def _file_name(attachment: dict) -> str:
+    tail = (attachment.get("data_url") or "").rsplit("/", 1)[-1].rsplit("?", 1)[0]
+    name = unquote(tail).strip()
+    if not name:
+        extension = (attachment.get("extension") or "").strip(".").lower()
+        name = f"anexo.{extension}" if extension else "anexo"
+    return name[:200]
+
+
+async def _build_file_attachment_payload(attachment: dict) -> dict | None:
+    """Baixa um anexo nao-audio e monta o descritor de `PublicMessageIn`. None se falhar."""
+    try:
+        data = await chatwoot.download_attachment(attachment["data_url"])
+    except chatwoot.ChatwootError as exc:
+        logger.warning("falha ao baixar anexo do Chatwoot: %s", exc)
+        return None
+    if not data:
+        return None
+    name = _file_name(attachment)
+    content_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+    kind = "image" if attachment.get("file_type") == "image" else "file"
+    return {
+        "kind": kind,
+        "name": name,
+        "content_type": content_type,
+        "data_base64": base64.b64encode(data).decode(),
+    }
 
 
 async def _build_audio_attachment_payload(attachment: dict) -> dict | None:
@@ -233,10 +283,11 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
     inbox_id = conversation.get("inbox_id") or (payload.get("inbox") or {}).get("id")
     content = (payload.get("content") or "").strip()
     audio_attachment = _extract_audio_attachment(payload)
+    file_attachments = _extract_file_attachments(payload)
     # Antes desta ligação (qa-02 seção 3b), uma nota de voz sozinha (sem
     # legenda) tinha `content` vazio e caía aqui — a conversa nunca chegava a
     # sair do webhook. Só segue sem conteúdo se houver áudio pra transcrever.
-    if not content and audio_attachment is None:
+    if not content and audio_attachment is None and not file_attachments:
         return
 
     state_row = tenants.conversation_state(tenant_id, conversation_id)
@@ -261,14 +312,22 @@ async def _handle_message(tenant_id: str, account_id: int, payload: dict) -> Non
             # explícito pra IA reagir a isso do que mandar mensagem vazia
             # (o backend rejeitaria) ou fingir silêncio.
             content = "(o cliente enviou um áudio, mas não foi possível baixá-lo)"
+    for file_attachment in file_attachments:
+        built = await _build_file_attachment_payload(file_attachment)
+        if built is not None:
+            kernel_attachments.append(built)
+        elif not content:
+            content = "(o cliente enviou um arquivo, mas não foi possível baixá-lo)"
 
+    only_files = bool(file_attachments) and audio_attachment is None
+    placeholder = "(arquivo recebido)" if only_files else "(áudio recebido)"
     session_id = (state_row or {}).get("session_id") or tenants.new_session_id()
     if config.get("show_progress"):
         await _send_progress(tenant_id, account_id, conversation_id)
     try:
         result = await kernel.ask(
             integration_key=decrypt(config["integration_key_encrypted"]),
-            message=content or "(áudio recebido)",
+            message=content or placeholder,
             session_id=f"cw-{conversation_id}-{session_id}",
             template_id=str(config["template_id"]) if config["template_id"] else None,
             attachments=kernel_attachments or None,
