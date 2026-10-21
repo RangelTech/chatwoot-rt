@@ -82,7 +82,22 @@ const flatten = (value, prefix = '') => {
   }
   return [{ label: prefix, value: cell(value) }];
 };
-const rawRows = computed(() => (raw.value ? flatten(raw.value) : []));
+// Identificadores internos (tenant, ids) nunca aparecem para o cliente.
+const HIDDEN_KEYS = ['tenantId', 'tenant_id', 'id'];
+const publicView = value => {
+  if (Array.isArray(value)) return value.map(publicView);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([k]) => !HIDDEN_KEYS.includes(k))
+        .map(([k, v]) => [k, publicView(v)])
+    );
+  }
+  return value;
+};
+const rawRows = computed(() =>
+  raw.value ? flatten(publicView(raw.value)) : []
+);
 
 const load = async () => {
   loading.value = true;
