@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useMapGetter } from 'dashboard/composables/store';
+import channelApi from 'dashboard/api/channelConnections';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import { SYNC_WINDOWS_DAYS } from './constants';
 
@@ -11,6 +12,19 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 
 const teams = useMapGetter('teams/getTeams');
+// Filas da Fase F (GET rt_ai/queues); sem permissao ou falha -> cai na lista de equipes.
+const queues = ref([]);
+const options = computed(() =>
+  queues.value.length ? queues.value : teams.value || []
+);
+onMounted(async () => {
+  try {
+    const { data } = await channelApi.queues();
+    queues.value = data?.queues || [];
+  } catch (e) {
+    queues.value = [];
+  }
+});
 const agentBots = useMapGetter('agentBots/getBots');
 
 const name = ref(props.defaultName);
@@ -48,8 +62,8 @@ const onSubmit = () => {
       {{ $t('CHANNEL_CONNECT.FINALIZE.TEAM') }}
       <select v-model="teamId" class="!mb-0" data-field="team">
         <option value="">{{ $t('CHANNEL_CONNECT.FINALIZE.NONE') }}</option>
-        <option v-for="team in teams" :key="team.id" :value="team.id">
-          {{ team.name }}
+        <option v-for="team in options" :key="team.id" :value="team.id">
+          {{ team.name }}{{ team.respondent_kind === 'ia' ? ' · IA' : '' }}
         </option>
       </select>
       <span class="text-xs font-normal text-n-slate-10">

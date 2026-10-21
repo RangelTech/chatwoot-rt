@@ -58,6 +58,10 @@ class ChannelConnectionsAPI extends ApiClient {
     });
   }
 
+  queues() {
+    return axios.get(`${this.baseUrl()}/rt_ai/queues`);
+  }
+
   // Contrato Fase F (F-contrato.md): fila de entrada da caixa. O canal nao
   // escolhe fila; so repassa a escolha do usuario.
   setEntryQueue({ inboxId, teamId }) {

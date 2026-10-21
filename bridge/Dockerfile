@@ -12,6 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bridge/app ./app
 COPY bridge/migrations ./migrations
+# worker de TikTok por conta (subprocesso do gateway; driver fake no simulador de QA)
+COPY bridge/tiktok_worker ./tiktok_worker
 
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=${GIT_COMMIT}
