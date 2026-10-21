@@ -363,7 +363,58 @@
         "NO_DOMAINS": "No connected domains.",
         "DOMAIN": "Domain"
       },
-      "NEW_KEY": "Key created. Copy it now: it will not be shown again."
+      "NEW_KEY": "Key created. Copy it now: it will not be shown again.",
+      "GW": {
+        "CANCEL": "Cancel",
+        "OAUTH": {
+          "BUTTON": "Connect with sign-in",
+          "TITLE": "Connect a provider with sign-in",
+          "HELP": "Sign in at the provider and paste the address you land on. The connection belongs only to your company.",
+          "START": "Start",
+          "STEP_OPEN": "1. Open the provider page and approve access.",
+          "OPEN": "Open provider page",
+          "PASTE": "2. Paste the address the provider sent you back to",
+          "FINISH": "Finish connection",
+          "STEP_DEVICE": "Enter this code at the address below, then check the connection.",
+          "CHECK": "Check connection",
+          "WAITING": "Still waiting for approval.",
+          "CONNECTED": "Connected {name}.",
+          "SIMULATOR": "Simulation mode: no real account is used.",
+          "AUTHORIZE_SIM": "Authorize (simulation)"
+        },
+        "QUOTA": {
+          "BUTTON": "Limits",
+          "TITLE": "Limits of {name}",
+          "UNAVAILABLE": "This provider does not report limits."
+        },
+        "COMBO": {
+          "EDIT": "Edit",
+          "STRATEGY": "When a model fails",
+          "FALLBACK": "Try the next model in order",
+          "ROUND_ROBIN": "Spread requests across models",
+          "ORDER": "Models, in order of use",
+          "ADD": "Add",
+          "ADD_PLACEHOLDER": "provider/model or another combo"
+        },
+        "COST": {
+          "EMPTY": "No provider usage recorded yet.",
+          "REQUESTS": "Requests",
+          "PROMPT_TOKENS": "Tokens sent",
+          "COMPLETION_TOKENS": "Tokens received",
+          "ERRORS": "Errors",
+          "COST": "Cost (estimated)",
+          "TOKENS": "Tokens",
+          "BY_PROVIDER": "By provider",
+          "BY_MODEL": "By model",
+          "BY_COMBO": "By combo",
+          "BY_DAY": "By day",
+          "COL_PROVIDER": "Provider",
+          "COL_MODEL": "Provider / model",
+          "COL_COMBO": "Combo",
+          "COL_DAY": "Day",
+          "NOTE": "Estimated cost in reais (reference rate R$ {rate} per dollar); not a bill."
+        }
+      }
     },
     "CRED": {
       "TITLE": "Credentials",

@@ -144,4 +144,91 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     expect(response).to have_http_status(:success)
     expect(Rt::EngineClient).to have_received(:put).with('/api/omnichannel/inboxes/12/ia', anything, anything)
   end
+  describe 'combos (G-4)' do
+    let(:url) { "/api/v1/accounts/#{account.id}/rt_ai/resources/combos" }
+
+    it 'forwards name, ordered models and strategy only, never a tenant from the browser' do
+      allow(Rt::GatewayClient).to receive(:post).and_return('id' => 'c')
+      post url, params: { name: 'principal', models: %w[a/m1 b/m2], strategy: { fallbackStrategy: 'round-robin', evil: 1 }, tenantId: 'outro', tenant_id: 'outro' },
+                headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::GatewayClient).to have_received(:post).with(
+        account: account, path: '/api/combos',
+        payload: { name: 'principal', models: %w[a/m1 b/m2], strategy: { 'fallbackStrategy' => 'round-robin' } }
+      )
+    end
+
+    it 'rejects malformed names, models and strategies before reaching the gateway' do
+      allow(Rt::GatewayClient).to receive(:post)
+      [{ name: '../x', models: [] }, { name: 'ok', models: ['a;rm -rf'] }, { name: 'ok', models: %w[a/m], strategy: { fallbackStrategy: 'x' } },
+       { name: 'ok', models: (1..31).map { |i| "a/m#{i}" } }].each do |body|
+        post url, params: body, headers: admin.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unprocessable_entity), body.inspect
+      end
+      expect(Rt::GatewayClient).not_to have_received(:post)
+    end
+
+    it 'passes a gateway refusal for a foreign provider (400) through as a business error' do
+      allow(Rt::GatewayClient).to receive(:post).and_raise(Rt::GatewayClient::Error.new('400', status: 400, body: {}))
+      post url, params: { name: 'x', models: %w[de-outro/m] }, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it 'updates only the sent combo fields and denies it to readers' do
+      allow(Rt::GatewayClient).to receive(:put).and_return('id' => 'c')
+      id = SecureRandom.uuid
+      put "#{url}/#{id}", params: { name: 'novo' }, headers: admin.create_new_auth_token, as: :json
+      expect(Rt::GatewayClient).to have_received(:put).with(account: account, path: "/api/combos/#{id}", payload: { name: 'novo' })
+      put "#{url}/#{id}", params: { name: 'novo' }, headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe 'tenant isolation (GW adversarial, BFF layer)' do
+    it 'always sends the tenant of the session Account, ignoring ids in params, headers and ids of other accounts' do
+      other = create(:account)
+      Rt::AiAccount.create!(account: other, ai_state: 'active', engine_tenant_id: SecureRandom.uuid, flags: { 'ai_enabled' => true })
+      allow(Rt::GatewayClient).to receive(:get).and_return('connections' => [])
+
+      get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers?tenantId=#{other.id}&tenant_id=#{other.id}",
+          headers: admin.create_new_auth_token.merge('X-Tenant-Id' => 'outro'), as: :json
+
+      expect(Rt::GatewayClient).to have_received(:get).with(account: account, path: '/api/providers')
+      expect(Rt::GatewayClient).not_to have_received(:get).with(account: other, path: anything)
+    end
+
+    it 'denies an administrator of one account from reaching another account resources' do
+      other = create(:account)
+      Rt::AiAccount.create!(account: other, ai_state: 'active', engine_tenant_id: SecureRandom.uuid, flags: { 'ai_enabled' => true })
+      allow(Rt::GatewayClient).to receive(:get)
+      get "/api/v1/accounts/#{other.id}/rt_ai/resources/providers", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unauthorized).or have_http_status(:forbidden)
+      expect(Rt::GatewayClient).not_to have_received(:get)
+    end
+
+    it 'validates ids: provider routes never forward free-form paths' do
+      allow(Rt::GatewayClient).to receive(:delete)
+      delete "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/not-an-id", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+      expect(Rt::GatewayClient).not_to have_received(:delete)
+    end
+
+    it 'returns an unavailable-gateway error without leaking the admin token or tenant' do
+      allow(Rt::GatewayClient).to receive(:get).and_raise(Rt::GatewayClient::Error.new('boom segredo', status: 500))
+      get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.body).not_to include('segredo')
+    end
+  end
+
+  describe 'permission matrix ai.providers.* (Leitor/Operador/Gestor/Admin)' do
+    it 'grants view/manage exactly as the spec table' do
+      expected = { 'leitor' => [false, false], 'operador' => [false, false], 'gestor' => [true, false], 'administrador_ia' => [true, true] }
+      expected.each do |role, (view, manage)|
+        perms = Rt::AiRoles.permissions_for(role)
+        expect(perms.include?('ai.providers.view')).to eq(view), role
+        expect(perms.include?('ai.providers.manage')).to eq(manage), role
+      end
+    end
+  end
 end
