@@ -205,6 +205,10 @@
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
       },
+      "COMBOS": {
+        "TITLE": "Combos de IA",
+        "HELP": "Defina a ordem de modelos para fallback e distribuição das requisições."
+      },
       "USAGE": {
         "TITLE": "Uso de IA",
         "HELP": "Uso estimado; não é cobrança."
