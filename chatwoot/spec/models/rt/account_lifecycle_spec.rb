@@ -32,9 +32,13 @@ RSpec.describe Rt::AccountLifecycle do
 
     event.update!(run_at: 1.minute.ago)
     allow(Rt::EngineClient).to receive(:post).and_return('engine_tenant_id' => SecureRandom.uuid)
+    allow(Rt::GatewayClient).to receive(:provision_tenant).and_return({})
     Rt::OutboxJob.perform_now
     expect(event.reload.state).to eq('done')
     expect(Rt::AiAccount.find_by(account_id: account.id).ai_state).to eq('active')
+    expect(Rt::GatewayClient).to have_received(:provision_tenant).with(account: account,
+                                                                         tenant_id: be_present,
+                                                                         name: account.name)
   end
 
   it 'marks the account failed after the attempts are exhausted' do

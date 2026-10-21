@@ -29,6 +29,14 @@ class Rt::GatewayClient
     request(Net::HTTP::Delete, account: account, path: path)
   end
 
+  # O tenant do Gateway e o mesmo tenant canônico devolvido pelo motor.
+  # A operação é idempotente no Gateway: uma segunda chamada devolve o já existente.
+  def self.provision_tenant(account:, tenant_id:, name:)
+    return {} if ENV['GATEWAY_BASE_URL'].blank? || ENV['GATEWAY_ADMIN_TOKEN'].blank?
+
+    post(account: account, path: '/api/tenants', payload: { id: tenant_id, name: name })
+  end
+
   def self.request(verb, account:, path:, payload: nil)
     ai = Rt::AiAccount.find_by!(account_id: account.id)
     tenant_id = ai.engine_tenant_id.to_s

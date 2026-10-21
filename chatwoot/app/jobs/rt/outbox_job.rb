@@ -17,7 +17,7 @@ class Rt::OutboxJob < ApplicationJob
     payload = { account_id: event.account_id, name: account&.name.to_s }
     result = Rt::EngineClient.post(PATHS.fetch(event.kind), payload)
     event.update!(state: 'done', last_error: nil)
-    record_state(event, result)
+    record_state(event, result, account)
   rescue StandardError => e
     mark_failed(event, e)
   end
@@ -31,10 +31,18 @@ class Rt::OutboxJob < ApplicationJob
     Rt::AiAccount.find_or_create_by!(account_id: event.account_id).update!(ai_state: 'failed', last_error: error.message.truncate(500))
   end
 
-  def record_state(event, result)
+  def record_state(event, result, account)
     ai = Rt::AiAccount.find_or_create_by!(account_id: event.account_id)
     case event.kind
-    when 'provision', 'resume' then ai.update!(engine_tenant_id: result['engine_tenant_id'], ai_state: 'active', last_error: nil)
+    when 'provision', 'resume'
+      tenant_id = result['engine_tenant_id'].presence || ai.engine_tenant_id
+      raise 'motor não devolveu tenant canônico' if tenant_id.blank?
+
+      ai.update!(engine_tenant_id: tenant_id, ai_state: 'active', last_error: nil)
+      # Sem este passo a conta fica ativa no motor, mas as telas de provedores,
+      # combos e uso recebem 404 do Gateway. Falhar aqui mantém o evento pendente
+      # para retry, em vez de publicar um tenant parcialmente provisionado.
+      Rt::GatewayClient.provision_tenant(account: account, tenant_id: tenant_id, name: account.name)
     when 'suspend', 'deprovision' then ai.update!(ai_state: 'suspended', last_error: nil)
     end
   end
