@@ -17,6 +17,12 @@ export const RESOURCES = {
       { key: 'api_base', label: 'API_BASE', optional: true },
     ],
   },
+  combos: {
+    title: 'COMBOS',
+    manage: 'ai.providers.manage',
+    columns: ['name', 'models'],
+    fields: [{ key: 'name', label: 'NAME' }, { key: 'models', label: 'MODELS' }],
+  },
   usage: { title: 'USAGE', columns: [], fields: [] },
   runs: {
     title: 'RUNS',
@@ -40,6 +46,7 @@ export const RESOURCES = {
 
 export const ROUTES = [
   ['providers', 'ai.providers.view'],
+  ['combos', 'ai.providers.view'],
   ['usage', 'ai.usage.view'],
   ['runs', 'ai.runs.view'],
   ['environment', 'ai.environment.view'],
