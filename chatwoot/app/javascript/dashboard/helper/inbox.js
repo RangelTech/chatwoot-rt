@@ -99,6 +99,11 @@ const INBOX_ICON_MAP_FILL = {
   [INBOX_TYPES.TIKTOK]: 'i-ri-tiktok-fill',
   [INBOX_TYPES.WAPI]: 'i-ri-whatsapp-fill',
   [INBOX_TYPES.EVOLUTION_API]: 'i-ri-whatsapp-fill',
+  [INBOX_TYPES.INSTAGRAM_UNOFFICIAL]: 'i-ri-instagram-fill',
+  [INBOX_TYPES.FACEBOOK_UNOFFICIAL]: 'i-ri-messenger-fill',
+  [INBOX_TYPES.MESSENGER_UNOFFICIAL]: 'i-ri-messenger-fill',
+  [INBOX_TYPES.TIKTOK_UNOFFICIAL]: 'i-ri-tiktok-fill',
+  [INBOX_TYPES.WHATSAPP_UNOFFICIAL]: 'i-ri-whatsapp-fill',
 };
 
 const DEFAULT_ICON_FILL = 'i-ri-chat-1-fill';
@@ -116,6 +121,11 @@ const INBOX_ICON_MAP_LINE = {
   [INBOX_TYPES.TIKTOK]: 'i-woot-tiktok',
   [INBOX_TYPES.WAPI]: 'i-woot-whatsapp',
   [INBOX_TYPES.EVOLUTION_API]: 'i-woot-whatsapp',
+  [INBOX_TYPES.INSTAGRAM_UNOFFICIAL]: 'i-woot-instagram',
+  [INBOX_TYPES.FACEBOOK_UNOFFICIAL]: 'i-woot-messenger',
+  [INBOX_TYPES.MESSENGER_UNOFFICIAL]: 'i-woot-messenger',
+  [INBOX_TYPES.TIKTOK_UNOFFICIAL]: 'i-woot-tiktok',
+  [INBOX_TYPES.WHATSAPP_UNOFFICIAL]: 'i-woot-whatsapp',
 };
 
 const DEFAULT_ICON_LINE = 'i-ri-chat-1-line';
