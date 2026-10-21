@@ -46,7 +46,7 @@ class RtKanban::MoveCard
       raise Error.new(409, 'stale_version') if card.lock_version != @expected.to_i
 
       from_stage_id = card.stage_id
-      position = position_for(card, target)
+      position = position_for(card, target, visible)
       card.update!(stage_id: target.id, position: position) # lock_version sobe sozinho (travamento otimista do Rails)
       board = card.board
       board.increment!(:revision) # rubocop:disable Rails/SkipsModelValidations
@@ -80,11 +80,12 @@ class RtKanban::MoveCard
   end
 
   # Fim da coluna, ou imediatamente antes de `before_card_id` (ponto médio; renumera a coluna se não houver espaço).
-  def position_for(card, target)
+  def position_for(card, target, visible)
     siblings = RtKanban::Card.where(stage_id: target.id).where.not(id: card.id).order(:position, :id)
     return (siblings.maximum(:position) || 0) + RtKanban::Card::GAP if @before_card_id.blank?
 
-    before = siblings.find_by(id: @before_card_id)
+    # a âncora também precisa ser visível ao operador (não revela nem se apoia em cartão alheio)
+    before = siblings.joins(:conversation).merge(visible).find_by(id: @before_card_id)
     raise Error.new(422, 'invalid_anchor') if before.nil?
 
     previous = siblings.where('position < ?', before.position).maximum(:position) || 0

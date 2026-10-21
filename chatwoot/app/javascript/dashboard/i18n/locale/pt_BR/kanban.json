@@ -53,6 +53,8 @@
       "CANCEL": "Cancelar",
       "ADD": "Adicionar etapa",
       "NEW_PLACEHOLDER": "Nome da nova etapa",
+      "MOVE_LEFT": "Mover etapa para a esquerda",
+      "MOVE_RIGHT": "Mover etapa para a direita",
       "SAVED": "Etapa salva.",
       "ERROR": "Não foi possível salvar a etapa."
     }
