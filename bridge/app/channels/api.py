@@ -142,7 +142,7 @@ def _guard(exc: GatewayError) -> HTTPException:
 class ConnectIn(BaseModel):
     account_id: int
     provider: str
-    actor_id: str = ""
+    actor_id: str | int = ""
     consent: dict
     login_flow: str | None = None
 
@@ -156,7 +156,7 @@ class StepIn(BaseModel):
 
 class AccountIn(BaseModel):
     account_id: int
-    actor_id: str = ""
+    actor_id: str | int = ""
 
 
 class DeliveryIn(BaseModel):
@@ -231,7 +231,7 @@ async def create(body: ConnectIn, gw: Gateway = Depends(get_gateway)):
         return await gw.connect(
             account_id=body.account_id,
             provider=body.provider,
-            actor_id=body.actor_id,
+            actor_id=str(body.actor_id),
             consent=body.consent,
             flow=body.login_flow,
         )
@@ -280,7 +280,7 @@ async def cancel(cid: str, body: AccountIn, gw: Gateway = Depends(get_gateway)):
 async def disconnect(cid: str, body: AccountIn, gw: Gateway = Depends(get_gateway)):
     try:
         return await gw.disconnect(
-            account_id=body.account_id, connection_id=cid, actor_id=body.actor_id
+            account_id=body.account_id, connection_id=cid, actor_id=str(body.actor_id)
         )
     except GatewayError as exc:
         raise _guard(exc) from exc
@@ -290,7 +290,7 @@ async def disconnect(cid: str, body: AccountIn, gw: Gateway = Depends(get_gatewa
 async def revoke(cid: str, body: AccountIn, gw: Gateway = Depends(get_gateway)):
     try:
         return await gw.revoke(
-            account_id=body.account_id, connection_id=cid, actor_id=body.actor_id
+            account_id=body.account_id, connection_id=cid, actor_id=str(body.actor_id)
         )
     except GatewayError as exc:
         raise _guard(exc) from exc
@@ -300,7 +300,7 @@ async def revoke(cid: str, body: AccountIn, gw: Gateway = Depends(get_gateway)):
 async def reauth(cid: str, body: AccountIn, gw: Gateway = Depends(get_gateway)):
     try:
         return await gw.reauth(
-            account_id=body.account_id, connection_id=cid, actor_id=body.actor_id
+            account_id=body.account_id, connection_id=cid, actor_id=str(body.actor_id)
         )
     except GatewayError as exc:
         raise _guard(exc) from exc

@@ -31,7 +31,7 @@ class Channels::GatewayClient
   def list(account_id:) = request(:get, '/connections', query: { account_id: account_id })
 
   def create_connection(account_id:, provider:, actor_id:, consent:, login_flow: nil)
-    body = { account_id: account_id, provider: provider, actor_id: actor_id, consent: consent }
+    body = { account_id: account_id, provider: provider, actor_id: actor_id.to_s, consent: consent }
     body[:login_flow] = login_flow if login_flow.present?
     request(:post, '/connections', body: body)
   end
@@ -136,7 +136,7 @@ class Channels::GatewayClient
   end
 
   def error_code_from(parsed, status)
-    code = parsed.is_a?(Hash) ? (parsed['error_code'] || parsed['code'] || parsed.dig('detail', 'error_code')) : nil
+    code = parsed.is_a?(Hash) ? (parsed['error_code'] || parsed['code'] || (parsed['detail'].is_a?(Hash) ? parsed['detail']['error_code'] : (parsed['detail'].is_a?(String) ? parsed['detail'] : nil))) : nil
     code = code.to_s if code
     return code if code&.match?(/\A[a-z_]{3,40}\z/)
 
