@@ -454,6 +454,6 @@ const loadProviderModels = async item => {
         <dd class="text-n-slate-12">{{ row.value }}</dd>
       </template>
     </dl>
-    <p v-else-if="!loading && !forbidden && !failed" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
+    <p v-else-if="!loading && !forbidden && !failed && !items.length" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
   </div>
 </template>
