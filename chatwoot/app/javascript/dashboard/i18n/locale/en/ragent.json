@@ -193,7 +193,9 @@
         "START": "Start",
         "STOP": "Stop",
         "BACKUP": "Backup now",
-        "TEST": "Test connection"
+        "TEST": "Test connection",
+        "ACTIVATE": "Activate",
+        "DEACTIVATE": "Deactivate"
       },
       "TEST_OK": "Connection works.",
       "TEST_FAILED": "The connection test failed.",

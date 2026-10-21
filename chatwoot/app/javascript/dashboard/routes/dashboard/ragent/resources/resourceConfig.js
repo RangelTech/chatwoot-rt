@@ -5,7 +5,7 @@ export const RESOURCES = {
     title: 'PROVIDERS',
     manage: 'ai.providers.manage',
     itemActions: ['test'],
-    columns: ['name', 'provider', 'model'],
+    columns: ['name', 'provider', 'model', 'is_active'],
     fields: [
       { key: 'name', label: 'NAME' },
       {
