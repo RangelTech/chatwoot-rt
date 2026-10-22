@@ -11,11 +11,13 @@
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  account_id :bigint           not null
+#  occurred_at :datetime
+#  user_id    :bigint
 #
 class Rt::OutboxEvent < ApplicationRecord
   self.table_name = 'rt_outbox_events'
 
-  KINDS = %w[provision suspend resume deprovision].freeze
+  KINDS = %w[provision suspend resume deprovision member_revoked].freeze
   MAX_ATTEMPTS = 12
 
   validates :kind, inclusion: { in: KINDS }
