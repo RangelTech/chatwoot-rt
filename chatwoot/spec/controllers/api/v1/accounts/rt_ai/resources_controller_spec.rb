@@ -232,6 +232,23 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     end
   end
 
+  describe 'runs (Execuções)' do
+    let(:url) { "/api/v1/accounts/#{account.id}/rt_ai/resources/runs" }
+
+    it 'reads the tenant runs route and forwards only numeric page and per_page' do
+      allow(Rt::EngineClient).to receive(:get).and_return('items' => [], 'total' => 0)
+      get "#{url}?page=3&per_page=500&tenant_id=hack", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::EngineClient).to have_received(:get).with('/api/runs?page=3&per_page=100', claims: anything)
+    end
+
+    it 'defaults to the first page of 25 and clamps garbage' do
+      allow(Rt::EngineClient).to receive(:get).and_return('items' => [], 'total' => 0)
+      get "#{url}?page=abc", headers: admin.create_new_auth_token, as: :json
+      expect(Rt::EngineClient).to have_received(:get).with('/api/runs?page=1&per_page=25', claims: anything)
+    end
+  end
+
   describe 'environment services (AMB-2)' do
     let(:base) { "/api/v1/accounts/#{account.id}/rt_ai/resources/environment_services" }
     let(:payload) { { 'ambiente' => 'ativo', 'servicos' => [{ 'nome' => 'web', 'estado' => 'rodando' }], 'soltos' => [] } }

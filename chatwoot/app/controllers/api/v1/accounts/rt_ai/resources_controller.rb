@@ -13,7 +13,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'quotas' => { gateway: :summary, view: 'ai.usage.view', manage: nil, fields: [] },
     'usage' => { gateway: :usage, view: 'ai.usage.view', manage: nil, fields: [] },
     'requests' => { gateway: :requests, view: 'ai.usage.view', manage: nil, fields: [] },
-    'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
+    'runs' => { path: '/api/runs', paged: true, view: 'ai.runs.view', manage: nil, fields: [] },
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
                        actions: %w[start stop backup] },
     # Serviços em execução no ambiente da empresa (AMB-2). Só leitura aqui; ações e logs têm rotas próprias.
@@ -34,7 +34,7 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   def index
     return render_gateway(gateway_get) if @rt_resource[:gateway]
 
-    render_engine engine_get(@rt_resource[:path])
+    render_engine engine_get(index_path)
   end
 
   def create
@@ -99,6 +99,16 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   end
 
   private
+
+  # Listas paginadas: só page/per_page numéricos seguem ao motor (nada livre do navegador).
+  def index_path
+    return @rt_resource[:path] unless @rt_resource[:paged]
+
+    page = params[:page].to_i.clamp(1, 10_000)
+    per_page = params[:per_page].to_i.clamp(1, 100)
+    per_page = 25 if params[:per_page].blank?
+    "#{@rt_resource[:path]}?page=#{page}&per_page=#{per_page}"
+  end
 
   def need_service_name
     head :not_found unless SERVICE_NAME.match?(params[:service].to_s)

@@ -291,7 +291,11 @@
         "TIMESTAMP": "Horário",
         "REQUESTEDMODEL": "Modelo solicitado",
         "ENDPOINT": "Endpoint",
-        "COST": "Custo estimado"
+        "COST": "Custo estimado",
+        "AGENT": "Agente",
+        "USER": "Pessoa",
+        "STARTED_AT": "Início",
+        "DURATION_MS": "Duração"
       },
       "LOAD_ERROR": "Não foi possível carregar esta tela agora. Tente novamente em instantes.",
       "RETRY": "Tentar de novo",
@@ -321,7 +325,12 @@
         "REVOKED": "Revogado",
         "OK": "Ok",
         "DONE": "Concluído",
-        "PAUSED": "Pausado"
+        "PAUSED": "Pausado",
+        "CANCELLED": "Cancelada",
+        "CANCELLING": "Cancelando",
+        "EXPIRED": "Expirada",
+        "QUEUED": "Na fila",
+        "AWAITING_APPROVAL": "Aguardando aprovação"
       },
       "STATE": {
         "RUNNING": "Em execução",
@@ -458,6 +467,11 @@
           "COL_DAY": "Dia",
           "NOTE": "Custo estimado em reais (cotação de referência de R$ {rate} por dólar); não é cobrança."
         }
+      },
+      "PAGER": {
+        "PREV": "Anterior",
+        "NEXT": "Próxima",
+        "PAGE": "Página {page} de {pages} ({total} execuções)"
       }
     },
     "CRED": {

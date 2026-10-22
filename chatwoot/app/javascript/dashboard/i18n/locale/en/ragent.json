@@ -291,7 +291,11 @@
         "TIMESTAMP": "Time",
         "REQUESTEDMODEL": "Requested model",
         "ENDPOINT": "Endpoint",
-        "COST": "Estimated cost"
+        "COST": "Estimated cost",
+        "AGENT": "Agent",
+        "USER": "Person",
+        "STARTED_AT": "Started",
+        "DURATION_MS": "Duration"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
       "RETRY": "Try again",
@@ -321,7 +325,12 @@
         "REVOKED": "Revoked",
         "OK": "Ok",
         "DONE": "Done",
-        "PAUSED": "Paused"
+        "PAUSED": "Paused",
+        "CANCELLED": "Cancelled",
+        "CANCELLING": "Cancelling",
+        "EXPIRED": "Expired",
+        "QUEUED": "Queued",
+        "AWAITING_APPROVAL": "Waiting for approval"
       },
       "STATE": {
         "RUNNING": "Running",
@@ -458,6 +467,11 @@
           "COL_DAY": "Day",
           "NOTE": "Estimated cost in reais (reference rate R$ {rate} per dollar); not a bill."
         }
+      },
+      "PAGER": {
+        "PREV": "Previous",
+        "NEXT": "Next",
+        "PAGE": "Page {page} of {pages} ({total} runs)"
       }
     },
     "CRED": {
