@@ -15,12 +15,13 @@ module Rt::AiRoles
     ai.payments.view ai.payments.manage
     ai.environment.view ai.environment.manage
     ai.inbox_routing.view ai.inbox_routing.manage
-    ai.members.manage_roles
+    ai.members.manage_roles ai.moon.use
   ].freeze
 
   GESTOR = (ALL - %w[
     ai.providers.manage ai.credentials.manage ai.integrations.view ai.integrations.manage
     ai.payments.manage ai.environment.manage ai.inbox_routing.manage ai.members.manage_roles
+    ai.moon.use
   ]).freeze
 
   OPERADOR = %w[
