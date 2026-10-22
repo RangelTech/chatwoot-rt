@@ -3,7 +3,7 @@
 class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
 
-  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download]
+  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download, :moon_reset]
   before_action -> { require_permission('ai.chat.run') }, only: [:stream_ticket, :cancel, :feedback]
   before_action :need_uuid, only: [:messages, :cancel, :feedback, :artifacts, :artifact_download]
   before_action :need_artifact_uuid, only: [:artifact_download]
@@ -31,6 +31,15 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
   end
 
   # Contexto assinado de uso único (≤ 60 s) que o navegador envia ao stream da mesma origem.
+  # Spec 11 §23: apaga o que o Sr Moon aprendeu deste usuário (administrador pode apagar de todos).
+  def moon_reset
+    return head :forbidden unless Current.account_user.permissions.include?('ai.moon.use')
+
+    everyone = ActiveModel::Type::Boolean.new.cast(params[:everyone]) &&
+               Current.account_user.permissions.include?('ai.agents.edit')
+    render json: engine_post("/api/me/moon/reset?everyone=#{everyone}")
+  end
+
   def stream_ticket
     claims = engine_context(scopes: Current.account_user.permissions.grep(/\Aai\./))
     render json: { ticket: Rt::EngineClient.sign(claims), expires_in: Rt::EngineClient::TTL }

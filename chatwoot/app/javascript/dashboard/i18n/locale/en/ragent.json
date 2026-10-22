@@ -74,7 +74,11 @@
       "MIC": "Record audio",
       "MIC_DONE": "Attach",
       "MIC_CANCEL": "Cancel",
-      "MIC_DENIED": "Could not use the microphone. Allow it in the browser."
+      "MIC_DENIED": "Could not use the microphone. Allow it in the browser.",
+      "MOON_RESET": "Reset Sr Moon memory",
+      "MOON_RESET_CONFIRM": "Erase everything Sr Moon learned about you?",
+      "MOON_RESET_OK": "Memory erased.",
+      "MOON_RESET_ERROR": "Could not reset now."
     },
     "AGENTS": {
       "TITLE": "Agents",

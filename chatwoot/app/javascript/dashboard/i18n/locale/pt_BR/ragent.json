@@ -74,7 +74,11 @@
       "MIC": "Gravar áudio",
       "MIC_DONE": "Anexar",
       "MIC_CANCEL": "Cancelar",
-      "MIC_DENIED": "Não foi possível usar o microfone. Libere a permissão no navegador."
+      "MIC_DENIED": "Não foi possível usar o microfone. Libere a permissão no navegador.",
+      "MOON_RESET": "Resetar memória do Sr Moon",
+      "MOON_RESET_CONFIRM": "Apagar tudo o que o Sr Moon aprendeu sobre você? Suas conversas e as skills da empresa não são afetadas.",
+      "MOON_RESET_OK": "Memória do Sr Moon apagada.",
+      "MOON_RESET_ERROR": "Não foi possível resetar agora."
     },
     "AGENTS": {
       "TITLE": "Agentes",

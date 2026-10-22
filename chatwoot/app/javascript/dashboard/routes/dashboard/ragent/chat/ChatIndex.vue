@@ -45,6 +45,21 @@ const forbidden = ref(false);
 const scroller = ref(null);
 let controller = null;
 
+const isMoon = computed(
+  () => templates.value.find(x => x.id === templateId.value)?.system_key === 'moon'
+);
+const resetMoon = async () => {
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(t('RAGENT.CHAT.MOON_RESET_CONFIRM'))) return;
+  try {
+    await window.axios.post(
+      `/api/v1/accounts/${window.location.pathname.split('/')[3]}/rt_ai/chats/moon_reset`
+    );
+    useAlert(t('RAGENT.CHAT.MOON_RESET_OK'));
+  } catch (error) {
+    useAlert(t('RAGENT.CHAT.MOON_RESET_ERROR'));
+  }
+};
 const hasTemplates = computed(() => templates.value.length > 0);
 const scrollDown = async () => {
   await nextTick();
@@ -115,7 +130,9 @@ onMounted(async () => {
   try {
     const [, tpl] = await Promise.all([loadChats(), rtAiChat.templates()]);
     templates.value = tpl.data || [];
-    if (!templateId.value && templates.value.length === 1) {
+    if (!templateId.value && templates.value[0]?.system_key === 'moon') {
+      templateId.value = templates.value[0].id; // abre direto no Sr Moon
+    } else if (!templateId.value && templates.value.length === 1) {
       templateId.value = templates.value[0].id;
     }
     if (chatId.value) await openChat(chatId.value);
@@ -311,10 +328,18 @@ const stop = async () => {
         <h1 class="text-heading-2 text-n-slate-12">
           {{ t('RAGENT.CHAT.TITLE') }}
         </h1>
+        <button
+          v-if="isMoon"
+          type="button"
+          class="ms-auto rounded-md border border-n-weak px-2 py-1 text-sm text-n-slate-11"
+          @click="resetMoon"
+        >
+          {{ t('RAGENT.CHAT.MOON_RESET') }}
+        </button>
         <select
           v-if="hasTemplates"
           v-model="templateId"
-          class="!mb-0 ms-auto w-64"
+          class="!mb-0 ms-2 w-64"
           :disabled="Boolean(chatId)"
           :aria-label="t('RAGENT.CHAT.AGENT')"
         >

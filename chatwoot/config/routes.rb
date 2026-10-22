@@ -179,6 +179,7 @@ Rails.application.routes.draw do
               end
               post :stream_ticket, on: :collection
               get :templates, on: :collection
+              post :moon_reset, on: :collection
             end
             resources :approvals, only: [:index] do
               post :decide, on: :member
