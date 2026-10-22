@@ -1,10 +1,13 @@
 <script setup>
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { formatDate, formatNumber, percent } from './format';
+import ServicesSection from './ServicesSection.vue';
 
 const props = defineProps({ data: { type: Object, required: true } });
 const { t, te } = useI18n();
+const route = useRoute();
 
 // Rótulo em português para estados/situações; valor desconhecido aparece como veio, sem quebrar.
 const label = (group, value) => {
@@ -177,6 +180,8 @@ const meterText = m =>
           </table>
         </div>
       </section>
+
+      <ServicesSection :account-id="route.params.accountId" />
 
       <section>
         <h2 class="mb-2 text-heading-3 text-n-slate-12">

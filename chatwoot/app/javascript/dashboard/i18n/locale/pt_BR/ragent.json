@@ -363,7 +363,49 @@
         "ADDRESS": "Endereço",
         "DOMAINS": "Domínios",
         "NO_DOMAINS": "Nenhum domínio conectado.",
-        "DOMAIN": "Domínio"
+        "DOMAIN": "Domínio",
+        "SERVICES": {
+          "TITLE": "Serviços em execução",
+          "REFRESH": "Atualizar",
+          "LOAD_ERROR": "Não foi possível carregar os serviços agora. Tentando de novo em instantes.",
+          "STOPPED": "Ambiente parado. Os serviços aparecem aqui quando o ambiente estiver ligado.",
+          "SUSPENDED": "Ambiente suspenso. Os serviços não podem ser listados agora.",
+          "EMPTY": "Nenhum serviço em execução. Peça ao agente para subir um serviço e ele aparece aqui.",
+          "COLUMNS": {
+            "NAME": "Nome",
+            "STATE": "Estado",
+            "UPTIME": "Tempo ativo",
+            "CPU_RAM": "Processador · Memória",
+            "PORT": "Porta",
+            "URL": "Endereço público",
+            "ORIGIN": "Origem"
+          },
+          "STATES": {
+            "RODANDO": "Rodando",
+            "PARADO": "Parado",
+            "REINICIANDO": "Reiniciando"
+          },
+          "ORIGINS": {
+            "SUPERVISED": "Supervisionado",
+            "AGENT": "Criado pelo agente"
+          },
+          "ACTIONS": {
+            "START": "Iniciar",
+            "STOP": "Parar",
+            "RESTART": "Reiniciar",
+            "LOGS": "Ver logs"
+          },
+          "CONFIRM_STOP": "Parar o serviço {name}? Ele deixa de responder até ser iniciado de novo.",
+          "DONE": "Feito.",
+          "ACTION_ERROR": "Não foi possível concluir a ação.",
+          "LOGS_ERROR": "Não foi possível abrir os logs.",
+          "LOGS_TITLE": "Últimas 200 linhas de {name}",
+          "NO_LOGS": "Sem registros.",
+          "CLOSE": "Fechar",
+          "LOOSE_TITLE": "Processos sem supervisão (não voltam após reiniciar o ambiente)",
+          "LOOSE_HELP": "Foram iniciados à mão e ninguém os reinicia. Peça ao agente para registrá-los como serviço se precisarem continuar no ar.",
+          "CONTAINERS_TITLE": "Contêineres"
+        }
       },
       "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo.",
       "GW": {

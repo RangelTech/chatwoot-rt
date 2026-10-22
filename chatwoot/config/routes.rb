@@ -129,6 +129,8 @@ Rails.application.routes.draw do
             post 'credentials/oauth/:provider', to: 'credentials#oauth_start'
             put 'credentials/:type/:id', to: 'credentials#update'
             delete 'credentials/:type/:id', to: 'credentials#destroy'
+            get 'resources/environment_services/:service/logs', to: 'resources#service_logs'
+            post 'resources/environment_services/:service/actions/:do', to: 'resources#service_action'
             resources :queues, only: [:index, :create, :update, :destroy] do
               collection do
                 put :entry

@@ -3,6 +3,8 @@
 # Allowlist fixa por domínio: nada de URL ou método vindos do navegador. Segredos só entram (write-only).
 class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
+  SERVICE_NAME = /\A[a-z][a-z0-9_-]{0,30}\z/
+  SERVICE_ACTIONS = %w[start stop restart].freeze
 
   RESOURCES = {
     'providers' => { gateway: :providers, view: 'ai.providers.view', manage: 'ai.providers.manage',
@@ -14,15 +16,19 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     'runs' => { path: '/api/hermes/sessions', view: 'ai.runs.view', manage: nil, fields: [] },
     'environment' => { path: '/api/environment', view: 'ai.environment.view', manage: 'ai.environment.manage', fields: [],
                        actions: %w[start stop backup] },
+    # Serviços em execução no ambiente da empresa (AMB-2). Só leitura aqui; ações e logs têm rotas próprias.
+    'environment_services' => { path: '/api/environment/services', view: 'ai.environment.view', manage: nil, fields: [] },
     'inboxes' => { path: '/api/omnichannel/inboxes', view: 'ai.inbox_routing.view', manage: 'ai.inbox_routing.manage',
                    fields: [], update_suffix: '/ia', update_fields: %w[template_id autopilot handoff_team_id show_progress] },
     'integrations' => { path: '/api/integrations', view: 'ai.integrations.view', manage: 'ai.integrations.manage',
                         fields: %w[name] }
   }.freeze
 
-  before_action :find_resource
+  before_action :find_resource, except: [:service_action, :service_logs]
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
+  before_action -> { require_permission('ai.environment.manage') }, only: [:service_action, :service_logs]
+  before_action :need_service_name, only: [:service_action, :service_logs]
   before_action :need_id, only: [:update, :destroy, :member_action, :models]
 
   def index
@@ -80,7 +86,23 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     head :not_found
   end
 
+  # Iniciar/parar/reiniciar um serviço do ambiente (auditado no motor). Nome e ação em allowlist.
+  def service_action
+    return head :not_found unless SERVICE_ACTIONS.include?(params[:do])
+
+    render_engine engine_post("/api/environment/services/#{params[:service]}/#{params[:do]}")
+  end
+
+  # Últimas 200 linhas do log do serviço (o motor redige segredos e audita a leitura).
+  def service_logs
+    render_engine engine_get("/api/environment/services/#{params[:service]}/logs")
+  end
+
   private
+
+  def need_service_name
+    head :not_found unless SERVICE_NAME.match?(params[:service].to_s)
+  end
 
   def find_resource
     @rt_resource = RESOURCES[params[:key]]
