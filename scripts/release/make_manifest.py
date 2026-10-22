@@ -41,7 +41,7 @@ image_id = "sha256:" + re.sub(r"^.*/", "", cfg).replace(".json", "")
 m = {
     "schema": 1,
     "service": a.service,
-    "repo": "RangelTech/chatwoot-rt",
+    "repo": "RangelTech/luar_chatwoot",
     "commit": a.commit[:7],
     "version": a.version,
     "artifact": {
