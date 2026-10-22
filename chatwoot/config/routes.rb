@@ -839,6 +839,7 @@ Rails.application.routes.draw do
         post :seed, on: :member
         post :reset_cache, on: :member
         post :reprovision, on: :member
+        post :update_ai_flags, on: :member
         post :create_admin, on: :member
       end
       resources :users, only: [:index, :new, :create, :show, :edit, :update, :destroy] do

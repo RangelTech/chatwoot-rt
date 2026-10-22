@@ -59,6 +59,17 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  # Flags de IA por Account (spec 10 §0.6): o Super Admin decide, o motor obedece.
+  def update_ai_flags
+    ai = Rt::AiAccount.find_or_create_by!(account_id: requested_resource.id)
+    sent = params[:ai_flags].respond_to?(:to_unsafe_h) ? params[:ai_flags].to_unsafe_h : {}
+    flags = Rt::AiAccount::DEFAULT_FLAGS.keys.index_with { |key| sent[key] == '1' }
+    ai.update!(flags: ai.flags.merge(flags))
+    # rubocop:disable Rails/I18nLocaleTexts
+    redirect_to [namespace, requested_resource], notice: 'Flags de IA atualizadas'
+    # rubocop:enable Rails/I18nLocaleTexts
+  end
+
   def create_admin
     user = AgentBuilder.new(email: params.require(:email), name: params[:name].to_s, inviter: current_super_admin,
                             account: requested_resource, role: :administrator).perform

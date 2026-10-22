@@ -203,4 +203,18 @@ RSpec.describe 'Super Admin accounts API', type: :request do
       end
     end
   end
+  describe 'POST /super_admin/accounts/:id/update_ai_flags' do
+    it 'liga e desliga flags de IA da Account' do
+      sign_in(super_admin, scope: :super_admin)
+      post "/super_admin/accounts/#{account.id}/update_ai_flags", params: { ai_flags: { 'ai_enabled' => '1', 'chat_enabled' => '1', 'kanban_enabled' => '0' } }
+      flags = Rt::AiAccount.find_by(account_id: account.id).effective_flags
+      expect(flags).to include('ai_enabled' => true, 'chat_enabled' => true, 'kanban_enabled' => false)
+    end
+
+    it 'nega sem sessao de super admin' do
+      post "/super_admin/accounts/#{account.id}/update_ai_flags", params: { ai_flags: { 'ai_enabled' => '1' } }
+      expect(response).to have_http_status(:redirect)
+      expect(Rt::AiAccount.find_by(account_id: account.id)&.effective_flags&.dig('ai_enabled')).to be_falsey
+    end
+  end
 end
