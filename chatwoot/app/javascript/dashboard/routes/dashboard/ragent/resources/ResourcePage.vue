@@ -76,22 +76,22 @@ const humanize = key => {
   const text = String(key).replace(/_/g, ' ');
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
-const flatten = (value, prefix = '') => {
+const flatten = (value, prefix = '', key = '') => {
   if (value === null || value === undefined) return [{ label: prefix, value: '—' }];
   if (Array.isArray(value)) {
     if (!value.length) return [{ label: prefix, value: '—' }];
     return value.flatMap((v, i) =>
       typeof v === 'object' && v !== null
-        ? flatten(v, `${prefix} ${i + 1}`.trim())
-        : [{ label: prefix, value: cell(v) }]
+        ? flatten(v, `${prefix} ${i + 1}`.trim(), key)
+        : [{ label: prefix, value: cell(v, key) }]
     );
   }
   if (typeof value === 'object') {
     return Object.entries(value).flatMap(([k, v]) =>
-      flatten(v, prefix ? `${prefix} · ${humanize(k)}` : humanize(k))
+      flatten(v, prefix ? `${prefix} · ${humanize(k)}` : humanize(k), k)
     );
   }
-  return [{ label: prefix, value: cell(value) }];
+  return [{ label: prefix, value: cell(value, key) }];
 };
 // Identificadores internos (tenant, ids) nunca aparecem para o cliente.
 const HIDDEN_KEYS = ['tenantId', 'tenant_id', 'id'];
