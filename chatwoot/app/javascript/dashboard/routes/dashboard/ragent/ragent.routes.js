@@ -19,7 +19,6 @@ export const legacyRedirects = [
       hash: to.hash,
     }),
   },
-  ...legacyRedirects,
 ];
 
 export const routes = [
