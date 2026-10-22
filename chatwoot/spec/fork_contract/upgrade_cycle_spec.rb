@@ -134,7 +134,7 @@ RSpec.describe 'Fork contract: cartao do Super Admin', type: :view do
 
     render partial: 'super_admin/instance_statuses/chatwoot_update'
 
-    expect(rendered).to include('Atualização do Chatwoot', '4.16.2', '4.17.0', '7 conflito(s)')
+    expect(rendered).to include('Atualização do motor base', '4.16.2', '4.17.0', '7 conflito(s)')
   end
 
   it 'funciona antes da primeira verificacao' do
