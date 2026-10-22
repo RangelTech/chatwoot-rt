@@ -106,7 +106,7 @@ jobs:
           python3 scripts/release/make_manifest.py --service chatwoot-rails \
             --archive chatwoot-rails.image.tar.gz --tag "chatwoot-rt/rails:${V}" \
             --version "${V}" --commit "${GITHUB_SHA}" --port 3000 --timeout 240 \
-            --env SECRET_KEY_BASE,POSTGRES_HOST,POSTGRES_DATABASE,POSTGRES_USERNAME,POSTGRES_PASSWORD,REDIS_URL,FRONTEND_URL,ACTIVE_STORAGE_SERVICE,STORAGE_BUCKET_NAME,STORAGE_ENDPOINT,STORAGE_ACCESS_KEY_ID,STORAGE_SECRET_ACCESS_KEY,BRIDGE_URL,BRIDGE_ADMIN_TOKEN \
+            --env SECRET_KEY_BASE,POSTGRES_HOST,POSTGRES_DATABASE,POSTGRES_USERNAME,POSTGRES_PASSWORD,REDIS_URL,FRONTEND_URL,ACTIVE_STORAGE_SERVICE,STORAGE_BUCKET_NAME,STORAGE_ENDPOINT,STORAGE_ACCESS_KEY_ID,STORAGE_SECRET_ACCESS_KEY,BRIDGE_URL,BRIDGE_ADMIN_TOKEN,GATEWAY_BASE_URL,GATEWAY_ADMIN_TOKEN \
             --memory 2g --cpus 2 --pre-deploy chatwoot-migrate --out release-manifest.chatwoot-rails.json
       - uses: actions/upload-artifact@v4
         with:

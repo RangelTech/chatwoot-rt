@@ -7,6 +7,7 @@ de rota ou de cabeçalho do Chatwoot.
 """
 
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -42,7 +43,7 @@ async def download_attachment(url: str) -> bytes:
     response = None
     for tentativa in range(2):
         try:
-            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
                 response = await client.get(url)
             break
         except httpx.HTTPError as exc:
@@ -115,9 +116,7 @@ async def create_account(name: str) -> dict:
 
 
 async def get_account(account_id: int) -> dict:
-    return await _request(
-        "GET", f"/platform/api/v1/accounts/{account_id}", token=_platform_token()
-    )
+    return await _request("GET", f"/platform/api/v1/accounts/{account_id}", token=_platform_token())
 
 
 async def update_account_branding(account_id: int, *, name: str, custom_attributes: dict) -> dict:
@@ -169,7 +168,16 @@ async def logout_user(user_id: int) -> None:
 
 
 async def user_access_token(user_id: int) -> str:
-    body = await _request("GET", f"/platform/api/v1/users/{user_id}", token=_platform_token())
+    # O recurso ``show`` da Platform API só é permitido para usuários
+    # vinculados explicitamente ao PlatformApp. O fork expõe a emissão de
+    # token como uma ação separada, protegida pelo mesmo vínculo, justamente
+    # para que a representação normal de User não revele a credencial.
+    #
+    # Usar GET aqui fazia a bridge falhar com 401 para contas válidas e
+    # deixava a tela de filas aparentar que a IA não estava disponível.
+    body = await _request(
+        "POST", f"/platform/api/v1/users/{user_id}/token", token=_platform_token()
+    )
     token = (body or {}).get("access_token")
     if not token:
         raise ChatwootError("Chatwoot não devolveu access_token do usuário")
@@ -238,12 +246,16 @@ async def create_message(
     *,
     message_type: str = "incoming",
     private: bool = False,
+    content_attributes: dict | None = None,
 ) -> dict:
+    body = {"content": content, "message_type": message_type, "private": private}
+    if content_attributes:
+        body["content_attributes"] = content_attributes
     return await _request(
         "POST",
         f"/api/v1/accounts/{account_id}/conversations/{conversation_id}/messages",
         token=token,
-        json_body={"content": content, "message_type": message_type, "private": private},
+        json_body=body,
     )
 
 
@@ -258,6 +270,7 @@ async def create_message_with_attachment(
     content: str = "",
     message_type: str = "outgoing",
     private: bool = False,
+    content_attributes: dict | None = None,
 ) -> dict:
     """Same endpoint as `create_message`, but multipart — the only way the
     Chatwoot API accepts a file (`Messages::MessageBuilder#process_attachments`
@@ -276,6 +289,8 @@ async def create_message_with_attachment(
     data = {"message_type": message_type, "private": str(private).lower()}
     if content:
         data["content"] = content
+    if content_attributes:
+        data["content_attributes"] = json.dumps(content_attributes)
     files = [("attachments[]", (filename, file_bytes, content_type))]
     ultimo: Exception | None = None
     response = None

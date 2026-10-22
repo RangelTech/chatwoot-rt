@@ -21,9 +21,7 @@ def _tenant_com_usuario(tenant_id: str) -> None:
         )
 
 
-def test_provision_tenant_registra_webhook_e_macro(
-    client, admin_auth, tenant_id, monkeypatch
-):
+def test_provision_tenant_registra_webhook_e_macro(client, admin_auth, tenant_id, monkeypatch):
     from app.config import settings
     from app.services import chatwoot, tenants
 
@@ -92,16 +90,12 @@ def test_provision_tenant_registra_webhook_e_macro(
     assert len(macros_criadas) == 1
 
 
-def test_label_webhook_devolve_conversa_para_ia_e_limpa_label(
-    client, tenant_id, monkeypatch
-):
+def test_label_webhook_devolve_conversa_para_ia_e_limpa_label(client, tenant_id, monkeypatch):
     from app.services import chatwoot, tenants
 
     _tenant_com_usuario(tenant_id)
     token = tenants.ensure_conversation_webhook_token(tenant_id)
-    tenants.set_conversation_state(
-        tenant_id=tenant_id, conversation_id=555, state="human_active"
-    )
+    tenants.set_conversation_state(tenant_id=tenant_id, conversation_id=555, state="human_active")
 
     async def falso_token(_user_id):
         return "token-de-conta"
@@ -147,9 +141,7 @@ def test_label_webhook_ignora_sem_a_label_reservada(client, tenant_id):
 
     _tenant_com_usuario(tenant_id)
     token = tenants.ensure_conversation_webhook_token(tenant_id)
-    tenants.set_conversation_state(
-        tenant_id=tenant_id, conversation_id=555, state="human_active"
-    )
+    tenants.set_conversation_state(tenant_id=tenant_id, conversation_id=555, state="human_active")
 
     resp = client.post(
         f"/agent-bot/label/{token}",
@@ -184,9 +176,7 @@ def test_devolver_para_ia_suporta_ciclos_concorrentes_sem_deixar_label_presente(
     from app.services import chatwoot, tenants
 
     _tenant_com_usuario(tenant_id)
-    tenants.set_conversation_state(
-        tenant_id=tenant_id, conversation_id=555, state="human_active"
-    )
+    tenants.set_conversation_state(tenant_id=tenant_id, conversation_id=555, state="human_active")
 
     labels = ["ia-retomar", "vip"]
     labels_definidas = []
@@ -217,10 +207,7 @@ def test_devolver_para_ia_suporta_ciclos_concorrentes_sem_deixar_label_presente(
     # provedor pode fazer. Cada ciclo reaplica a macro depois da limpeza.
     async def processar_retries():
         await asyncio.gather(
-            *[
-                label_webhook._handle_label_event(tenant_id, 7, 42)
-                for _ in range(3)
-            ]
+            *[label_webhook._handle_label_event(tenant_id, 7, 42) for _ in range(3)]
         )
 
     for _ in range(3):

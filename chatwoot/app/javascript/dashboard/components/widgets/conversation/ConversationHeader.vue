@@ -8,6 +8,7 @@ import InboxName from '../InboxName.vue';
 import MoreActions from './MoreActions.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
+import RespondentBadge from 'dashboard/routes/dashboard/ragent/queues/RespondentBadge.vue'; // LUAR Fase F
 import ConversationCallButton from './ConversationCallButton.vue';
 import wootConstants from 'dashboard/constants/globals';
 import { conversationListPageURL } from 'dashboard/helper/URLHelper';
@@ -155,6 +156,12 @@ const copyConversationId = async () => {
           </button>
           <span v-if="hasMultipleInboxes">•</span>
           <InboxName v-if="hasMultipleInboxes" :inbox="inbox" class="!mx-0" />
+          <!-- LUAR Fase F: quem responde (fila/IA/pessoa) -->
+          <RespondentBadge
+            :conversation-id="chat.id"
+            :account-id="accountId"
+            :version="[chat.status, chat.meta?.assignee?.id, chat.meta?.team?.id].join('-')"
+          />
           <span v-if="isSnoozed">•</span>
           <span v-if="isSnoozed" class="font-medium text-n-amber-10">
             {{ snoozedDisplayText }}

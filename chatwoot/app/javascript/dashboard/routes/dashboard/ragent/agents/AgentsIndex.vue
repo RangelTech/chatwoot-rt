@@ -16,6 +16,9 @@ const newDescription = ref('');
 const editing = ref(null);
 const files = ref([]);
 const manifest = ref({ tools: [] });
+const combos = ref([]);
+const selectedCombo = ref('');
+const legacyModelAlias = ref('');
 const toolsText = ref('');
 const confirmActions = ref(false);
 const allowLuar = ref(false);
@@ -68,6 +71,17 @@ const edit = async agent => {
   editing.value = agent;
   files.value = data.files || [];
   manifest.value = data.manifest || { tools: [] };
+  try {
+    const comboResponse = await rtAiAgents.combos();
+    combos.value = Array.isArray(comboResponse.data)
+      ? comboResponse.data
+      : comboResponse.data.combos || [];
+  } catch (error) {
+    combos.value = [];
+    useAlert(t('RAGENT.AGENTS.ERROR'));
+  }
+  selectedCombo.value = manifest.value.model?.combo || '';
+  legacyModelAlias.value = manifest.value.model?.alias || '';
   toolsText.value = (manifest.value.tools || []).join(', ');
   confirmActions.value = Boolean(manifest.value.limits?.confirm_actions);
   allowLuar.value = Boolean(manifest.value.limits?.luar);
@@ -91,6 +105,11 @@ const payload = () => ({
     .map(f => ({ path: f.path, content: f.content })),
   manifest: {
     ...manifest.value,
+    model: selectedCombo.value
+      ? { combo: selectedCombo.value }
+      : legacyModelAlias.value
+        ? { alias: legacyModelAlias.value }
+        : null,
     output: { format: outputFormat.value },
     limits: {
       ...(manifest.value.limits || {}),
@@ -277,6 +296,20 @@ const archive = async agent => {
       <label class="text-body-main text-n-slate-11">
         {{ t('RAGENT.AGENTS.TOOLS') }}
         <input v-model="toolsText" type="text" class="!mb-0 w-full" />
+      </label>
+      <label class="flex flex-col gap-1 text-body-main text-n-slate-11">
+        {{ t('RAGENT.AGENTS.MODEL_COMBO') }}
+        <select
+          v-model="selectedCombo"
+          class="!mb-0 w-full max-w-md"
+          data-testid="model-combo"
+        >
+          <option value="">{{ t('RAGENT.AGENTS.MODEL_COMBO_DEFAULT') }}</option>
+          <option v-for="combo in combos" :key="combo.name" :value="combo.name">
+            {{ combo.name }}
+          </option>
+        </select>
+        <span>{{ t('RAGENT.AGENTS.MODEL_COMBO_HELP') }}</span>
       </label>
       <label class="flex items-center gap-2 text-body-main text-n-slate-11">
         <input v-model="confirmActions" type="checkbox" class="!mb-0" />

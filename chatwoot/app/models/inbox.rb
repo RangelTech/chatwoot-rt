@@ -180,6 +180,11 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Wapi'
   end
 
+  # Fase CH: canais não oficiais conectados pelo gateway de canais (ou legados cookie).
+  def unofficial_gateway?
+    channel.is_a?(UnofficialGatewayChannel)
+  end
+
   def evolution_api?
     channel_type == 'Channel::EvolutionApi'
   end
@@ -213,7 +218,7 @@ class Inbox < ApplicationRecord
       "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/line/#{channel.line_channel_id}"
     when 'Channel::Whatsapp'
       "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/whatsapp/#{channel.phone_number}"
-    when 'Channel::Wapi', 'Channel::EvolutionApi'
+    when 'Channel::Wapi', 'Channel::EvolutionApi', *UnofficialGatewayChannel::CHANNEL_TYPES.values
       channel.callback_url
     end
   end

@@ -18,7 +18,7 @@ class Rt::AiAccount < ApplicationRecord
   # Flags por Account (spec 10 §0.6): o Chatwoot decide, o motor só obedece.
   DEFAULT_FLAGS = {
     'ai_enabled' => false, 'chat_enabled' => false, 'chat_landing_enabled' => false, 'harness_enabled' => false,
-    'graph_enabled' => true, 'environment_enabled' => false, 'kanban_enabled' => false,
+    'graph_enabled' => false, 'environment_enabled' => false, 'kanban_enabled' => false,
     'outbound_enabled' => false
   }.freeze
 

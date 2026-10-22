@@ -3,6 +3,8 @@
     "CHAT": {
       "TITLE": "AI Chat",
       "NEW": "New chat",
+      "HISTORY": "History",
+      "CLOSE_HISTORY": "Close history",
       "UNTITLED": "Untitled chat",
       "NOT_SENT_TO_CUSTOMER": "Test chat - not sent to the customer",
       "AGENT": "Agent",
@@ -84,6 +86,9 @@
       "EMPTY": "No agents yet.",
       "INSTRUCTIONS": "Instructions (AGENTE.md)",
       "TOOLS": "Tools (comma separated)",
+      "MODEL_COMBO": "Model combo",
+      "MODEL_COMBO_DEFAULT": "Use the company default",
+      "MODEL_COMBO_HELP": "Only combos created for this company are shown.",
       "CONFIRM_ACTIONS": "Ask for confirmation before running actions (approval card)",
       "ALLOW_LUAR": "Allow the agent to operate LUAR (conversations, Kanban, notes) as the user",
       "SAVE": "Save draft",
@@ -171,12 +176,15 @@
       "AGENTS": "Agents",
       "SKILLS": "Skills and routines",
       "PROVIDERS": "Providers",
+      "COMBOS": "Combos",
       "CREDENTIALS": "Credentials",
       "INBOXES": "Inboxes",
       "INTEGRATIONS": "Integrations",
       "RUNS": "Runs",
       "ENVIRONMENT": "Environment",
-      "USAGE": "Usage"
+      "USAGE": "Usage",
+      "QUOTAS": "Limits",
+      "REQUESTS": "Requests"
     },
     "RES": {
       "NEW": "New",
@@ -189,15 +197,34 @@
       "ACTIONS": {
         "START": "Start",
         "STOP": "Stop",
-        "BACKUP": "Backup now"
+        "BACKUP": "Backup now",
+        "TEST": "Test connection",
+        "MODELS": "View models",
+        "ACTIVATE": "Activate",
+        "DEACTIVATE": "Deactivate"
       },
+      "TEST_OK": "Connection works.",
+      "AVAILABLE_MODELS": "Models available from this provider",
+      "TEST_FAILED": "The connection test failed.",
       "PROVIDERS": {
         "TITLE": "AI providers",
         "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."
       },
+      "COMBOS": {
+        "TITLE": "AI combos",
+        "HELP": "Set model order for fallback and request distribution."
+      },
       "USAGE": {
         "TITLE": "AI usage",
         "HELP": "Estimated usage; not a bill."
+      },
+      "QUOTAS": {
+        "TITLE": "AI limits",
+        "HELP": "Current request limit and the resources enabled for your company."
+      },
+      "REQUESTS": {
+        "TITLE": "AI requests",
+        "HELP": "The latest requests from your company. Keys and prompt content are never shown here."
       },
       "RUNS": {
         "TITLE": "Runs",
@@ -244,6 +271,7 @@
         "NAME": "Name",
         "PROVIDER": "Provider",
         "MODEL": "Model",
+        "MODELS": "Models (JSON list)",
         "API_KEY": "API key",
         "API_BASE": "API base URL (optional)"
       },
@@ -251,6 +279,7 @@
         "NAME": "Name",
         "PROVIDER": "Provider",
         "MODEL": "Model",
+        "MODELS": "Models",
         "IS_ACTIVE": "Active",
         "UPDATED_AT": "Updated",
         "STATUS": "Status",
@@ -258,7 +287,15 @@
         "TITLE": "Title",
         "DEVICE_NAME": "Device",
         "LAST_ACTIVITY_AT": "Last activity",
-        "KEY_PREFIX": "Key"
+        "KEY_PREFIX": "Key",
+        "TIMESTAMP": "Time",
+        "REQUESTEDMODEL": "Requested model",
+        "ENDPOINT": "Endpoint",
+        "COST": "Estimated cost",
+        "AGENT": "Agent",
+        "USER": "Person",
+        "STARTED_AT": "Started",
+        "DURATION_MS": "Duration"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
       "RETRY": "Try again",
@@ -288,7 +325,12 @@
         "REVOKED": "Revoked",
         "OK": "Ok",
         "DONE": "Done",
-        "PAUSED": "Paused"
+        "PAUSED": "Paused",
+        "CANCELLED": "Cancelled",
+        "CANCELLING": "Cancelling",
+        "EXPIRED": "Expired",
+        "QUEUED": "Queued",
+        "AWAITING_APPROVAL": "Waiting for approval"
       },
       "STATE": {
         "RUNNING": "Running",
@@ -330,9 +372,107 @@
         "ADDRESS": "Address",
         "DOMAINS": "Domains",
         "NO_DOMAINS": "No connected domains.",
-        "DOMAIN": "Domain"
+        "DOMAIN": "Domain",
+        "SERVICES": {
+          "TITLE": "Running services",
+          "REFRESH": "Refresh",
+          "LOAD_ERROR": "Could not load services right now. Trying again shortly.",
+          "STOPPED": "Environment stopped. Services show up here when it is running.",
+          "SUSPENDED": "Environment suspended. Services cannot be listed right now.",
+          "EMPTY": "No services running. Ask the agent to start one and it will appear here.",
+          "COLUMNS": {
+            "NAME": "Name",
+            "STATE": "State",
+            "UPTIME": "Uptime",
+            "CPU_RAM": "CPU · Memory",
+            "PORT": "Port",
+            "URL": "Public address",
+            "ORIGIN": "Origin"
+          },
+          "STATES": {
+            "RODANDO": "Running",
+            "PARADO": "Stopped",
+            "REINICIANDO": "Restarting"
+          },
+          "ORIGINS": {
+            "SUPERVISED": "Supervised",
+            "AGENT": "Created by the agent"
+          },
+          "ACTIONS": {
+            "START": "Start",
+            "STOP": "Stop",
+            "RESTART": "Restart",
+            "LOGS": "View logs"
+          },
+          "CONFIRM_STOP": "Stop service {name}? It stops answering until started again.",
+          "DONE": "Done.",
+          "ACTION_ERROR": "Could not complete the action.",
+          "LOGS_ERROR": "Could not open the logs.",
+          "LOGS_TITLE": "Last 200 lines of {name}",
+          "NO_LOGS": "No records.",
+          "CLOSE": "Close",
+          "LOOSE_TITLE": "Processes without supervision (they do not come back after the environment restarts)",
+          "LOOSE_HELP": "They were started by hand and nobody restarts them. Ask the agent to register them as a service if they must stay up.",
+          "CONTAINERS_TITLE": "Containers"
+        }
       },
-      "NEW_KEY": "Key created. Copy it now: it will not be shown again."
+      "NEW_KEY": "Key created. Copy it now: it will not be shown again.",
+      "GW": {
+        "CANCEL": "Cancel",
+        "OAUTH": {
+          "BUTTON": "Connect with sign-in",
+          "TITLE": "Connect a provider with sign-in",
+          "HELP": "Sign in at the provider and paste the address you land on. The connection belongs only to your company.",
+          "START": "Start",
+          "STEP_OPEN": "1. Open the provider page and approve access.",
+          "OPEN": "Open provider page",
+          "PASTE": "2. Paste the address the provider sent you back to",
+          "FINISH": "Finish connection",
+          "STEP_DEVICE": "Enter this code at the address below, then check the connection.",
+          "CHECK": "Check connection",
+          "WAITING": "Still waiting for approval.",
+          "CONNECTED": "Connected {name}.",
+          "SIMULATOR": "Simulation mode: no real account is used.",
+          "AUTHORIZE_SIM": "Authorize (simulation)"
+        },
+        "QUOTA": {
+          "BUTTON": "Limits",
+          "TITLE": "Limits of {name}",
+          "UNAVAILABLE": "This provider does not report limits."
+        },
+        "COMBO": {
+          "EDIT": "Edit",
+          "STRATEGY": "When a model fails",
+          "FALLBACK": "Try the next model in order",
+          "ROUND_ROBIN": "Spread requests across models",
+          "ORDER": "Models, in order of use",
+          "ADD": "Add",
+          "ADD_PLACEHOLDER": "provider/model or another combo"
+        },
+        "COST": {
+          "EMPTY": "No provider usage recorded yet.",
+          "REQUESTS": "Requests",
+          "PROMPT_TOKENS": "Tokens sent",
+          "COMPLETION_TOKENS": "Tokens received",
+          "ERRORS": "Errors",
+          "COST": "Cost (estimated)",
+          "TOKENS": "Tokens",
+          "BY_PROVIDER": "By provider",
+          "BY_MODEL": "By model",
+          "BY_COMBO": "By combo",
+          "BY_DAY": "By day",
+          "COL_PROVIDER": "Provider",
+          "COL_MODEL": "Provider / model",
+          "COL_COMBO": "Combo",
+          "COL_DAY": "Day",
+          "NOTE": "Estimated cost in reais (reference rate R$ {rate} per dollar); not a bill."
+        }
+      },
+      "PAGER": {
+        "PREV": "Previous",
+        "NEXT": "Next",
+        "PAGE": "Page {page} of {pages} ({total} runs)"
+      }
     },
     "CRED": {
       "TITLE": "Credentials",
@@ -421,13 +561,51 @@
       "VARS_HELP": "The Variables column shows the names the agent skill uses to read each credential in the terminal. The value is never shown."
     },
     "INBOXES": {
-      "TITLE": "Inboxes and agents",
-      "HELP": "Choose which agent answers each inbox. Without an agent, the inbox is human-only.",
+      "TITLE": "Service queues",
+      "HELP": "The inbox receives the conversation; the queue decides whether a human or an AI agent responds.",
+      "ENTRY_TITLE": "Entry queue by inbox",
+      "ROUTING_MODE": "Routing mode",
+      "ENTRY_QUEUE": "Entry queue",
+      "SELECT_QUEUE": "Select a queue",
+      "MODE_LEGACY": "Legacy",
+      "MODE_SHADOW": "Shadow",
+      "MODE_QUEUES": "Queues",
+      "QUEUES_TITLE": "Queues",
+      "QUEUES_HELP": "AI-managed queues cannot have human members or automatic assignment.",
+      "QUEUE_NAME": "Queue name",
+      "RESPONDENT": "Respondent",
+      "HUMAN_QUEUE": "Human team",
+      "AI_QUEUE": "AI-managed",
+      "AGENT": "Published agent",
+      "SELECT_AGENT": "Select an agent",
+      "AI_MODE": "AI mode",
+      "MODE_PILOT": "Autopilot",
+      "MODE_OFF": "Off",
+      "DESCRIPTION": "Description",
+      "DESTINATIONS": "Allowed handoff queues",
+      "NEW_QUEUE": "New queue",
+      "CREATE_QUEUE": "Create queue",
+      "QUEUE_CREATED": "Queue created",
+      "NO_QUEUES": "No queues configured.",
+      "SAVED": "Configuration saved",
+      "CONFIRM_DELETE": "Remove queue {name}? Open conversations require a destination queue.",
+      "DELETE_DESTINATION": "Destination when removing (if open conversations exist)",
       "HUMAN_ONLY": "Human only (no agent)",
       "AUTOPILOT": "Answer automatically",
       "DEGRADED": "Link saved, but automatic replies were not updated on this inbox yet. Save again in a moment.",
       "SHOW_PROGRESS": "Notify that it is working",
-      "SHOW_PROGRESS_HELP": "Sends a single short message (\"Thinking…\") before the reply. When off, the customer only receives the final reply."
+      "SHOW_PROGRESS_HELP": "Sends a single short message (\"Thinking…\") before the reply. When off, the customer only receives the final reply.",
+      "BADGE_AI": "Handled by AI · {queue}",
+      "BADGE_PERSON": "In service: {name}",
+      "BADGE_HUMAN": "Human queue · {queue}",
+      "BADGE_NONE": "No respondent",
+      "BADGE_AI_OFF": "AI queue paused · {queue}",
+      "TEAM_AI_BADGE": "Managed by AI",
+      "TEAM_AI_BLOCKED": "This team is managed by AI and cannot have human members. Change the queue in Service queues.",
+      "SERVICE_AGENT": "Service agent",
+      "SERVICE_AGENT_HELP": "Shortcut: creates or reuses the AI queue of the agent and sets it as the entry queue.",
+      "PICK_SERVICE_AGENT": "Choose an agent (shortcut)",
+      "SHORTCUT_FAILED": "Could not prepare the agent queue"
     },
     "ROUTINE": {
       "HELP": "Routines wake the agent at a set time and run the instruction you wrote. The result lands in the history and becomes a conversation.",

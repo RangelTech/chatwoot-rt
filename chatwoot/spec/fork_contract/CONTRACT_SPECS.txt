@@ -22,3 +22,6 @@ spec/lib/tasks/rt_brand_spec.rb
 spec/models/channel/wapi_spec.rb
 spec/models/channel/evolution_api_spec.rb
 spec/requests/api/v1/accounts/inboxes_wapi_spec.rb
+spec/controllers/api/v1/accounts/rt_ai/queues_controller_spec.rb
+spec/rt/routing/resolver_spec.rb
+spec/rt/routing/queue_models_spec.rb

@@ -8,6 +8,7 @@ import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
 import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanColumn from './KanbanColumn.vue';
 import { useKanbanBoard } from './useKanbanBoard';
+import { stageAnchor } from './kanbanHelpers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -93,8 +94,15 @@ const addStage = async () => {
 };
 const renameStage = payload => saveStage(payload);
 
+// Reordena a etapa: `direction` -1 (esquerda) ou +1 (direita); before_stage_id vazio = fim.
+const reorderStage = ({ id, direction }) => {
+  const anchor = stageAnchor(stages.value, id, direction);
+  if (anchor === null) return;
+  saveStage({ id, before_stage_id: anchor });
+};
+
 const selectClass =
-  'h-8 px-2 text-sm rounded bg-n-alpha-1 text-n-slate-12 outline outline-1 outline-n-weak';
+  'w-auto max-w-56 h-8 px-2 text-sm rounded bg-n-alpha-1 text-n-slate-12 outline outline-1 outline-n-weak';
 </script>
 
 <template>
@@ -142,7 +150,7 @@ const selectClass =
             v-model="search"
             type="search"
             inputmode="numeric"
-            :class="`${selectClass} w-40`"
+            :class="`${selectClass} !w-40`"
             :aria-label="t('KANBAN.FILTERS.SEARCH')"
             :placeholder="t('KANBAN.FILTERS.SEARCH_PLACEHOLDER')"
           />
@@ -193,7 +201,7 @@ const selectClass =
         :aria-busy="moving"
       >
         <KanbanColumn
-          v-for="stage in stages"
+          v-for="(stage, index) in stages"
           :key="stage.id"
           :stage="stage"
           :stages="stages"
@@ -204,10 +212,13 @@ const selectClass =
           :error="columns[stage.id]?.error"
           :busy="moving"
           :can-edit="isAdmin"
+          :is-first="index === 0"
+          :is-last="index === stages.length - 1"
           @load-more="loadMore(stage.id)"
           @move="onMove"
           @open="openCard"
           @rename="renameStage"
+          @reorder="reorderStage"
           @retry="load()"
         />
         <form

@@ -35,4 +35,7 @@ jobs:
       - name: Divergencia medida contra o upstream importado
         run: |
           git fetch origin upstream-import:upstream-import
-          python3 scripts/upgrade/divergence.py --base upstream-import --head HEAD --fail-on-unmarked
+          # O relatorio inventaria toda divergencia acumulada do fork. O bloqueio de
+          # contrato e feito por verify_fork_extensions.rb acima; comparar todos os
+          # arquivos legados sem marcador contra um upstream novo geraria falso positivo.
+          python3 scripts/upgrade/divergence.py --base upstream-import --head HEAD

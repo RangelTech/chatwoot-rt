@@ -107,6 +107,9 @@ class Account < ApplicationRecord
   has_many :evolution_api_channels, dependent: :destroy_async, class_name: '::Channel::EvolutionApi'
   has_many :facebook_unofficial_channels, dependent: :destroy_async, class_name: '::Channel::FacebookUnofficial'
   has_many :instagram_unofficial_channels, dependent: :destroy_async, class_name: '::Channel::InstagramUnofficial'
+  has_many :messenger_unofficial_channels, dependent: :destroy_async, class_name: '::Channel::MessengerUnofficial'
+  has_many :whatsapp_unofficial_channels, dependent: :destroy_async, class_name: '::Channel::WhatsappUnofficial'
+  has_many :tiktok_unofficial_channels, dependent: :destroy_async, class_name: '::Channel::TiktokUnofficial'
   has_many :working_hours, dependent: :destroy_async
 
   has_one_attached :contacts_export

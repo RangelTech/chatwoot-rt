@@ -38,6 +38,9 @@ const i18nMap = {
   'Channel::EvolutionApi': 'EVOLUTION_API',
   'Channel::InstagramUnofficial': 'INSTAGRAM_UNOFFICIAL',
   'Channel::FacebookUnofficial': 'FACEBOOK_UNOFFICIAL',
+  'Channel::MessengerUnofficial': 'MESSENGER_UNOFFICIAL',
+  'Channel::WhatsappUnofficial': 'WHATSAPP_UNOFFICIAL',
+  'Channel::TiktokUnofficial': 'TIKTOK_UNOFFICIAL',
 };
 
 const twilioChannelName = () => {

@@ -12,10 +12,12 @@ import { useAlert } from 'dashboard/composables';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import RtKanbanAPI from 'dashboard/api/rtKanban';
+import { moveErrorKey } from './kanbanHelpers';
 
 export const PAGE_SIZE = 30;
 const MAX_LIMIT = 50;
 const REFETCH_DEBOUNCE_MS = 500;
+const RETRY_MS = 3000;
 const DEFAULT_STATUS = 'active';
 const ACTIVE_STATUSES = 'open,pending,snoozed';
 
@@ -124,7 +126,10 @@ export function useKanbanBoard() {
       await fetchAllColumns({ keepSize });
     } catch (error) {
       if (error.response?.status === 404) state.value = 'disabled';
-      else state.value = 'error';
+      else if (state.value === 'ready' && keepSize) {
+        // refetch em segundo plano falhou (rede caiu): mantém o quadro na tela e tenta de novo
+        scheduleRefetch(RETRY_MS);
+      } else state.value = 'error';
     }
   };
 
@@ -150,20 +155,8 @@ export function useKanbanBoard() {
   };
 
   // Mapeia o erro da API para a mensagem do toast.
-  const moveErrorMessage = error => {
-    switch (error.response?.status) {
-      case 409:
-        return t('KANBAN.MOVE.ERROR_CONFLICT');
-      case 422:
-        return t('KANBAN.MOVE.ERROR_INVALID');
-      case 403:
-        return t('KANBAN.MOVE.ERROR_FORBIDDEN');
-      case 404:
-        return t('KANBAN.MOVE.ERROR_NOT_FOUND');
-      default:
-        return t('KANBAN.MOVE.ERROR_GENERIC');
-    }
-  };
+  const moveErrorMessage = error =>
+    t(`KANBAN.MOVE.${moveErrorKey(error.response?.status)}`);
 
   /**
    * Unico caminho de movimento (drag e menu "Mover para").
@@ -210,9 +203,9 @@ export function useKanbanBoard() {
     }
   };
 
-  const saveStage = async ({ id, name }) => {
+  const saveStage = async ({ id, name, ...rest }) => {
     try {
-      if (id) await RtKanbanAPI.updateStage(id, { name });
+      if (id) await RtKanbanAPI.updateStage(id, { name, ...rest });
       else await RtKanbanAPI.createStage({ name });
       useAlert(t('KANBAN.STAGE.SAVED'));
       await fetchBoard();
@@ -236,7 +229,7 @@ export function useKanbanBoard() {
 
   // Realtime: so invalida; a lista vem sempre da API autorizada.
   let timer = null;
-  const scheduleRefetch = () => {
+  function scheduleRefetch(delay = REFETCH_DEBOUNCE_MS) {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       if (moving.value) {
@@ -244,8 +237,8 @@ export function useKanbanBoard() {
         return;
       }
       await load({ keepSize: true });
-    }, REFETCH_DEBOUNCE_MS);
-  };
+    }, delay);
+  }
 
   const onChanged = data => {
     if (state.value !== 'ready' && state.value !== 'disabled') return;
@@ -256,17 +249,20 @@ export function useKanbanBoard() {
     scheduleRefetch();
   };
   const onReconnect = () => scheduleRefetch();
+  const onOnline = () => scheduleRefetch(0);
 
   onMounted(() => {
     load();
     emitter.on(BUS_EVENTS.RT_KANBAN_CHANGED, onChanged);
     emitter.on(BUS_EVENTS.WEBSOCKET_RECONNECT, onReconnect);
+    window.addEventListener('online', onOnline);
   });
 
   onBeforeUnmount(() => {
     clearTimeout(timer);
     emitter.off(BUS_EVENTS.RT_KANBAN_CHANGED, onChanged);
     emitter.off(BUS_EVENTS.WEBSOCKET_RECONNECT, onReconnect);
+    window.removeEventListener('online', onOnline);
   });
 
   watch(

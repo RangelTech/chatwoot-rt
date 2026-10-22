@@ -49,7 +49,7 @@ const onMoveChange = event => {
     <button
       :id="`kanban-card-${card.id}`"
       type="button"
-      class="flex flex-col gap-1 text-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-n-brand"
+      class="flex flex-col gap-1 pe-6 text-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-n-brand"
       :aria-label="ariaLabel"
       @click="emit('open', card)"
     >

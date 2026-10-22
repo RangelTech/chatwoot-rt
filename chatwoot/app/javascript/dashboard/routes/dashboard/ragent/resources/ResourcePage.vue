@@ -7,7 +7,16 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import { RESOURCES } from './resourceConfig';
 import UsagePanel from './UsagePanel.vue';
 import EnvironmentPanel from './EnvironmentPanel.vue';
-import { formatBytes, formatDate, formatNumber, isDateKey } from './format';
+import ProviderCostPanel from './ProviderCostPanel.vue';
+import ProviderOauth from './ProviderOauth.vue';
+import ComboEditor from './ComboEditor.vue';
+import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatNumber,
+  isDateKey,
+} from './format';
 
 const { axios } = window;
 const { t, te } = useI18n();
@@ -30,14 +39,27 @@ const form = ref({});
 const busy = ref(false);
 // Chave de integração: o servidor a devolve uma única vez, na criação.
 const newKey = ref('');
+const providerModels = ref([]);
+const providerQuota = ref(null);
+const showOauth = ref(false);
+const editingCombo = ref(null);
+const comboSuggestions = ref([]);
+const page = ref(1);
+const total = ref(0);
+const PER_PAGE = 25;
+const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
+  // Combos exibem uma lista de modelos. Objetos continuam ocultos para não
+  // despejar estruturas internas cruas na tela.
+  if (Array.isArray(value)) return value.map(item => String(item)).join(', ') || '—';
   if (typeof value === 'object') return '—';
   if (isDateKey(column)) return formatDate(value);
   if (column === 'size_bytes') return formatBytes(value);
+  if (column === 'duration_ms') return formatDuration(value);
   if (column === 'status') {
     const k = `RAGENT.RES.STATUS.${String(value).toUpperCase()}`;
     return te(k) ? t(k) : String(value);
@@ -71,17 +93,36 @@ const flatten = (value, prefix = '') => {
   }
   return [{ label: prefix, value: cell(value) }];
 };
-const rawRows = computed(() => (raw.value ? flatten(raw.value) : []));
+// Identificadores internos (tenant, ids) nunca aparecem para o cliente.
+const HIDDEN_KEYS = ['tenantId', 'tenant_id', 'id'];
+const publicView = value => {
+  if (Array.isArray(value)) return value.map(publicView);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([k]) => !HIDDEN_KEYS.includes(k))
+        .map(([k, v]) => [k, publicView(v)])
+    );
+  }
+  return value;
+};
+const rawRows = computed(() =>
+  raw.value ? flatten(publicView(raw.value)) : []
+);
 
 const load = async () => {
   loading.value = true;
   forbidden.value = false;
   failed.value = false;
   try {
-    const { data } = await axios.get(base.value);
+    const { data } = await axios.get(
+      base.value,
+      config.value.paged ? { params: { page: page.value, per_page: PER_PAGE } } : {}
+    );
+    total.value = Number(data?.total) || 0;
     const list = Array.isArray(data)
       ? data
-      : data.items || data.sessions || data.charges || data.records;
+      : data.items || data.sessions || data.charges || data.records || data.requests;
     if (Array.isArray(list)) {
       items.value = list;
       raw.value = null;
@@ -99,9 +140,20 @@ const load = async () => {
   }
 };
 
+const goTo = n => {
+  page.value = Math.min(Math.max(1, n), pages.value);
+  load();
+};
+
 onMounted(load);
 watch(key, () => {
+  page.value = 1;
+  total.value = 0;
   creating.value = false;
+  showOauth.value = false;
+  editingCombo.value = null;
+  providerModels.value = [];
+  providerQuota.value = null;
   newKey.value = '';
   form.value = {};
   load();
@@ -131,6 +183,62 @@ const submit = async () => {
   }
 };
 
+// Sugestões do editor de combos: só provedores e combos do tenant da sessão.
+const openComboEditor = async combo => {
+  editingCombo.value = combo || {};
+  creating.value = false;
+  try {
+    const { data } = await axios.get(
+      `/api/v1/accounts/${accountId.value}/rt_ai/resources/providers`
+    );
+    comboSuggestions.value = (Array.isArray(data) ? data : [])
+      .filter(c => c.provider && (c.defaultModel || c.model))
+      .map(c => `${c.provider}/${c.defaultModel || c.model}`);
+  } catch (error) {
+    comboSuggestions.value = [];
+  }
+  comboSuggestions.value = [
+    ...comboSuggestions.value,
+    ...items.value.filter(c => c.id !== combo?.id).map(c => c.name),
+  ];
+};
+
+const saveCombo = async payload => {
+  busy.value = true;
+  try {
+    if (editingCombo.value?.id) {
+      await axios.put(`${base.value}/${editingCombo.value.id}`, payload);
+    } else {
+      await axios.post(base.value, payload);
+    }
+    editingCombo.value = null;
+    useAlert(t('RAGENT.RES.SAVED'));
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const loadQuota = async item => {
+  busy.value = true;
+  providerQuota.value = null;
+  try {
+    const { data } = await axios.get(`${base.value}/${item.id}/quota`);
+    providerQuota.value = { name: item.name || item.provider, data };
+  } catch (error) {
+    providerQuota.value = { name: item.name || item.provider, data: null };
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const quotaRows = computed(() =>
+  providerQuota.value?.data ? flatten(providerQuota.value.data) : []
+);
+
 const remove = async item => {
   // eslint-disable-next-line no-alert
   if (!window.confirm(t('RAGENT.RES.CONFIRM_DELETE'))) return;
@@ -151,6 +259,52 @@ const runAction = async name => {
     useAlert(t('RAGENT.RES.ERROR'));
   }
 };
+
+const runItemAction = async (item, name) => {
+  busy.value = true;
+  try {
+    const { data } = await axios.post(`${base.value}/${item.id}/actions/${name}`);
+    if (name === 'test' && data.valid === false) {
+      useAlert(data.error || t('RAGENT.RES.TEST_FAILED'));
+    } else {
+      useAlert(t('RAGENT.RES.TEST_OK'));
+    }
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+// O estado ativo e alterado pelo BFF tenant-scoped; nunca enviamos tenant, URL
+// do gateway ou qualquer credencial a partir do navegador.
+const toggleActive = async item => {
+  busy.value = true;
+  try {
+    const current = item.is_active ?? item.isActive ?? true;
+    await axios.put(`${base.value}/${item.id}`, { is_active: !current });
+    useAlert(t('RAGENT.RES.SAVED'));
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const loadProviderModels = async item => {
+  busy.value = true;
+  try {
+    const { data } = await axios.get(`${base.value}/${item.id}/models`);
+    providerModels.value = Array.isArray(data?.models) ? data.models : [];
+  } catch (error) {
+    providerModels.value = [];
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -169,7 +323,18 @@ const runAction = async name => {
           @click="runAction(a)"
         />
         <Button
-          v-if="canManage && config.fields.length"
+          v-if="canManage && key === 'providers'"
+          variant="faded"
+          :label="t('RAGENT.RES.GW.OAUTH.BUTTON')"
+          @click="showOauth = !showOauth"
+        />
+        <Button
+          v-if="canManage && key === 'combos'"
+          :label="t('RAGENT.RES.NEW')"
+          @click="openComboEditor(null)"
+        />
+        <Button
+          v-else-if="canManage && config.fields.length"
           :label="t('RAGENT.RES.NEW')"
           @click="creating = !creating"
         />
@@ -198,13 +363,27 @@ const runAction = async name => {
       <Button size="sm" variant="faded" :label="t('RAGENT.RES.RETRY')" @click="load" />
     </div>
 
-    <section v-if="creating" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
+    <ProviderOauth
+      v-if="showOauth && key === 'providers'"
+      :base="`/api/v1/accounts/${accountId}/rt_ai`"
+      @done="load"
+    />
+    <ComboEditor
+      v-if="editingCombo && key === 'combos'"
+      :key="editingCombo.id || 'new'"
+      :initial="editingCombo.id ? editingCombo : null"
+      :suggestions="comboSuggestions"
+      :busy="busy"
+      @save="saveCombo"
+      @cancel="editingCombo = null"
+    />
+    <section v-if="creating && key !== 'combos'" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
       <label v-for="f in config.fields" :key="f.key" class="text-body-main text-n-slate-11">
         {{ t(`RAGENT.RES.FIELDS.${f.label}`) }}
         <select v-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
           <option v-for="o in f.options" :key="o" :value="o">{{ o }}</option>
         </select>
-        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" placeholder="{}" />
+        <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" :placeholder="f.placeholder || '{}'" />
         <input
           v-else
           v-model="form[f.key]"
@@ -232,12 +411,84 @@ const runAction = async name => {
               {{ cell(it[c], c) }}
             </td>
             <td v-if="canManage && it.id" class="px-4 py-2 text-end">
+              <Button
+                v-for="a in config.itemActions || []"
+                :key="a"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
+                @click="runItemAction(it, a)"
+              />
+              <Button
+                v-for="a in config.itemReads || []"
+                :key="a"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t(`RAGENT.RES.ACTIONS.${a.toUpperCase()}`)"
+                @click="loadProviderModels(it)"
+              />
+              <Button
+                v-if="key === 'providers'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t('RAGENT.RES.GW.QUOTA.BUTTON')"
+                @click="loadQuota(it)"
+              />
+              <Button
+                v-if="key === 'combos'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t('RAGENT.RES.GW.COMBO.EDIT')"
+                @click="openComboEditor(it)"
+              />
+              <Button
+                v-if="key === 'providers'"
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.ACTIONS.DEACTIVATE' : 'RAGENT.RES.ACTIONS.ACTIVATE')"
+                @click="toggleActive(it)"
+              />
               <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+    <nav
+      v-if="config.paged && total > PER_PAGE"
+      class="flex items-center gap-3"
+      data-testid="pager"
+    >
+      <Button size="sm" variant="faded" data-testid="pager-prev" :disabled="page <= 1 || loading" :label="t('RAGENT.RES.PAGER.PREV')" @click="goTo(page - 1)" />
+      <span class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PAGER.PAGE', { page, pages, total }) }}</span>
+      <Button size="sm" variant="faded" data-testid="pager-next" :disabled="page >= pages || loading" :label="t('RAGENT.RES.PAGER.NEXT')" @click="goTo(page + 1)" />
+    </nav>
+    <section v-if="providerModels.length" class="rounded-xl border border-n-weak p-4">
+      <h2 class="mb-2 text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
+      <ul class="grid gap-1 text-body-main text-n-slate-11 sm:grid-cols-2">
+        <li v-for="model in providerModels" :key="model.id || model.name">{{ model.name || model.id }}</li>
+      </ul>
+    </section>
+    <section v-if="providerQuota" class="rounded-xl border border-n-weak p-4" data-testid="provider-quota">
+      <h2 class="mb-2 text-heading-4 text-n-slate-12">
+        {{ t('RAGENT.RES.GW.QUOTA.TITLE', { name: providerQuota.name }) }}
+      </h2>
+      <p v-if="!quotaRows.length || providerQuota.data?.message" class="text-body-main text-n-slate-11">
+        {{ t('RAGENT.RES.GW.QUOTA.UNAVAILABLE') }}
+      </p>
+      <dl v-else class="grid grid-cols-1 gap-x-6 gap-y-2 text-body-main sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <template v-for="(row, i) in quotaRows" :key="i">
+          <dt class="text-n-slate-11">{{ row.label }}</dt>
+          <dd class="text-n-slate-12">{{ row.value }}</dd>
+        </template>
+      </dl>
+    </section>
+    <ProviderCostPanel v-if="raw && key === 'usage' && raw.byProvider" :data="raw" />
     <UsagePanel v-else-if="raw && key === 'usage'" :data="raw" />
     <EnvironmentPanel v-else-if="raw && key === 'environment'" :data="raw" />
     <dl
@@ -249,6 +500,6 @@ const runAction = async name => {
         <dd class="text-n-slate-12">{{ row.value }}</dd>
       </template>
     </dl>
-    <p v-else-if="!loading && !forbidden && !failed" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
+    <p v-else-if="!loading && !forbidden && !failed && !items.length" class="text-n-slate-11">{{ t('RAGENT.RES.EMPTY') }}</p>
   </div>
 </template>

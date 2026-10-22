@@ -39,6 +39,8 @@ const subagents = ref({ active: 0, total: 0 });
 // Formato em que o agente escreve (markdown | whatsapp | text): vem do chat, do início da run e do `done`.
 const chatFormat = ref('markdown');
 const loading = ref(true);
+// gaveta do histórico (só no celular; no desktop a lista fica fixa ao lado)
+const showHistory = ref(false);
 const forbidden = ref(false);
 const scroller = ref(null);
 let controller = null;
@@ -83,6 +85,7 @@ const loadPendingApprovals = async id => {
 };
 
 const openChat = async id => {
+  showHistory.value = false;
   chatId.value = id;
   artifacts.value = [];
   approvals.value = [];
@@ -99,6 +102,7 @@ const openChat = async id => {
 };
 
 const newChat = () => {
+  showHistory.value = false;
   chatId.value = '';
   chatFormat.value = 'markdown';
   messages.value = [];
@@ -246,8 +250,25 @@ const stop = async () => {
 <template>
   <div class="flex h-full w-full overflow-hidden bg-n-surface-1">
     <aside
-      class="hidden md:flex w-64 shrink-0 flex-col border-r border-n-weak p-3 gap-2"
+      id="rt-chat-history"
+      class="w-64 shrink-0 flex-col border-r border-n-weak p-3 gap-2 md:flex"
+      :class="
+        showHistory
+          ? 'fixed inset-0 z-50 flex w-full bg-n-surface-1'
+          : 'hidden'
+      "
+      :aria-label="t('RAGENT.CHAT.HISTORY')"
+      @keydown.esc="showHistory = false"
     >
+      <Button
+        class="md:!hidden"
+        icon="i-lucide-x"
+        slate
+        ghost
+        sm
+        :label="t('RAGENT.CHAT.CLOSE_HISTORY')"
+        @click="showHistory = false"
+      />
       <Button
         :label="t('RAGENT.CHAT.NEW')"
         size="sm"
@@ -276,6 +297,17 @@ const stop = async () => {
       <header
         class="flex flex-wrap items-center gap-3 border-b border-n-weak px-4 py-3"
       >
+        <Button
+          class="md:!hidden"
+          icon="i-lucide-history"
+          slate
+          faded
+          sm
+          :label="t('RAGENT.CHAT.HISTORY')"
+          aria-controls="rt-chat-history"
+          :aria-expanded="showHistory"
+          @click="showHistory = true"
+        />
         <h1 class="text-heading-2 text-n-slate-12">
           {{ t('RAGENT.CHAT.TITLE') }}
         </h1>

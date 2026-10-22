@@ -70,6 +70,6 @@ jobs:
           node-version: 24
           cache: pnpm
           cache-dependency-path: chatwoot/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Vitest (Ragent, Kanban, rotas e permissoes)
         run: pnpm exec vitest run app/javascript/dashboard/routes/dashboard/ragent app/javascript/dashboard/routes/dashboard/kanban app/javascript/dashboard/routes/index.spec.js app/javascript/v3/helpers

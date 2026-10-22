@@ -1425,6 +1425,9 @@
       "EVOLUTION_API": "Whatsapp Unoficial",
       "INSTAGRAM_UNOFFICIAL": "Instagram Unoficial",
       "FACEBOOK_UNOFFICIAL": "Facebook Unoficial",
+      "MESSENGER_UNOFFICIAL": "Messenger (experimental)",
+      "WHATSAPP_UNOFFICIAL": "WhatsApp (experimental)",
+      "TIKTOK_UNOFFICIAL": "TikTok (experimental)",
       "VOICE": "Voice"
     }
   }

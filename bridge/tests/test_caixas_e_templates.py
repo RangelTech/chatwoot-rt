@@ -200,7 +200,7 @@ def test_vincular_agente_associa_o_bot_na_caixa(client, admin_auth, tenant_id, m
 
 
 def test_tirar_o_agente_desassocia_o_bot(client, admin_auth, tenant_id, monkeypatch):
-    """"Somente atendimento humano" precisa realmente calar a IA na caixa."""
+    """ "Somente atendimento humano" precisa realmente calar a IA na caixa."""
     from app.services import chatwoot
 
     associados = []
@@ -240,9 +240,7 @@ def test_tirar_o_agente_desassocia_o_bot(client, admin_auth, tenant_id, monkeypa
     assert associados[-1] == (44, None)
 
 
-def test_falha_ao_associar_o_bot_nao_perde_a_config(
-    client, admin_auth, tenant_id, monkeypatch
-):
+def test_falha_ao_associar_o_bot_nao_perde_a_config(client, admin_auth, tenant_id, monkeypatch):
     """O vínculo é válido mesmo se o Chatwoot estiver fora do ar na hora; o que
     não pode é a tela dizer "salvo" sem contar que o bot não entrou."""
     from app.services import chatwoot

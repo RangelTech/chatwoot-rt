@@ -141,6 +141,14 @@ const confirmPlaceHolderText = computed(() =>
             <div class="flex flex-col items-start gap-1">
               <span class="block text-heading-3 text-n-slate-12 capitalize">
                 {{ team.name }}
+                <!-- LUAR Fase F: selo de fila Gerenciada por IA -->
+                <span
+                  v-if="team.rt_ai_queue"
+                  data-testid="team-ai-badge"
+                  class="ml-2 rounded-md bg-n-iris-3 px-2 py-0.5 text-xs font-medium normal-case text-n-iris-11"
+                >
+                  {{ $t('RAGENT.INBOXES.TEAM_AI_BADGE') }}
+                </span>
               </span>
               <p class="mb-0 text-n-slate-11 text-body-main">
                 {{ team.description }}

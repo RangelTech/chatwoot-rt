@@ -430,3 +430,5 @@ Conversation.include_mod_with('Audit::Conversation')
 Conversation.include_mod_with('Concerns::Conversation')
 Conversation.prepend_mod_with('Conversation')
 Conversation.prepend(Rt::ConversationKanban)
+
+Conversation.prepend(Rt::ConversationRouting)

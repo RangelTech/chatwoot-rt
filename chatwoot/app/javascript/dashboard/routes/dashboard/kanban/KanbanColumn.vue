@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import Draggable from 'vuedraggable';
 import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanCard from './KanbanCard.vue';
+import { beforeCardIdAfterDrop } from './kanbanHelpers';
 
 const props = defineProps({
   stage: { type: Object, required: true },
@@ -15,9 +16,18 @@ const props = defineProps({
   error: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
   canEdit: { type: Boolean, default: false },
+  isFirst: { type: Boolean, default: false },
+  isLast: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['loadMore', 'move', 'open', 'rename', 'retry']);
+const emit = defineEmits([
+  'loadMore',
+  'move',
+  'open',
+  'rename',
+  'reorder',
+  'retry',
+]);
 
 const { t } = useI18n();
 
@@ -33,11 +43,10 @@ watch(
 const onChange = event => {
   const info = event.added || event.moved;
   if (!info) return;
-  const next = localItems.value[info.newIndex + 1];
   emit('move', {
     card: info.element,
     toStageId: props.stage.id,
-    beforeCardId: next ? next.id : null,
+    beforeCardId: beforeCardIdAfterDrop(localItems.value, info.newIndex),
   });
 };
 
@@ -100,6 +109,24 @@ const submitEdit = () => {
           {{ stage.count_visible }}
         </span>
         <Button
+          v-if="canEdit && !isFirst"
+          icon="i-lucide-chevron-left"
+          slate
+          ghost
+          xs
+          :aria-label="t('KANBAN.STAGE.MOVE_LEFT')"
+          @click="emit('reorder', { id: stage.id, direction: -1 })"
+        />
+        <Button
+          v-if="canEdit && !isLast"
+          icon="i-lucide-chevron-right"
+          slate
+          ghost
+          xs
+          :aria-label="t('KANBAN.STAGE.MOVE_RIGHT')"
+          @click="emit('reorder', { id: stage.id, direction: 1 })"
+        />
+        <Button
           v-if="canEdit"
           icon="i-lucide-pencil"
           slate
@@ -144,11 +171,28 @@ const submitEdit = () => {
           role="list"
           class="flex flex-col gap-2 min-h-12"
           :disabled="busy"
+          handle=".rt-kanban-handle"
           :animation="150"
+          :force-fallback="true"
+          :fallback-tolerance="5"
+          :delay="180"
+          :delay-on-touch-only="true"
+          :touch-start-threshold="8"
+          :fallback-on-body="true"
+          ghost-class="rt-kanban-ghost"
+          chosen-class="rt-kanban-chosen"
+          fallback-class="rt-kanban-fallback"
           @change="onChange"
         >
           <template #item="{ element }">
-            <li class="list-none cursor-grab">
+            <li class="relative list-none">
+              <span
+                class="rt-kanban-handle absolute top-2 end-2 z-10 flex items-center justify-center size-7 rounded cursor-grab text-n-slate-10 hover:bg-n-alpha-2 touch-none select-none"
+                :title="t('KANBAN.CARD.DRAG')"
+                aria-hidden="true"
+              >
+                <span class="i-lucide-grip-vertical size-4" />
+              </span>
               <KanbanCard
                 :card="element"
                 :stages="stages"
@@ -173,3 +217,20 @@ const submitEdit = () => {
     </div>
   </section>
 </template>
+
+<style>
+/* Arraste por ponteiro (mouse e toque): o clone vai para o body, entao o estilo nao pode ser scoped. */
+.rt-kanban-ghost {
+  opacity: 0.4;
+}
+.rt-kanban-chosen {
+  cursor: grabbing;
+}
+.rt-kanban-fallback {
+  opacity: 0.95;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+  z-index: 1000;
+  list-style: none;
+}
+</style>

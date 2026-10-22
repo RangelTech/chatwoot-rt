@@ -547,6 +547,12 @@ const menuItems = computed(() => {
           activeOn: ['ragent_providers'],
         },
         {
+          name: 'RagentCombos',
+          label: t('RAGENT.MENU.COMBOS'),
+          to: accountScopedRoute('ragent_combos'),
+          activeOn: ['ragent_combos'],
+        },
+        {
           name: 'RagentCredentials',
           label: t('RAGENT.MENU.CREDENTIALS'),
           to: accountScopedRoute('ragent_credentials'),
@@ -581,6 +587,18 @@ const menuItems = computed(() => {
           label: t('RAGENT.MENU.USAGE'),
           to: accountScopedRoute('ragent_usage'),
           activeOn: ['ragent_usage'],
+        },
+        {
+          name: 'RagentQuotas',
+          label: t('RAGENT.MENU.QUOTAS'),
+          to: accountScopedRoute('ragent_quotas'),
+          activeOn: ['ragent_quotas'],
+        },
+        {
+          name: 'RagentRequests',
+          label: t('RAGENT.MENU.REQUESTS'),
+          to: accountScopedRoute('ragent_requests'),
+          activeOn: ['ragent_requests'],
         },
       ],
     },

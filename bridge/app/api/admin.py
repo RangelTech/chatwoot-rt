@@ -7,16 +7,29 @@ sistema mestre, com o token administrativo da ponte.
 
 import logging
 import secrets
+import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 from app.config import settings
-from app.services import chatwoot, evolution, tenants
+from app.services import chatwoot, evolution, routing, tenants
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _as_uuid(value: str) -> str:
+    """Ids de tenant/usuario sao UUID no banco: valor invalido vira 422, nunca 500 do Postgres."""
+    try:
+        return str(uuid.UUID(str(value)))
+    except ValueError as exc:
+        raise ValueError("deve ser um UUID") from exc
+
+
+UuidStr = Annotated[str, AfterValidator(_as_uuid)]
 
 
 def require_admin(request: Request) -> None:
@@ -25,33 +38,31 @@ def require_admin(request: Request) -> None:
         raise HTTPException(status_code=503, detail="ponte sem token administrativo configurado")
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not secrets.compare_digest(
-        token, settings.bridge_admin_token
-    ):
+    if scheme.lower() != "bearer" or not secrets.compare_digest(token, settings.bridge_admin_token):
         raise HTTPException(status_code=401, detail="não autorizado")
 
 
 class TenantIn(BaseModel):
-    tenant_id: str
+    tenant_id: UuidStr
     tenant_key: str = Field(min_length=1, max_length=100)
     tenant_name: str = Field(min_length=1, max_length=200)
 
 
 class UserIn(BaseModel):
-    tenant_id: str
-    platform_user_id: str
+    tenant_id: UuidStr
+    platform_user_id: UuidStr
     email: str
     name: str = "Operador"
     role: str = Field(default="agent", pattern="^(agent|administrator)$")
 
 
 class MenuDemoIn(BaseModel):
-    tenant_id: str
+    tenant_id: UuidStr
     inbox_name: str = "Fila Demo IVR"
 
 
 class AiConfigIn(BaseModel):
-    tenant_id: str
+    tenant_id: UuidStr
     chatwoot_inbox_id: int | None = None
     template_id: str | None = None
     integration_key: str | None = None
@@ -77,14 +88,52 @@ class EvolutionProvisionIn(BaseModel):
     indice: int = Field(default=1, ge=1, le=20)
 
 
+class RoutingMigrationIn(BaseModel):
+    tenant_id: UuidStr | None = None
+
+
+class RoutingRollbackIn(BaseModel):
+    tenant_id: UuidStr
+    chatwoot_inbox_id: int
+
+
 class BrandingIn(BaseModel):
-    tenant_id: str
+    tenant_id: UuidStr
     brand_name: str = Field(min_length=1, max_length=200)
     primary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
     secondary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
     theme: str = Field(pattern=r"^(light|dark)$")
     logo_url: str = Field(default="", max_length=2000)
     version: int = Field(ge=1)
+
+
+@router.post("/routing/migrate", dependencies=[Depends(require_admin)])
+async def migrate_legacy_routing(payload: RoutingMigrationIn) -> dict:
+    """F-4: copia o legado para o Chatwoot e liga somente o modo sombra."""
+    if not routing.configured():
+        raise HTTPException(status_code=503, detail="rota interna do Luar nao configurada")
+    batches = tenants.legacy_routing_migration_batches(payload.tenant_id)
+    results = []
+    for batch in batches:
+        result = await routing.migrate_legacy(batch)
+        results.append({"account_id": batch["account_id"], "result": result})
+    return {"accounts": len(batches), "results": results}
+
+
+@router.post("/routing/migrate/rollback", dependencies=[Depends(require_admin)])
+async def rollback_legacy_routing(payload: RoutingRollbackIn) -> dict:
+    """F-4: volta uma caixa ao legado sem apagar nenhum registro Rt."""
+    if not routing.configured():
+        raise HTTPException(status_code=503, detail="rota interna do Luar nao configurada")
+    link = tenants.get_tenant_link(payload.tenant_id)
+    if not link or not link.get("chatwoot_account_id"):
+        raise HTTPException(status_code=404, detail="tenant sem conta Chatwoot")
+    result = await routing.rollback_legacy(
+        int(link["chatwoot_account_id"]), payload.chatwoot_inbox_id
+    )
+    if result is None:
+        raise HTTPException(status_code=502, detail="rollback recusado pelo Luar")
+    return result
 
 
 @router.post("/tenants", dependencies=[Depends(require_admin)])
@@ -316,7 +365,7 @@ async def provision_user(payload: UserIn):
 
 
 @router.get("/sso/{tenant_id}/{platform_user_id}", dependencies=[Depends(require_admin)])
-async def sso_link(tenant_id: str, platform_user_id: str):
+async def sso_link(tenant_id: UuidStr, platform_user_id: UuidStr):
     """URL temporária de login no Chatwoot para um usuário já provisionado."""
     user_link = tenants.get_user_link(tenant_id, platform_user_id)
     if user_link is None or not user_link["chatwoot_user_id"]:
@@ -326,7 +375,7 @@ async def sso_link(tenant_id: str, platform_user_id: str):
 
 
 @router.post("/logout/{tenant_id}/{platform_user_id}", dependencies=[Depends(require_admin)])
-async def sso_logout(tenant_id: str, platform_user_id: str):
+async def sso_logout(tenant_id: UuidStr, platform_user_id: UuidStr):
     """Derruba a sessão do usuário no Chatwoot (produto-05 seção 6c) — par
     de /sso: chamado no logout do RAgentes pra sincronizar o RAtende.
     Idempotente: usuário nunca provisionado no Chatwoot não é erro, é no-op
@@ -426,6 +475,24 @@ async def provision_menu_demo(payload: MenuDemoIn):
         "team_ids": team_ids,
         "config_id": str(config["id"]),
     }
+
+
+@router.get("/ai-config/status", dependencies=[Depends(require_admin)])
+async def ai_config_status(tenant_id: str):
+    """O tenant ja tem chave de integracao para a bridge responder numa fila de IA?"""
+    config = tenants.ai_config_for(tenant_id, None)
+    with_key = bool(config and config["integration_key_encrypted"])
+    if not with_key:
+        from app.db import get_connection
+
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM tenant_ai_config WHERE tenant_id = %s"
+                " AND integration_key_encrypted IS NOT NULL LIMIT 1",
+                (tenant_id,),
+            ).fetchone()
+        with_key = row is not None
+    return {"has_integration_key": with_key}
 
 
 @router.post("/ai-config", dependencies=[Depends(require_admin)])
@@ -596,7 +663,7 @@ def _first_admin(tenant_id: str) -> dict | None:
 
 
 @router.get("/ai-config/{tenant_id}", dependencies=[Depends(require_admin)])
-async def list_ai_config(tenant_id: str):
+async def list_ai_config(tenant_id: UuidStr):
     """Caixas do tenant e qual template atende cada uma.
 
     Um tenant tem várias caixas — WhatsApp, Instagram, site — e cada uma pode

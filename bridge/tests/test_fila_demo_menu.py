@@ -352,9 +352,7 @@ def test_provision_menu_demo_cria_inbox_e_teams_uma_vez(client, admin_auth, tena
 
     _tenant_com_usuario(tenant_id)
 
-    resp = client.post(
-        "/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id}
-    )
+    resp = client.post("/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id})
     assert resp.status_code == 200
     corpo = resp.json()
     assert corpo["created"] is True
@@ -370,9 +368,7 @@ def test_provision_menu_demo_cria_inbox_e_teams_uma_vez(client, admin_auth, tena
     assert config["team_financeiro_id"] == 503
 
     # Chamar de novo é idempotente: não recria inbox nem Teams.
-    resp2 = client.post(
-        "/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id}
-    )
+    resp2 = client.post("/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id})
     assert resp2.status_code == 200
     assert resp2.json()["created"] is False
     assert caixas_criadas == ["Fila Demo IVR"]
@@ -380,7 +376,5 @@ def test_provision_menu_demo_cria_inbox_e_teams_uma_vez(client, admin_auth, tena
 
 
 def test_provision_menu_demo_sem_tenant_provisionado_da_409(client, admin_auth, tenant_id):
-    resp = client.post(
-        "/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id}
-    )
+    resp = client.post("/admin/menu-demo", headers=admin_auth, json={"tenant_id": tenant_id})
     assert resp.status_code == 409

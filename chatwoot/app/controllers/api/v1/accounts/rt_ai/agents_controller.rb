@@ -30,11 +30,17 @@ class Api::V1::Accounts::RtAi::AgentsController < Api::V1::Accounts::RtAi::BaseC
   end
 
   def update_draft
-    render_engine engine_put("/api/templates/#{params[:id]}/draft", package_params)
+    package = package_params
+    return unless combo_allowed!(package[:manifest])
+
+    render_engine engine_put("/api/templates/#{params[:id]}/draft", package)
   end
 
   def validate
-    render_engine engine_post("/api/templates/#{params[:id]}/validate", package_params)
+    package = package_params
+    return unless combo_allowed!(package[:manifest])
+
+    render_engine engine_post("/api/templates/#{params[:id]}/validate", package)
   end
 
   # Envia ou substitui um arquivo do pacote (multipart: `file`, `path` opcional).
@@ -66,11 +72,21 @@ class Api::V1::Accounts::RtAi::AgentsController < Api::V1::Accounts::RtAi::BaseC
   end
 
   def create_version
+    # Re-read the persisted draft immediately before versioning. This makes a
+    # forged/stale browser request unable to publish a combo from another
+    # tenant, even if it skipped the client-side selector.
+    draft = engine_get("/api/templates/#{params[:id]}/draft")
+    return if performed? || !combo_allowed!(draft.is_a?(Hash) ? draft['manifest'] : nil)
+
     render_engine engine_post("/api/templates/#{params[:id]}/versions", { source: 'draft', notes: params[:notes].to_s })
   end
 
   def publish
-    render_engine engine_post("/api/templates/#{params[:id]}/deploy", { version_id: params.require(:version_id) })
+    version_id = params.require(:version_id)
+    version = engine_get("/api/templates/#{params[:id]}/versions/#{version_id}")
+    return if performed? || !combo_allowed!(version.is_a?(Hash) ? version['manifest'] : nil)
+
+    render_engine engine_post("/api/templates/#{params[:id]}/deploy", { version_id: version_id })
   end
 
   def destroy
@@ -111,6 +127,25 @@ class Api::V1::Accounts::RtAi::AgentsController < Api::V1::Accounts::RtAi::BaseC
   def package_params
     { files: params.permit(files: [:path, :content])[:files].to_a.map(&:to_h),
       manifest: params[:manifest].respond_to?(:to_unsafe_h) ? params[:manifest].to_unsafe_h : {} }
+  end
+
+  # Combo ownership is checked through the authenticated account's Gateway
+  # mapping. Never accept a tenant id from the browser or from the manifest.
+  def combo_allowed!(manifest)
+    model = manifest.is_a?(Hash) ? (manifest['model'] || manifest[:model]) : nil
+    combo = model.is_a?(Hash) ? (model['combo'] || model[:combo]).to_s.strip : ''
+    return true if combo.blank?
+
+    response = Rt::GatewayClient.get(account: Current.account, path: '/api/combos')
+    combos = response.is_a?(Hash) ? Array(response['combos']) : []
+    return true if combos.any? { |item| item.is_a?(Hash) && item['name'].to_s == combo }
+
+    render json: { code: 'invalid_combo', message: 'O combo selecionado não pertence a esta empresa.' }, status: :unprocessable_entity
+    false
+  rescue Rt::GatewayClient::Error => e
+    Rails.logger.warn("rt_ai gateway combo validation error: #{e.message}")
+    render json: { code: 'gateway_error', message: 'Não foi possível validar o combo de IA.' }, status: :bad_gateway
+    false
   end
 
   def need_uuid

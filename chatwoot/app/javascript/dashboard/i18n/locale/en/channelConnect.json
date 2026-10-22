@@ -1,0 +1,150 @@
+{
+  "CHANNEL_CONNECT": {
+    "CATALOG": {
+      "INSTAGRAM_TITLE": "Instagram (experimental)",
+      "INSTAGRAM_DESC": "Connect with username and password. Experimental connector.",
+      "MESSENGER_TITLE": "Messenger (experimental)",
+      "MESSENGER_DESC": "Connect with username and password. Experimental connector.",
+      "TIKTOK_TITLE": "TikTok (experimental)",
+      "TIKTOK_DESC": "Connect by scanning a QR code. Experimental connector.",
+      "WHATSAPP_TITLE": "WhatsApp (experimental)",
+      "WHATSAPP_DESC": "Connect by scanning a QR code or pairing code. Experimental connector."
+    },
+    "PROVIDERS": {
+      "INSTAGRAM": "Instagram",
+      "MESSENGER": "Messenger",
+      "TIKTOK": "TikTok",
+      "WHATSAPP": "WhatsApp"
+    },
+    "EXPERIMENTAL_BADGE": "Connect channel",
+    "MODE": {
+      "OFFICIAL_TITLE": "Official",
+      "OFFICIAL_DESC": "Uses the official integration of the platform. Safest option, recommended whenever available.",
+      "EXPERIMENTAL_TITLE": "Experimental",
+      "EXPERIMENTAL_DESC": "Signs in with your account like a regular app. Works where the official option is not available, with risks."
+    },
+    "INFO": {
+      "REQUIREMENTS_TITLE": "Requirements",
+      "REQUIREMENTS_PASSWORD": "The username and password of the account. If the account uses two-factor authentication, keep your phone at hand.",
+      "REQUIREMENTS_QR": "A phone with the app installed and signed in to the account, to scan the QR code.",
+      "LIMITATIONS_TITLE": "Limitations",
+      "LIMITATIONS_TEXT": "Text messages are supported. Behavior may change when the platform updates.",
+      "LIMITATIONS_MEDIA": "Media, groups and reactions are only available once they have been tested.",
+      "RISKS_TITLE": "Risks",
+      "RISK_BLOCK": "The platform may block or limit the account.",
+      "RISK_OWN_ACCOUNT": "Use an account of your own, never a customer account.",
+      "RISK_2FA": "Do not turn off two-factor authentication (2FA).",
+      "CONSENT": "I understand the risks and agree to connect this account experimentally."
+    },
+    "STEPS": {
+      "CREDENTIALS_HELP": "Sign in with the account you want to connect.",
+      "CODE_HELP": "Enter the verification code sent by the platform (SMS or authenticator app).",
+      "PASSWORD_NOT_STORED": "Your password is sent securely and is never stored.",
+      "SIGN_IN": "Sign in",
+      "VERIFY": "Verify",
+      "APPROVAL_TITLE": "Confirm in the app",
+      "APPROVAL_HELP": "Open the app on your phone and approve the sign-in attempt. This page continues on its own.",
+      "QR_ALT": "QR code to connect the account",
+      "QR_REFRESHING": "Refreshing the code...",
+      "QR_EXPIRES_IN": "The code refreshes in {seconds}s",
+      "QR_HELP_TIKTOK": "On your phone: TikTok > Profile > ☰ > QR code, then scan this code.",
+      "QR_HELP_WHATSAPP": "On your phone: WhatsApp > Linked devices > Link a device, then scan this code.",
+      "QR_HELP_INSTAGRAM": "Scan this code with the app.",
+      "QR_HELP_MESSENGER": "Scan this code with the app.",
+      "PAIRING_HELP": "On your phone: WhatsApp > Linked devices > Link with phone number, then type this code.",
+      "SYNC_TITLE": "Validating access and syncing",
+      "SYNC_HELP": "Importing your recent conversations. You can keep this page open.",
+      "CHOICE_HELP": "The platform asks you to choose how to continue.",
+      "CAPTCHA_HELP": "Type the characters in the image to prove you are not a robot.",
+      "CAPTCHA_AUDIO": "Listen to the audio",
+      "PROVIDER_MESSAGE": "Message from the platform",
+      "CONTINUE": "Continue",
+      "CAPTCHA_ALT": "Verification image"
+    },
+    "FINALIZE": {
+      "HELP": "Almost done. Choose how this inbox will work.",
+      "NAME": "Inbox name",
+      "TEAM": "Incoming queue (team)",
+      "TEAM_HINT": "New conversations go to this team.",
+      "AGENT": "Service agent",
+      "NONE": "None",
+      "SYNC_WINDOW": "Import conversations from the last",
+      "DAYS": "{count} days",
+      "SUBMIT": "Create inbox"
+    },
+    "ACTIONS": {
+      "CONTINUE": "Continue",
+      "BACK": "Back",
+      "CANCEL": "Cancel",
+      "CLOSE": "Close"
+    },
+    "DONE": "Channel connected.",
+    "CANCELLED": "The connection was cancelled.",
+    "ERRORS": {
+      "WRONG_PASSWORD": "Wrong username or password. Check them and try again.",
+      "WRONG_CODE": "That code is incorrect. Check the latest code and try again.",
+      "ACCOUNT_LOCKED": "The account is locked. Unlock it in the official app and try again later.",
+      "CHECKPOINT_REQUIRED": "The platform asked for a security check. Open the official app, complete the check and try again.",
+      "TIMEOUT": "Time ran out. Start the connection again.",
+      "TOO_MANY_ATTEMPTS": "Too many attempts. Wait a while before trying again, to avoid blocking the account.",
+      "PROVIDER_UNAVAILABLE": "The platform is not responding right now. Try again in a few minutes.",
+      "UNSUPPORTED_STEP": "This sign-in step is not supported. Use the official option or contact support.",
+      "GENERIC": "Something went wrong. Try again in a few minutes.",
+      "CONSENT_REQUIRED": "Accept the terms to continue.",
+      "ATTEMPTS_LEFT": "Attempts left: {count}",
+      "ACCOUNT_NOT_FOUND": "We could not find that account. Check the username or email and try again.",
+      "LOGIN_REJECTED": "The platform rejected the login. Check the details, complete any verification in the official app and try again.",
+      "WRONG_CAPTCHA": "The characters in the image do not match. Try again."
+    },
+    "STATES": {
+      "PENDING_AUTH": "Signing in",
+      "AWAITING_2FA": "Waiting for code",
+      "AWAITING_CHALLENGE": "Waiting for approval",
+      "CONNECTED": "Connected",
+      "DEGRADED": "Unstable",
+      "REAUTH_REQUIRED": "Reconnect needed",
+      "DISCONNECTED": "Disconnected",
+      "REVOKED": "Revoked"
+    },
+    "PANEL": {
+      "TITLE": "Connection",
+      "LAST_ACTIVITY": "Last activity",
+      "LAST_ERROR": "Last error",
+      "NO_ERROR": "None",
+      "CONNECTOR_VERSION": "Connector version",
+      "NEVER": "No activity yet",
+      "RECONNECT": "Reconnect",
+      "DISCONNECT": "Disconnect",
+      "REVOKE": "Revoke access",
+      "CONFIRM_DISCONNECT": "Disconnect this account? You will stop receiving messages until you reconnect. Conversations are kept.",
+      "CONFIRM_REVOKE": "Revoke access? The session is removed and the account must sign in again to use this inbox.",
+      "CONFIRM_YES": "Yes, confirm",
+      "DISCONNECT_DONE": "Account disconnected.",
+      "REVOKE_DONE": "Access revoked."
+    },
+    "FIELDS": {
+      "USERNAME": "Username or email",
+      "PASSWORD": "Password",
+      "VERIFICATION_CODE": "Verification code",
+      "OTP_CODE": "Verification code",
+      "TOTP_CODE": "6-digit code",
+      "SMS_CODE": "Code received by SMS",
+      "WHATSAPP_CODE": "Code received on WhatsApp",
+      "BACKUP_CODE": "Backup code",
+      "CAPTCHA_CODE": "Text in the image",
+      "PHONE_NUMBER": "Number with country code (e.g. 5511999999999)",
+      "DIALOG_ACTION": "How to continue",
+      "MFATYPE": "Verification method",
+      "CONFIRMATION_ACTION": "How to continue",
+      "ACCOUNT": "Account",
+      "CONTACT_POINT": "Send the code to"
+    },
+    "OPTIONS": {
+      "TRY_AGAIN": "Try again",
+      "SIGN_UP": "Sign up",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp",
+      "TRY_ANOTHER_WAY": "Try another way"
+    }
+  }
+}

@@ -1,5 +1,7 @@
 """Ponte Rangel Tech — Chatwoot ⇄ agent-platform."""
 
+import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -7,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from app.api import admin, agent_bot, label_webhook
+from app.channels import api as channels_api
 from app.config import settings
 from app.db import get_connection
 
@@ -40,6 +43,23 @@ def run_migrations() -> list[str]:
     return applied
 
 
+async def _recover_after_start() -> None:
+    """Apos reiniciar, responde o que o webhook perdido deixou sem resposta (ultimos 15 min)."""
+    # 45 s: o processo antigo termina as runs em voo antes da varredura.
+    await asyncio.sleep(45)
+    first = True
+    while True:
+        try:
+            # Depois da 1a passada, so mensagens com mais de 2 min sem resposta.
+            recovered = await agent_bot.recover_unanswered(15, 0 if first else 120)
+            if recovered:
+                logger.info("recuperadas %s conversas sem resposta", recovered)
+        except Exception:  # noqa: BLE001
+            logger.exception("varredura falhou")
+        first = False
+        await asyncio.sleep(60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Sem isso, segredo em repouso (integration_key, etc.) seria cifrado com a
@@ -53,13 +73,28 @@ async def lifespan(app: FastAPI):
     applied = run_migrations()
     if applied:
         logger.info("migrações aplicadas: %s", applied)
-    yield
+    worker = None
+    if settings.channels_gateway_token:
+        worker = asyncio.create_task(channels_api.worker_loop())
+    recovery = asyncio.create_task(_recover_after_start())
+    try:
+        yield
+    finally:
+        recovery.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await recovery
+        if worker:
+            worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await worker
 
 
 app = FastAPI(title="chatwoot-rt bridge", lifespan=lifespan)
 app.include_router(admin.router)
 app.include_router(agent_bot.router)
 app.include_router(label_webhook.router)
+app.include_router(channels_api.router)
+app.include_router(channels_api.as_router)
 
 
 @app.get("/health")

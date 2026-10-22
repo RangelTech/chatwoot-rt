@@ -9,6 +9,15 @@ Rails.application.routes.draw do
   # Proxy Luar (H-6): o agente de IA opera a API do Chatwoot como o usuário do chat.
   match '/rt_luar/api/v1/accounts/:account_id(/*path)', to: 'rt_luar/proxy#handle', via: :all, format: false
 
+  # Fase F: rota interna da bridge (token de servico).
+  get '/internal/routing/resolve', to: 'rt_internal/routing#resolve', format: false
+  get '/internal/routing/destinations', to: 'rt_internal/routing#destinations', format: false
+  post '/internal/routing/handoff', to: 'rt_internal/routing#handoff', format: false
+  get '/internal/routing/pending', to: 'rt_internal/routing#pending', format: false
+  get '/internal/routing/history', to: 'rt_internal/routing#history', format: false
+  post '/internal/routing/migrate', to: 'rt_internal/routing_migrations#create', format: false
+  post '/internal/routing/migrate/rollback', to: 'rt_internal/routing_migrations#rollback', format: false
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
@@ -71,8 +80,20 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          resources :channel_connections, only: [:create, :show] do
+            get :catalog, on: :collection
+            member do
+              post :step
+              post :cancel
+              post :disconnect
+              post :revoke
+              post :reauth
+              post :finalize
+            end
+          end
           namespace :rt_kanban do
             resource :board, only: [:show, :update]
+            resource :metrics, only: [:show]
             resources :cards, only: [:index] do
               patch :move, on: :member
             end
@@ -108,11 +129,29 @@ Rails.application.routes.draw do
             post 'credentials/oauth/:provider', to: 'credentials#oauth_start'
             put 'credentials/:type/:id', to: 'credentials#update'
             delete 'credentials/:type/:id', to: 'credentials#destroy'
+            get 'resources/environment_services/:service/logs', to: 'resources#service_logs'
+            post 'resources/environment_services/:service/actions/:do', to: 'resources#service_action'
+            resources :queues, only: [:index, :create, :update, :destroy] do
+              collection do
+                put :entry
+                get :respondent
+                get :shadow
+              end
+            end
+            # Provedor por OAuth (G-3) e cota por provedor (G-5): estado/PKCE no servidor, tenant da sessão.
+            get 'providers_oauth/:provider/start', to: 'provider_oauth#start'
+            post 'providers_oauth/:provider/finish', to: 'provider_oauth#finish'
+            post 'providers_oauth/:provider/poll', to: 'provider_oauth#poll'
+            post 'providers_oauth/:provider/import', to: 'provider_oauth#import'
+            get 'resources/providers/:id/quota', to: 'provider_oauth#quota'
+            # Leitura por item explicitamente allowlisted; o browser não informa URL do Gateway.
+            get 'resources/:key/:id/models', to: 'resources#models'
             get 'resources/:key', to: 'resources#index'
             post 'resources/:key', to: 'resources#create'
             put 'resources/:key/:id', to: 'resources#update'
             delete 'resources/:key/:id', to: 'resources#destroy'
             post 'resources/:key/actions/:name', to: 'resources#action'
+            post 'resources/:key/:id/actions/:name', to: 'resources#member_action'
             resources :agents, only: [:index, :create, :destroy] do
               member do
                 get :draft
@@ -371,8 +410,6 @@ Rails.application.routes.draw do
           resource :branded_email_layout, only: [:show, :update]
           resources :inboxes, only: [:index, :show, :create, :update, :destroy] do
             post :provision_evolution, on: :collection
-            post :iniciar_social_unofficial, on: :collection
-            post :concluir_social_unofficial, on: :collection
             get :assignable_agents, on: :member
             get :campaigns, on: :member
             get :agent_bot, on: :member
@@ -753,6 +790,7 @@ Rails.application.routes.draw do
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   post 'webhooks/wapi/:project_id', to: 'webhooks/wapi#process_payload'
+  post 'webhooks/channels/:channel_type/:id', to: 'webhooks/channels#process_payload'
   post 'webhooks/evolution/:instance_name', to: 'webhooks/evolution#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'

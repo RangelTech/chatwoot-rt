@@ -10,13 +10,26 @@ WORKDIR /srv
 COPY bridge/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ReLttk (MIT, Linkmail16/ReLttk-TikTok-Client-Bot) fixado por commit; roda so dentro do worker
+# por conta (subprocesso do gateway, sessao em diretorio proprio). Nao copiado para o repositorio.
+ARG RELTTK_COMMIT=6483b27f441aaf13ebb3ad82b4c49014216a9733
+RUN pip install --no-cache-dir websockets lz4 qrcode stealth-requests pycryptodome \
+ && mkdir -p /opt/relttk && python -c "import io,tarfile,urllib.request,sys; \
+u='https://github.com/Linkmail16/ReLttk-TikTok-Client-Bot/archive/%s.tar.gz' % sys.argv[1]; \
+t=tarfile.open(fileobj=io.BytesIO(urllib.request.urlopen(u,timeout=60).read())); t.extractall('/opt/relttk'); \
+import os; d=[x for x in os.listdir('/opt/relttk') if x.startswith('ReLttk')][0]; os.rename('/opt/relttk/'+d,'/opt/relttk/relttk')" ${RELTTK_COMMIT}
+ENV PYTHONPATH=/opt/relttk
+
 COPY bridge/app ./app
 COPY bridge/migrations ./migrations
+# worker de TikTok por conta (subprocesso do gateway; driver fake no simulador de QA)
+COPY bridge/tiktok_worker ./tiktok_worker
 
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=${GIT_COMMIT}
 
-RUN useradd --system --uid 10001 --create-home app && chown -R app:app /srv
+RUN useradd --system --uid 10001 --create-home app \
+ && mkdir -p /var/lib/luar/tiktok-sessions && chown -R app:app /srv /var/lib/luar
 USER app
 
 ENV PORT=8100

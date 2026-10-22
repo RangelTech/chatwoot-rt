@@ -33,6 +33,7 @@
     "CARD": {
       "ARIA": "Conversation #{id} with {contact}",
       "NO_CONTACT": "No contact",
+      "DRAG": "Drag to move",
       "UNASSIGNED": "Unassigned"
     },
     "MOVE": {
@@ -53,6 +54,8 @@
       "CANCEL": "Cancel",
       "ADD": "Add stage",
       "NEW_PLACEHOLDER": "New stage name",
+      "MOVE_LEFT": "Move stage left",
+      "MOVE_RIGHT": "Move stage right",
       "SAVED": "Stage saved.",
       "ERROR": "Could not save the stage."
     }

@@ -3,6 +3,8 @@
     "CHAT": {
       "TITLE": "Chat com IA",
       "NEW": "Novo chat",
+      "HISTORY": "Histórico",
+      "CLOSE_HISTORY": "Fechar histórico",
       "UNTITLED": "Chat sem título",
       "NOT_SENT_TO_CUSTOMER": "Chat de teste — não envia ao cliente",
       "AGENT": "Agente",
@@ -84,6 +86,9 @@
       "EMPTY": "Nenhum agente ainda.",
       "INSTRUCTIONS": "Instruções (AGENTE.md)",
       "TOOLS": "Ferramentas (separadas por vírgula)",
+      "MODEL_COMBO": "Combo de modelos",
+      "MODEL_COMBO_DEFAULT": "Usar o padrão da empresa",
+      "MODEL_COMBO_HELP": "Somente aparecem combos criados para esta empresa.",
       "CONFIRM_ACTIONS": "Pedir confirmação antes de executar ações (cartão de aprovação)",
       "ALLOW_LUAR": "Permitir que o agente opere o LUAR (conversas, Kanban, notas) como o usuário",
       "SAVE": "Salvar rascunho",
@@ -171,12 +176,15 @@
       "AGENTS": "Agentes",
       "SKILLS": "Skills e rotinas",
       "PROVIDERS": "Provedores",
+      "COMBOS": "Combos",
       "CREDENTIALS": "Credenciais",
       "INBOXES": "Caixas de entrada",
       "INTEGRATIONS": "Integrações",
       "RUNS": "Execuções",
       "ENVIRONMENT": "Ambiente",
-      "USAGE": "Uso"
+      "USAGE": "Uso",
+      "QUOTAS": "Limites",
+      "REQUESTS": "Requisições"
     },
     "RES": {
       "NEW": "Novo",
@@ -189,15 +197,34 @@
       "ACTIONS": {
         "START": "Ligar",
         "STOP": "Parar",
-        "BACKUP": "Fazer backup"
+        "BACKUP": "Fazer backup",
+        "TEST": "Testar conexão",
+        "MODELS": "Ver modelos",
+        "ACTIVATE": "Ativar",
+        "DEACTIVATE": "Desativar"
       },
+      "TEST_OK": "A conexão funciona.",
+      "AVAILABLE_MODELS": "Modelos disponíveis neste provedor",
+      "TEST_FAILED": "O teste de conexão falhou.",
       "PROVIDERS": {
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
       },
+      "COMBOS": {
+        "TITLE": "Combos de IA",
+        "HELP": "Defina a ordem de modelos para fallback e distribuição das requisições."
+      },
       "USAGE": {
         "TITLE": "Uso de IA",
         "HELP": "Uso estimado; não é cobrança."
+      },
+      "QUOTAS": {
+        "TITLE": "Limites de IA",
+        "HELP": "Limite atual de requisições e recursos habilitados para a sua empresa."
+      },
+      "REQUESTS": {
+        "TITLE": "Requisições de IA",
+        "HELP": "As últimas requisições da sua empresa. Chaves e conteúdo dos pedidos nunca aparecem aqui."
       },
       "RUNS": {
         "TITLE": "Execuções",
@@ -244,6 +271,7 @@
         "NAME": "Nome",
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
+        "MODELS": "Modelos (lista JSON)",
         "API_KEY": "Chave de API",
         "API_BASE": "URL base da API (opcional)"
       },
@@ -251,6 +279,7 @@
         "NAME": "Nome",
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
+        "MODELS": "Modelos",
         "IS_ACTIVE": "Ativo",
         "UPDATED_AT": "Atualizado",
         "STATUS": "Situação",
@@ -258,7 +287,15 @@
         "TITLE": "Título",
         "DEVICE_NAME": "Dispositivo",
         "LAST_ACTIVITY_AT": "Última atividade",
-        "KEY_PREFIX": "Chave"
+        "KEY_PREFIX": "Chave",
+        "TIMESTAMP": "Horário",
+        "REQUESTEDMODEL": "Modelo solicitado",
+        "ENDPOINT": "Endpoint",
+        "COST": "Custo estimado",
+        "AGENT": "Agente",
+        "USER": "Pessoa",
+        "STARTED_AT": "Início",
+        "DURATION_MS": "Duração"
       },
       "LOAD_ERROR": "Não foi possível carregar esta tela agora. Tente novamente em instantes.",
       "RETRY": "Tentar de novo",
@@ -288,7 +325,12 @@
         "REVOKED": "Revogado",
         "OK": "Ok",
         "DONE": "Concluído",
-        "PAUSED": "Pausado"
+        "PAUSED": "Pausado",
+        "CANCELLED": "Cancelada",
+        "CANCELLING": "Cancelando",
+        "EXPIRED": "Expirada",
+        "QUEUED": "Na fila",
+        "AWAITING_APPROVAL": "Aguardando aprovação"
       },
       "STATE": {
         "RUNNING": "Em execução",
@@ -330,9 +372,107 @@
         "ADDRESS": "Endereço",
         "DOMAINS": "Domínios",
         "NO_DOMAINS": "Nenhum domínio conectado.",
-        "DOMAIN": "Domínio"
+        "DOMAIN": "Domínio",
+        "SERVICES": {
+          "TITLE": "Serviços em execução",
+          "REFRESH": "Atualizar",
+          "LOAD_ERROR": "Não foi possível carregar os serviços agora. Tentando de novo em instantes.",
+          "STOPPED": "Ambiente parado. Os serviços aparecem aqui quando o ambiente estiver ligado.",
+          "SUSPENDED": "Ambiente suspenso. Os serviços não podem ser listados agora.",
+          "EMPTY": "Nenhum serviço em execução. Peça ao agente para subir um serviço e ele aparece aqui.",
+          "COLUMNS": {
+            "NAME": "Nome",
+            "STATE": "Estado",
+            "UPTIME": "Tempo ativo",
+            "CPU_RAM": "Processador · Memória",
+            "PORT": "Porta",
+            "URL": "Endereço público",
+            "ORIGIN": "Origem"
+          },
+          "STATES": {
+            "RODANDO": "Rodando",
+            "PARADO": "Parado",
+            "REINICIANDO": "Reiniciando"
+          },
+          "ORIGINS": {
+            "SUPERVISED": "Supervisionado",
+            "AGENT": "Criado pelo agente"
+          },
+          "ACTIONS": {
+            "START": "Iniciar",
+            "STOP": "Parar",
+            "RESTART": "Reiniciar",
+            "LOGS": "Ver logs"
+          },
+          "CONFIRM_STOP": "Parar o serviço {name}? Ele deixa de responder até ser iniciado de novo.",
+          "DONE": "Feito.",
+          "ACTION_ERROR": "Não foi possível concluir a ação.",
+          "LOGS_ERROR": "Não foi possível abrir os logs.",
+          "LOGS_TITLE": "Últimas 200 linhas de {name}",
+          "NO_LOGS": "Sem registros.",
+          "CLOSE": "Fechar",
+          "LOOSE_TITLE": "Processos sem supervisão (não voltam após reiniciar o ambiente)",
+          "LOOSE_HELP": "Foram iniciados à mão e ninguém os reinicia. Peça ao agente para registrá-los como serviço se precisarem continuar no ar.",
+          "CONTAINERS_TITLE": "Contêineres"
+        }
       },
-      "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo."
+      "NEW_KEY": "Chave criada. Copie agora: ela não será exibida de novo.",
+      "GW": {
+        "CANCEL": "Cancelar",
+        "OAUTH": {
+          "BUTTON": "Conectar com login",
+          "TITLE": "Conectar um provedor com login",
+          "HELP": "Entre no provedor e cole o endereço para onde ele levar você. A conexão pertence só à sua empresa.",
+          "START": "Começar",
+          "STEP_OPEN": "1. Abra a página do provedor e autorize o acesso.",
+          "OPEN": "Abrir página do provedor",
+          "PASTE": "2. Cole o endereço de retorno que o provedor mostrou",
+          "FINISH": "Concluir conexão",
+          "STEP_DEVICE": "Digite este código no endereço abaixo e depois verifique a conexão.",
+          "CHECK": "Verificar conexão",
+          "WAITING": "Ainda aguardando a aprovação.",
+          "CONNECTED": "Conectado: {name}.",
+          "SIMULATOR": "Modo simulação: nenhuma conta real é usada.",
+          "AUTHORIZE_SIM": "Autorizar (simulação)"
+        },
+        "QUOTA": {
+          "BUTTON": "Limites",
+          "TITLE": "Limites de {name}",
+          "UNAVAILABLE": "Este provedor não informa limites."
+        },
+        "COMBO": {
+          "EDIT": "Editar",
+          "STRATEGY": "Quando um modelo falha",
+          "FALLBACK": "Tentar o próximo modelo da ordem",
+          "ROUND_ROBIN": "Distribuir as chamadas entre os modelos",
+          "ORDER": "Modelos, na ordem de uso",
+          "ADD": "Adicionar",
+          "ADD_PLACEHOLDER": "provedor/modelo ou outro combo"
+        },
+        "COST": {
+          "EMPTY": "Nenhum uso de provedor registrado ainda.",
+          "REQUESTS": "Chamadas",
+          "PROMPT_TOKENS": "Tokens enviados",
+          "COMPLETION_TOKENS": "Tokens recebidos",
+          "ERRORS": "Erros",
+          "COST": "Custo (estimado)",
+          "TOKENS": "Tokens",
+          "BY_PROVIDER": "Por provedor",
+          "BY_MODEL": "Por modelo",
+          "BY_COMBO": "Por combo",
+          "BY_DAY": "Por dia",
+          "COL_PROVIDER": "Provedor",
+          "COL_MODEL": "Provedor / modelo",
+          "COL_COMBO": "Combo",
+          "COL_DAY": "Dia",
+          "NOTE": "Custo estimado em reais (cotação de referência de R$ {rate} por dólar); não é cobrança."
+        }
+      },
+      "PAGER": {
+        "PREV": "Anterior",
+        "NEXT": "Próxima",
+        "PAGE": "Página {page} de {pages} ({total} execuções)"
+      }
     },
     "CRED": {
       "TITLE": "Credenciais",
@@ -421,13 +561,51 @@
       "VARS_HELP": "A coluna Variáveis mostra os nomes que a skill do agente usa para ler cada credencial no terminal. O valor nunca é exibido."
     },
     "INBOXES": {
-      "TITLE": "Caixas de entrada e agentes",
-      "HELP": "Escolha qual agente atende cada caixa de entrada. Sem agente, a caixa é só humana.",
+      "TITLE": "Filas de atendimento",
+      "HELP": "A caixa recebe a conversa; a fila decide se responde um humano ou um agente de IA.",
+      "ENTRY_TITLE": "Fila de entrada por caixa",
+      "ROUTING_MODE": "Modo de roteamento",
+      "ENTRY_QUEUE": "Fila de entrada",
+      "SELECT_QUEUE": "Selecione uma fila",
+      "MODE_LEGACY": "Legado",
+      "MODE_SHADOW": "Sombra",
+      "MODE_QUEUES": "Filas",
+      "QUEUES_TITLE": "Filas",
+      "QUEUES_HELP": "Filas de IA não aceitam membros humanos nem atribuição automática.",
+      "QUEUE_NAME": "Nome da fila",
+      "RESPONDENT": "Quem responde",
+      "HUMAN_QUEUE": "Equipe humana",
+      "AI_QUEUE": "Gerenciada por IA",
+      "AGENT": "Agente publicado",
+      "SELECT_AGENT": "Selecione um agente",
+      "AI_MODE": "Modo da IA",
+      "MODE_PILOT": "Piloto automático",
+      "MODE_OFF": "Desligado",
+      "DESCRIPTION": "Descrição",
+      "DESTINATIONS": "Filas permitidas para repasse",
+      "NEW_QUEUE": "Nova fila",
+      "CREATE_QUEUE": "Criar fila",
+      "QUEUE_CREATED": "Fila criada",
+      "NO_QUEUES": "Nenhuma fila configurada.",
+      "SAVED": "Configuração salva",
+      "CONFIRM_DELETE": "Remover a fila {name}? Conversas abertas exigem uma fila de destino.",
+      "DELETE_DESTINATION": "Destino ao remover (se houver conversas abertas)",
       "HUMAN_ONLY": "Só humano (sem agente)",
       "AUTOPILOT": "Responder automaticamente",
       "DEGRADED": "Vínculo salvo, mas o atendimento automático ainda não foi atualizado nesta caixa. Salve de novo em instantes.",
       "SHOW_PROGRESS": "Avisar que está trabalhando",
-      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final."
+      "SHOW_PROGRESS_HELP": "Envia uma única mensagem curta (\"Pensando…\") antes da resposta. Desligado, o cliente recebe só a resposta final.",
+      "BADGE_AI": "Atendida por IA · {queue}",
+      "BADGE_PERSON": "Em atendimento: {name}",
+      "BADGE_HUMAN": "Fila de pessoas · {queue}",
+      "BADGE_NONE": "Sem respondente",
+      "BADGE_AI_OFF": "Fila de IA pausada · {queue}",
+      "TEAM_AI_BADGE": "Gerenciada por IA",
+      "TEAM_AI_BLOCKED": "Esta equipe é gerenciada por IA e não pode ter membros humanos. Altere a fila em Filas de atendimento.",
+      "SERVICE_AGENT": "Agente de atendimento",
+      "SERVICE_AGENT_HELP": "Atalho: cria ou reaproveita a fila de IA do agente e a define como fila de entrada.",
+      "PICK_SERVICE_AGENT": "Escolher um agente (atalho)",
+      "SHORTCUT_FAILED": "Não foi possível preparar a fila do agente"
     },
     "ROUTINE": {
       "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",

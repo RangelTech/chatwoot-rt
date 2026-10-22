@@ -57,6 +57,37 @@ extensions:
       app/helpers/api/v1/inboxes_helper.rb: "'wapi' => Current.account.wapi_channels"
       config/routes.rb: "post 'webhooks/wapi/:project_id'"
 
+  - id: channel_unofficial_gateway
+    status: active
+    strategy: additive_with_upstream_touchpoints
+    purpose: Unofficial channels (Instagram, Messenger, WhatsApp, TikTok) connected by the channels gateway (user/password or QR); signed webhook in, gateway send out.
+    required_paths:
+      - app/models/concerns/unofficial_gateway_channel.rb
+      - app/models/channel/instagram_unofficial.rb
+      - app/models/channel/messenger_unofficial.rb
+      - app/models/channel/whatsapp_unofficial.rb
+      - app/models/channel/tiktok_unofficial.rb
+      - app/controllers/webhooks/channels_controller.rb
+      - app/controllers/api/v1/accounts/channel_connections_controller.rb
+      - app/policies/channel_connection_policy.rb
+      - app/services/channels/gateway_client.rb
+      - app/services/channels/incoming_message_service.rb
+      - app/services/channels/send_on_unofficial_service.rb
+      - db/migrate/20261020000100_create_channel_unofficial_gateway.rb
+      - db/migrate/20261020000200_legacy_unofficial_cookies_to_reauth_required.rb
+      - spec/requests/webhooks/channels_spec.rb
+      - spec/requests/api/v1/accounts/channel_connections_spec.rb
+    touchpoints:
+      - app/models/account.rb
+      - app/jobs/send_reply_job.rb
+      - config/routes.rb
+      - config/initializers/filter_parameter_logging.rb
+    markers:
+      app/models/account.rb: "has_many :messenger_unofficial_channels"
+      app/jobs/send_reply_job.rb: "'Channel::MessengerUnofficial' => ::Channels::SendOnUnofficialService"
+      config/routes.rb: "post 'webhooks/channels/:channel_type/:id'"
+      config/initializers/filter_parameter_logging.rb: "verification_code"
+
   - id: channel_evolution_api
     status: active
     strategy: additive_with_new_migration
