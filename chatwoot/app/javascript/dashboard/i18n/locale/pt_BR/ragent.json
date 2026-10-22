@@ -70,7 +70,11 @@
         "STEPS": "Passos",
         "SUBAGENTS": "{n} subagente trabalhando | {n} subagentes trabalhando",
         "SUBAGENTS_PROGRESS": "{done} de {total} concluídos"
-      }
+      },
+      "MIC": "Gravar áudio",
+      "MIC_DONE": "Anexar",
+      "MIC_CANCEL": "Cancelar",
+      "MIC_DENIED": "Não foi possível usar o microfone. Libere a permissão no navegador."
     },
     "AGENTS": {
       "TITLE": "Agentes",

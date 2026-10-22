@@ -70,7 +70,11 @@
         "STEPS": "Steps",
         "SUBAGENTS": "{n} subagent working | {n} subagents working",
         "SUBAGENTS_PROGRESS": "{done} of {total} finished"
-      }
+      },
+      "MIC": "Record audio",
+      "MIC_DONE": "Attach",
+      "MIC_CANCEL": "Cancel",
+      "MIC_DENIED": "Could not use the microphone. Allow it in the browser."
     },
     "AGENTS": {
       "TITLE": "Agents",

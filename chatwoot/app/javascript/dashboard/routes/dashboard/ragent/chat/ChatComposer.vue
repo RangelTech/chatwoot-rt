@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -54,6 +54,65 @@ const onPick = event => {
 const onDrop = event => {
   if (!props.readOnly && !props.sending) addFiles(event.dataTransfer.files);
 };
+
+// Spec 11 §3: microfone. Grava, anexa o áudio e o motor transcreve antes de passar ao agente.
+const recording = ref(false);
+const seconds = ref(0);
+let recorder = null;
+let timer = null;
+let chunks = [];
+const MAX_SECONDS = 600;
+
+const stopTimer = () => {
+  clearInterval(timer);
+  timer = null;
+};
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : 'audio/mp4';
+    recorder = new MediaRecorder(stream, { mimeType: mime });
+    recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach(tr => tr.stop());
+      if (recorder.cancelled) return;
+      const ext = mime.startsWith('audio/mp4') ? 'm4a' : 'webm';
+      const file = new File([new Blob(chunks, { type: mime })], `voz-${Date.now()}.${ext}`, {
+        type: mime,
+      });
+      addFiles([file]);
+    };
+    recorder.start();
+    recording.value = true;
+    seconds.value = 0;
+    timer = setInterval(() => {
+      seconds.value += 1;
+      if (seconds.value >= MAX_SECONDS) stopRecording();
+    }, 1000);
+  } catch (error) {
+    useAlert(t('RAGENT.CHAT.MIC_DENIED'));
+  }
+};
+
+const stopRecording = (cancel = false) => {
+  stopTimer();
+  recording.value = false;
+  if (recorder && recorder.state !== 'inactive') {
+    recorder.cancelled = cancel === true;
+    recorder.stop();
+  }
+};
+
+onBeforeUnmount(() => stopRecording(true));
+
+const timeLabel = computed(
+  () =>
+    `${String(Math.floor(seconds.value / 60)).padStart(2, '0')}:${String(seconds.value % 60).padStart(2, '0')}`
+);
 
 const removeFile = index => files.value.splice(index, 1);
 
@@ -120,6 +179,32 @@ const submit = () => {
           :disabled="sending || disabled"
           @click="picker.click()"
         />
+        <Button
+          v-if="!recording"
+          icon="i-lucide-mic"
+          variant="ghost"
+          color="slate"
+          :title="t('RAGENT.CHAT.MIC')"
+          :aria-label="t('RAGENT.CHAT.MIC')"
+          :disabled="sending || disabled"
+          @click="startRecording"
+        />
+        <div v-else class="flex items-center gap-2 text-body-main text-n-ruby-11">
+          <span class="size-2 rounded-full bg-n-ruby-9 animate-pulse" aria-hidden="true" />
+          {{ timeLabel }}
+          <Button
+            :label="t('RAGENT.CHAT.MIC_DONE')"
+            size="sm"
+            @click="stopRecording(false)"
+          />
+          <Button
+            :label="t('RAGENT.CHAT.MIC_CANCEL')"
+            size="sm"
+            variant="ghost"
+            color="slate"
+            @click="stopRecording(true)"
+          />
+        </div>
         <textarea
           v-model="draft"
           rows="2"
