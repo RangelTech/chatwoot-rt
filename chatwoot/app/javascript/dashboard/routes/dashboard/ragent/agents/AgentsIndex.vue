@@ -21,9 +21,23 @@ const combos = ref([]);
 const selectedCombo = ref('');
 const legacyModelAlias = ref('');
 // Spec 11 §4: o agente escolhe skills da empresa (checkbox); o campo "Ferramentas" saiu.
+const hostOptions = ref([]);
+const linkedHostIds = ref([]);
 const skillOptions = ref([]);
 const linkedSkillIds = ref([]);
 const skillsBase = () => `/api/v1/accounts/${window.location.pathname.split('/')[3]}/rt_ai/skills/agent`;
+const hostsBase = () =>
+  `/api/v1/accounts/${window.location.pathname.split('/')[3]}/rt_ai/hosts/agent`;
+const loadHostLinks = async id => {
+  try {
+    const { data } = await window.axios.get(`${hostsBase()}/${id}`);
+    hostOptions.value = data.hosts || [];
+    linkedHostIds.value = hostOptions.value.filter(x => x.linked).map(x => x.id);
+  } catch (error) {
+    hostOptions.value = [];
+    linkedHostIds.value = [];
+  }
+};
 const loadSkillLinks = async id => {
   try {
     const { data } = await window.axios.get(`${skillsBase()}/${id}`);
@@ -97,6 +111,7 @@ const edit = async agent => {
   selectedCombo.value = manifest.value.model?.combo || '';
   legacyModelAlias.value = manifest.value.model?.alias || '';
   await loadSkillLinks(agent.id);
+  await loadHostLinks(agent.id);
   confirmActions.value = Boolean(manifest.value.limits?.confirm_actions);
   allowLuar.value = Boolean(manifest.value.limits?.luar);
   outputFormat.value = OUTPUT_FORMATS.includes(manifest.value.output?.format)
@@ -157,6 +172,9 @@ const payload = () => ({
 const save = async () => {
   busy.value = true;
   try {
+    await window.axios.put(`${hostsBase()}/${editing.value.id}`, {
+      host_ids: linkedHostIds.value,
+    });
     await window.axios.put(`${skillsBase()}/${editing.value.id}`, {
       skill_ids: linkedSkillIds.value,
     });
@@ -342,6 +360,16 @@ const archive = async agent => {
           <span v-if="sk.files" class="text-n-slate-10">
             ({{ t('RAGENT.AGENTS.SKILL_FILES', { n: sk.files }) }})
           </span>
+        </label>
+      </fieldset>
+      <fieldset
+        v-if="hostOptions.length"
+        class="flex flex-col gap-1 text-body-main text-n-slate-11"
+      >
+        <legend class="mb-1">{{ t('RAGENT.HOSTS.AGENT_HOSTS') }}</legend>
+        <label v-for="h in hostOptions" :key="h.id" class="flex items-center gap-2">
+          <input v-model="linkedHostIds" type="checkbox" :value="h.id" class="!mb-0" />
+          <span class="text-n-slate-12">{{ h.name }}</span>
         </label>
       </fieldset>
       <label class="flex flex-col gap-1 text-body-main text-n-slate-11">

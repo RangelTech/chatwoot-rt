@@ -104,6 +104,14 @@ Rails.application.routes.draw do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
             # Da empresa (compartilhadas pelo tenant); declaradas antes de :skills para não cair em :id.
+            get 'hosts', to: 'hosts#index'
+            post 'hosts', to: 'hosts#create'
+            get 'hosts/agent/:id', to: 'hosts#agent'
+            put 'hosts/agent/:id', to: 'hosts#agent_update'
+            post 'hosts/:id/pair', to: 'hosts#new_code'
+            post 'hosts/:id/test', to: 'hosts#test'
+            put 'hosts/:id', to: 'hosts#update'
+            delete 'hosts/:id', to: 'hosts#destroy'
             get 'skills/company/:id/files', to: 'skills#company_files'
             post 'skills/company/:id/files', to: 'skills#company_file_upload'
             delete 'skills/company/:id/files/:file_id', to: 'skills#company_file_destroy'
