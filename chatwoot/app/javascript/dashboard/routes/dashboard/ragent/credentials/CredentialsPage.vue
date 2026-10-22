@@ -1,4 +1,5 @@
 <script setup>
+import AiSettingsTabs from '../AiSettingsTabs.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -224,6 +225,7 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
   <div
     class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6"
   >
+    <AiSettingsTabs />
     <header class="flex items-center gap-3">
       <h1 class="text-heading-1 text-n-slate-12">
         {{ t('RAGENT.CRED.TITLE') }}

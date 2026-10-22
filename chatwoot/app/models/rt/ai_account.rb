@@ -19,7 +19,7 @@ class Rt::AiAccount < ApplicationRecord
   DEFAULT_FLAGS = {
     'ai_enabled' => false, 'chat_enabled' => false, 'chat_landing_enabled' => false, 'harness_enabled' => false,
     'graph_enabled' => false, 'environment_enabled' => false, 'kanban_enabled' => false,
-    'outbound_enabled' => false
+    'outbound_enabled' => false, 'calls_enabled' => false
   }.freeze
 
   belongs_to :account

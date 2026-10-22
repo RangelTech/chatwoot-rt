@@ -50,8 +50,10 @@ const store = useStore();
 
 // Calls run on the enterprise-only API (cloud runs enterprise); hide the entry
 // on community so it doesn't lead to a dashboard/CTA the backend can't serve.
+// Spec 11 §10: Calls escondido por padrão; o Super Admin liga pela flag calls_enabled da conta.
+const callsFlag = ref(false);
 const isCallsAvailable = computed(
-  () => isOnChatwootCloud.value || isEnterprise
+  () => callsFlag.value && (isOnChatwootCloud.value || isEnterprise)
 );
 const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
@@ -257,8 +259,20 @@ const checkKanban = async () => {
   }
 };
 
+const checkCallsFlag = async () => {
+  try {
+    const { data } = await window.axios.get(
+      `/api/v1/accounts/${store.getters.getCurrentAccountId}/rt_ai/me`
+    );
+    callsFlag.value = !!data?.flags?.calls_enabled;
+  } catch (error) {
+    callsFlag.value = false;
+  }
+};
+
 onMounted(() => {
   checkKanban();
+  checkCallsFlag();
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
   store.dispatch('notifications/unReadCount');
@@ -541,64 +555,16 @@ const menuItems = computed(() => {
           activeOn: ['ragent_skills'],
         },
         {
-          name: 'RagentProviders',
-          label: t('RAGENT.MENU.PROVIDERS'),
-          to: accountScopedRoute('ragent_providers'),
-          activeOn: ['ragent_providers'],
-        },
-        {
-          name: 'RagentCombos',
-          label: t('RAGENT.MENU.COMBOS'),
-          to: accountScopedRoute('ragent_combos'),
-          activeOn: ['ragent_combos'],
-        },
-        {
-          name: 'RagentCredentials',
-          label: t('RAGENT.MENU.CREDENTIALS'),
-          to: accountScopedRoute('ragent_credentials'),
-          activeOn: ['ragent_credentials'],
-        },
-        {
-          name: 'RagentInboxes',
-          label: t('RAGENT.MENU.INBOXES'),
-          to: accountScopedRoute('ragent_inboxes'),
-          activeOn: ['ragent_inboxes'],
-        },
-        {
-          name: 'RagentIntegrations',
-          label: t('RAGENT.MENU.INTEGRATIONS'),
-          to: accountScopedRoute('ragent_integrations'),
-          activeOn: ['ragent_integrations'],
-        },
-        {
-          name: 'RagentRuns',
-          label: t('RAGENT.MENU.RUNS'),
-          to: accountScopedRoute('ragent_runs'),
-          activeOn: ['ragent_runs'],
-        },
-        {
-          name: 'RagentEnvironment',
-          label: t('RAGENT.MENU.ENVIRONMENT'),
-          to: accountScopedRoute('ragent_environment'),
-          activeOn: ['ragent_environment'],
-        },
-        {
           name: 'RagentUsage',
           label: t('RAGENT.MENU.USAGE'),
           to: accountScopedRoute('ragent_usage'),
           activeOn: ['ragent_usage'],
         },
         {
-          name: 'RagentQuotas',
-          label: t('RAGENT.MENU.QUOTAS'),
-          to: accountScopedRoute('ragent_quotas'),
-          activeOn: ['ragent_quotas'],
-        },
-        {
-          name: 'RagentRequests',
-          label: t('RAGENT.MENU.REQUESTS'),
-          to: accountScopedRoute('ragent_requests'),
-          activeOn: ['ragent_requests'],
+          name: 'RagentRuns',
+          label: t('RAGENT.MENU.RUNS'),
+          to: accountScopedRoute('ragent_runs'),
+          activeOn: ['ragent_runs'],
         },
       ],
     },
@@ -821,6 +787,21 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.AGENTS'),
           icon: 'i-lucide-square-user',
           to: accountScopedRoute('agent_list'),
+        },
+        {
+          name: 'Settings AI',
+          label: t('RAGENT.MENU.AI_SETTINGS'),
+          icon: 'i-lucide-sparkles',
+          activeOn: [
+            'ragent_providers',
+            'ragent_combos',
+            'ragent_credentials',
+            'ragent_environment',
+            'ragent_integrations',
+            'ragent_quotas',
+            'ragent_requests',
+          ],
+          to: accountScopedRoute('ragent_providers'),
         },
         {
           name: 'Settings Teams',

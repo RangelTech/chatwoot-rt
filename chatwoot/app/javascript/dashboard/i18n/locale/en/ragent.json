@@ -6,7 +6,6 @@
       "HISTORY": "History",
       "CLOSE_HISTORY": "Close history",
       "UNTITLED": "Untitled chat",
-      "NOT_SENT_TO_CUSTOMER": "Test chat - not sent to the customer",
       "AGENT": "Agent",
       "PICK_AGENT": "Choose an agent",
       "PLACEHOLDER": "Type your message",
@@ -188,7 +187,9 @@
       "ENVIRONMENT": "Environment",
       "USAGE": "Usage",
       "QUOTAS": "Limits",
-      "REQUESTS": "Requests"
+      "REQUESTS": "Requests",
+      "AI_SETTINGS": "Artificial intelligence",
+      "ADVANCED": "Advanced"
     },
     "RES": {
       "NEW": "New",

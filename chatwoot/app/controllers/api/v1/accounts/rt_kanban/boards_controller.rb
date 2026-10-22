@@ -1,7 +1,12 @@
 class Api::V1::Accounts::RtKanban::BoardsController < Api::V1::Accounts::RtKanban::BaseController
   before_action :need_admin, only: [:update]
 
+  # Spec 11 §1: quadro sempre ligado; contas antigas desligadas ligam no primeiro acesso.
   def show
+    unless @board.enabled
+      @board.update!(enabled: true)
+      RtKanban::BackfillJob.perform_later(Current.account.id)
+    end
     counts = RtKanban::Card.where(board_id: @board.id).joins(:conversation).merge(visible).group(:stage_id).count
     render json: { id: @board.id, account_id: @board.account_id, revision: @board.revision, enabled: @board.enabled,
                    stages: @board.stages.map { |s| stage_json(s, counts[s.id].to_i) } }
