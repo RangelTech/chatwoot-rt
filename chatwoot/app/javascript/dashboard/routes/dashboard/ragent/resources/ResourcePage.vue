@@ -10,7 +10,13 @@ import EnvironmentPanel from './EnvironmentPanel.vue';
 import ProviderCostPanel from './ProviderCostPanel.vue';
 import ProviderOauth from './ProviderOauth.vue';
 import ComboEditor from './ComboEditor.vue';
-import { formatBytes, formatDate, formatNumber, isDateKey } from './format';
+import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatNumber,
+  isDateKey,
+} from './format';
 
 const { axios } = window;
 const { t, te } = useI18n();
@@ -38,6 +44,10 @@ const providerQuota = ref(null);
 const showOauth = ref(false);
 const editingCombo = ref(null);
 const comboSuggestions = ref([]);
+const page = ref(1);
+const total = ref(0);
+const PER_PAGE = 25;
+const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const cell = (value, column = '') => {
@@ -49,6 +59,7 @@ const cell = (value, column = '') => {
   if (typeof value === 'object') return '—';
   if (isDateKey(column)) return formatDate(value);
   if (column === 'size_bytes') return formatBytes(value);
+  if (column === 'duration_ms') return formatDuration(value);
   if (column === 'status') {
     const k = `RAGENT.RES.STATUS.${String(value).toUpperCase()}`;
     return te(k) ? t(k) : String(value);
@@ -104,7 +115,11 @@ const load = async () => {
   forbidden.value = false;
   failed.value = false;
   try {
-    const { data } = await axios.get(base.value);
+    const { data } = await axios.get(
+      base.value,
+      config.value.paged ? { params: { page: page.value, per_page: PER_PAGE } } : {}
+    );
+    total.value = Number(data?.total) || 0;
     const list = Array.isArray(data)
       ? data
       : data.items || data.sessions || data.charges || data.records || data.requests;
@@ -125,8 +140,15 @@ const load = async () => {
   }
 };
 
+const goTo = n => {
+  page.value = Math.min(Math.max(1, n), pages.value);
+  load();
+};
+
 onMounted(load);
 watch(key, () => {
+  page.value = 1;
+  total.value = 0;
   creating.value = false;
   showOauth.value = false;
   editingCombo.value = null;
@@ -437,6 +459,15 @@ const loadProviderModels = async item => {
         </tbody>
       </table>
     </div>
+    <nav
+      v-if="config.paged && total > PER_PAGE"
+      class="flex items-center gap-3"
+      data-testid="pager"
+    >
+      <Button size="sm" variant="faded" data-testid="pager-prev" :disabled="page <= 1 || loading" :label="t('RAGENT.RES.PAGER.PREV')" @click="goTo(page - 1)" />
+      <span class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PAGER.PAGE', { page, pages, total }) }}</span>
+      <Button size="sm" variant="faded" data-testid="pager-next" :disabled="page >= pages || loading" :label="t('RAGENT.RES.PAGER.NEXT')" @click="goTo(page + 1)" />
+    </nav>
     <section v-if="providerModels.length" class="rounded-xl border border-n-weak p-4">
       <h2 class="mb-2 text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
       <ul class="grid gap-1 text-body-main text-n-slate-11 sm:grid-cols-2">

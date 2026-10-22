@@ -231,4 +231,83 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
       end
     end
   end
+
+  describe 'runs (Execuções)' do
+    let(:url) { "/api/v1/accounts/#{account.id}/rt_ai/resources/runs" }
+
+    it 'reads the tenant runs route and forwards only numeric page and per_page' do
+      allow(Rt::EngineClient).to receive(:get).and_return('items' => [], 'total' => 0)
+      get "#{url}?page=3&per_page=500&tenant_id=hack", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::EngineClient).to have_received(:get).with('/api/runs?page=3&per_page=100', claims: anything)
+    end
+
+    it 'defaults to the first page of 25 and clamps garbage' do
+      allow(Rt::EngineClient).to receive(:get).and_return('items' => [], 'total' => 0)
+      get "#{url}?page=abc", headers: admin.create_new_auth_token, as: :json
+      expect(Rt::EngineClient).to have_received(:get).with('/api/runs?page=1&per_page=25', claims: anything)
+    end
+  end
+
+  describe 'environment services (AMB-2)' do
+    let(:base) { "/api/v1/accounts/#{account.id}/rt_ai/resources/environment_services" }
+    let(:payload) { { 'ambiente' => 'ativo', 'servicos' => [{ 'nome' => 'web', 'estado' => 'rodando' }], 'soltos' => [] } }
+
+    it 'lists through the engine without ever forwarding a tenant from the browser' do
+      allow(Rt::EngineClient).to receive(:get).and_return(payload)
+      get "#{base}?tenant_id=hack&account_id=999", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['servicos'].first['nome']).to eq('web')
+      expect(Rt::EngineClient).to have_received(:get).with('/api/environment/services', claims: anything)
+    end
+
+    it 'reports a stopped environment as data, not as an error' do
+      allow(Rt::EngineClient).to receive(:get).and_return('ambiente' => 'parado', 'servicos' => [], 'soltos' => [])
+      get base, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['ambiente']).to eq('parado')
+    end
+
+    it 'denies listing to users without ai.environment.view' do
+      allow(Rt::EngineClient).to receive(:get)
+      get base, headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(Rt::EngineClient).not_to have_received(:get)
+    end
+
+    it 'lets managers act and read logs, only with allowlisted names and actions' do
+      allow(Rt::EngineClient).to receive(:post).and_return('ok' => true)
+      allow(Rt::EngineClient).to receive(:get).and_return('log' => 'x')
+      post "#{base}/web/actions/stop", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::EngineClient).to have_received(:post).with('/api/environment/services/web/stop', {}, anything)
+      get "#{base}/web/logs", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      post "#{base}/web/actions/rm_rf", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+      post "#{base}/Web%3Bx/actions/stop", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+      get "#{base}/..%2Fetc/logs", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'denies actions and logs to operators' do
+      allow(Rt::EngineClient).to receive(:post)
+      allow(Rt::EngineClient).to receive(:get)
+      post "#{base}/web/actions/stop", headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:forbidden)
+      get "#{base}/web/logs", headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(Rt::EngineClient).not_to have_received(:post)
+    end
+
+    it 'does not serve another account to a member of this one' do
+      other = create(:account)
+      Rt::AiAccount.create!(account: other, ai_state: 'active', engine_tenant_id: SecureRandom.uuid, flags: { 'ai_enabled' => true })
+      allow(Rt::EngineClient).to receive(:get).and_return(payload)
+      get "/api/v1/accounts/#{other.id}/rt_ai/resources/environment_services", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unauthorized).or have_http_status(:forbidden).or have_http_status(:not_found)
+      expect(Rt::EngineClient).not_to have_received(:get)
+    end
+  end
 end

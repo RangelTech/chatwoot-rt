@@ -39,7 +39,8 @@ export const RESOURCES = {
   },
   runs: {
     title: 'RUNS',
-    columns: ['title', 'status', 'device_name', 'last_activity_at'],
+    columns: ['agent', 'user', 'status', 'started_at', 'duration_ms'],
+    paged: true,
     fields: [],
   },
   environment: {

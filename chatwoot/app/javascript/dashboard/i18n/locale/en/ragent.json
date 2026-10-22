@@ -291,7 +291,11 @@
         "TIMESTAMP": "Time",
         "REQUESTEDMODEL": "Requested model",
         "ENDPOINT": "Endpoint",
-        "COST": "Estimated cost"
+        "COST": "Estimated cost",
+        "AGENT": "Agent",
+        "USER": "Person",
+        "STARTED_AT": "Started",
+        "DURATION_MS": "Duration"
       },
       "LOAD_ERROR": "Could not load this screen right now. Please try again shortly.",
       "RETRY": "Try again",
@@ -321,7 +325,12 @@
         "REVOKED": "Revoked",
         "OK": "Ok",
         "DONE": "Done",
-        "PAUSED": "Paused"
+        "PAUSED": "Paused",
+        "CANCELLED": "Cancelled",
+        "CANCELLING": "Cancelling",
+        "EXPIRED": "Expired",
+        "QUEUED": "Queued",
+        "AWAITING_APPROVAL": "Waiting for approval"
       },
       "STATE": {
         "RUNNING": "Running",
@@ -363,7 +372,49 @@
         "ADDRESS": "Address",
         "DOMAINS": "Domains",
         "NO_DOMAINS": "No connected domains.",
-        "DOMAIN": "Domain"
+        "DOMAIN": "Domain",
+        "SERVICES": {
+          "TITLE": "Running services",
+          "REFRESH": "Refresh",
+          "LOAD_ERROR": "Could not load services right now. Trying again shortly.",
+          "STOPPED": "Environment stopped. Services show up here when it is running.",
+          "SUSPENDED": "Environment suspended. Services cannot be listed right now.",
+          "EMPTY": "No services running. Ask the agent to start one and it will appear here.",
+          "COLUMNS": {
+            "NAME": "Name",
+            "STATE": "State",
+            "UPTIME": "Uptime",
+            "CPU_RAM": "CPU · Memory",
+            "PORT": "Port",
+            "URL": "Public address",
+            "ORIGIN": "Origin"
+          },
+          "STATES": {
+            "RODANDO": "Running",
+            "PARADO": "Stopped",
+            "REINICIANDO": "Restarting"
+          },
+          "ORIGINS": {
+            "SUPERVISED": "Supervised",
+            "AGENT": "Created by the agent"
+          },
+          "ACTIONS": {
+            "START": "Start",
+            "STOP": "Stop",
+            "RESTART": "Restart",
+            "LOGS": "View logs"
+          },
+          "CONFIRM_STOP": "Stop service {name}? It stops answering until started again.",
+          "DONE": "Done.",
+          "ACTION_ERROR": "Could not complete the action.",
+          "LOGS_ERROR": "Could not open the logs.",
+          "LOGS_TITLE": "Last 200 lines of {name}",
+          "NO_LOGS": "No records.",
+          "CLOSE": "Close",
+          "LOOSE_TITLE": "Processes without supervision (they do not come back after the environment restarts)",
+          "LOOSE_HELP": "They were started by hand and nobody restarts them. Ask the agent to register them as a service if they must stay up.",
+          "CONTAINERS_TITLE": "Containers"
+        }
       },
       "NEW_KEY": "Key created. Copy it now: it will not be shown again.",
       "GW": {
@@ -416,6 +467,11 @@
           "COL_DAY": "Day",
           "NOTE": "Estimated cost in reais (reference rate R$ {rate} per dollar); not a bill."
         }
+      },
+      "PAGER": {
+        "PREV": "Previous",
+        "NEXT": "Next",
+        "PAGE": "Page {page} of {pages} ({total} runs)"
       }
     },
     "CRED": {
