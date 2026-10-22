@@ -522,7 +522,9 @@
         "EMAIL": "E-mail (IMAP/SMTP)",
         "PAYMENT": "Pagamento (Mercado Pago)",
         "GOOGLE": "Google (conectar conta)",
-        "MICROSOFT": "Outlook / Microsoft (conectar conta)"
+        "MICROSOFT": "Outlook / Microsoft (conectar conta)",
+        "AWS": "AWS (chaves em JSON)",
+        "AZURE": "Azure (JSON)"
       },
       "TYPE_HELP": {
         "SECRET": "Um valor com nome, como uma chave de API. O agente o recebe como variável de ambiente com o mesmo nome.",
@@ -532,7 +534,9 @@
         "EMAIL": "Uma caixa de e-mail por IMAP e SMTP. O agente recebe servidor, usuário e senha em variáveis EMAIL_<NOME>_*.",
         "PAYMENT": "Token de acesso do Mercado Pago, usado para cobrar por Pix. Vale para toda a empresa.",
         "GOOGLE": "Abre a página do Google para você autorizar o acesso a agenda e planilhas. O agente recebe o token em GOOGLE_<NOME>_TOKEN.",
-        "MICROSOFT": "Abre a página da Microsoft para você autorizar o acesso a agenda e reuniões. O agente recebe o token em MICROSOFT_<NOME>_TOKEN."
+        "MICROSOFT": "Abre a página da Microsoft para você autorizar o acesso a agenda e reuniões. O agente recebe o token em MICROSOFT_<NOME>_TOKEN.",
+        "AWS": "JSON com {\"access_key_id\": \"...\", \"secret_access_key\": \"...\", \"region\": \"us-east-1\"}. O agente o recebe na variável AWS_<NOME>_JSON.",
+        "AZURE": "JSON com {\"tenant_id\": \"...\", \"client_id\": \"...\", \"client_secret\": \"...\"}. O agente o recebe na variável AZURE_<NOME>_JSON."
       },
       "FIELDS": {
         "NAME": "Nome",
@@ -593,7 +597,10 @@
       "SANDBOX": "Modo de teste",
       "PRODUCTION": "Produção",
       "EMPTY": "Nenhuma credencial ainda. Clique em Nova credencial.",
-      "VARS_HELP": "A coluna Variáveis mostra os nomes que a skill do agente usa para ler cada credencial no terminal. O valor nunca é exibido."
+      "VARS_HELP": "A coluna Variáveis mostra os nomes que a skill do agente usa para ler cada credencial no terminal. O valor nunca é exibido.",
+      "TEST": "Testar",
+      "TEST_FAILED": "O teste não pôde ser feito.",
+      "WORKSPACE_INTRO": "Sua empresa tem um espaço de trabalho compartilhado por todos os usuários. Os agentes podem trabalhar nele (ler arquivos, usar estas credenciais, rodar tarefas) quando as skills vinculadas a eles permitirem."
     },
     "INBOXES": {
       "TITLE": "Filas de atendimento",

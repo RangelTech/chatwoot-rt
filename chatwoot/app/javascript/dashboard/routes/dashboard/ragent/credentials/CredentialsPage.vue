@@ -175,6 +175,23 @@ const connect = async providerKey => {
   }
 };
 
+const testing = ref('');
+const testResult = ref({});
+const runTest = async item => {
+  testing.value = item.id;
+  try {
+    const { data } = await axios.post(`${base.value}/${item.type}/${item.id}/test`);
+    testResult.value = { ...testResult.value, [item.id]: data };
+  } catch (error) {
+    testResult.value = {
+      ...testResult.value,
+      [item.id]: { ok: false, detail: t('RAGENT.CRED.TEST_FAILED') },
+    };
+  } finally {
+    testing.value = '';
+  }
+};
+
 const remove = async item => {
   // eslint-disable-next-line no-alert
   if (!window.confirm(t('RAGENT.CRED.CONFIRM_REMOVE', { name: item.name })))
@@ -201,6 +218,8 @@ const details = item => {
     case 'ssh':
       return `${i.user}@${i.host}:${i.port || 22}`;
     case 'gcp':
+    case 'aws':
+    case 'azure':
       return t('RAGENT.CRED.STORED_JSON');
     case 'database': {
       if (i.db_kind === 'sqlite')
@@ -226,6 +245,9 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
     class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6"
   >
     <AiSettingsTabs />
+    <p class="rounded-xl bg-n-alpha-2 p-3 text-body-main text-n-slate-11">
+      {{ t('RAGENT.CRED.WORKSPACE_INTRO') }}
+    </p>
     <header class="flex items-center gap-3">
       <h1 class="text-heading-1 text-n-slate-12">
         {{ t('RAGENT.CRED.TITLE') }}
@@ -438,6 +460,22 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
                 "
                 @click="isOauthItem(it) ? reconnect(it) : startReplace(it)"
               />
+              <Button
+                v-if="['secret', 'ssh', 'gcp', 'aws', 'azure'].includes(it.type)"
+                size="sm"
+                variant="faded"
+                :disabled="testing === it.id"
+                :label="t('RAGENT.CRED.TEST')"
+                @click="runTest(it)"
+              />
+              <p
+                v-if="testResult[it.id]"
+                class="mt-1 text-sm"
+                :class="testResult[it.id].ok ? 'text-n-teal-11' : 'text-n-ruby-11'"
+                role="status"
+              >
+                {{ testResult[it.id].detail }}
+              </p>
               <Button
                 size="sm"
                 color="ruby"

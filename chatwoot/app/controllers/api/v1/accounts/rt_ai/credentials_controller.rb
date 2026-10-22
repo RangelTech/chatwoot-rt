@@ -12,6 +12,8 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
     'secret' => { list: '/api/secrets', fields: %i[name value] },
     'ssh' => { list: '/api/secrets', fields: %i[name value host port user] },
     'gcp' => { list: '/api/secrets', fields: %i[name value] },
+    'aws' => { list: '/api/secrets', fields: %i[name value] },
+    'azure' => { list: '/api/secrets', fields: %i[name value] },
     'database' => { list: '/api/datasources', fields: %i[name db_kind host port database user password ssl path] },
     'email' => { list: '/api/email-accounts',
                  fields: %i[label email_address smtp_host smtp_port imap_host imap_port username password use_tls] },
@@ -21,16 +23,16 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
   }.freeze
 
   # Tipos que moram na tabela de segredos do motor, distinguidos pelo campo `kind`.
-  SECRET_KINDS = %w[secret ssh gcp].freeze
+  SECRET_KINDS = %w[secret ssh gcp aws azure].freeze
   # Uma consulta por origem no motor (segredo/SSH/GCP dividem a mesma).
   LISTS = TYPES.values.pluck(:list).uniq.freeze
   LIST_TYPE = TYPES.to_h { |type, cfg| [cfg[:list], type] }.freeze
 
   before_action -> { require_permission('ai.credentials.view') }, only: [:index]
-  before_action -> { require_permission('ai.credentials.manage') }, only: [:create, :update, :destroy, :oauth_start]
-  before_action :find_type, only: [:create, :update, :destroy]
+  before_action -> { require_permission('ai.credentials.manage') }, only: [:create, :update, :destroy, :oauth_start, :test]
+  before_action :find_type, only: [:create, :update, :destroy, :test]
   before_action :reject_connected_types, only: [:create, :update]
-  before_action :need_id, only: [:update, :destroy]
+  before_action :need_id, only: [:update, :destroy, :test]
 
   def index
     items = []
@@ -54,6 +56,15 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
 
   def update
     render_saved engine_save(:put, params[:id])
+  end
+
+  # Spec 11 §7: "Testar" roda no motor (nunca no navegador); só tipos guardados como segredo.
+  def test
+    return render json: { ok: true, detail: 'Este tipo não tem teste de conexão.' } unless SECRET_KINDS.include?(@rt_type)
+
+    render json: Rt::EngineClient.post("/api/secrets/#{params[:id]}/test", {}, claims: engine_context)
+  rescue Rt::EngineClient::Error => e
+    engine_failed(e)
   end
 
   def destroy
@@ -201,7 +212,7 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
 
   def present_secret(base, row)
     kind = SECRET_KINDS.include?(row['kind']) ? row['kind'] : 'secret'
-    base.merge(type: kind, name: row['name'], info: { hint: row['hint'] }.merge((row['meta'] || {}).slice('host', 'port', 'user')))
+    base.merge(type: kind, name: row['name'], info: { hint: row['hint'], last_test_ok: row['last_test_ok'], last_test_detail: row['last_test_detail'] }.merge((row['meta'] || {}).slice('host', 'port', 'user')))
   end
 
   def present_database(base, row)

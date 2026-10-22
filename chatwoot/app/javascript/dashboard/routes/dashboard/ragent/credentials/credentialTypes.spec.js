@@ -14,6 +14,8 @@ describe('credentialTypes', () => {
       'database',
       'ssh',
       'gcp',
+      'aws',
+      'azure',
       'email',
       'payment',
       'google',

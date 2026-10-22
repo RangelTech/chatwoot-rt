@@ -69,6 +69,20 @@ export const CREDENTIAL_TYPES = [
     ],
   },
   {
+    key: 'aws',
+    fields: [
+      text('name', { default: 'AWS' }),
+      { key: 'value', kind: 'json-file', secret: true },
+    ],
+  },
+  {
+    key: 'azure',
+    fields: [
+      text('name', { default: 'AZURE' }),
+      { key: 'value', kind: 'json-file', secret: true },
+    ],
+  },
+  {
     key: 'email',
     fields: [
       text('label'),
