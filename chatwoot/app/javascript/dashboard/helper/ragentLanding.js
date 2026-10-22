@@ -16,7 +16,7 @@ export const ragentLandingPath = async accountId => {
       data?.flags?.chat_enabled &&
       data?.flags?.chat_landing_enabled &&
       (data.scopes || []).includes('ai.chat.view');
-    if (allowed) target = 'ragent/chat';
+    if (allowed) target = 'ia/chat';
   } catch (error) {
     target = 'dashboard';
   }
