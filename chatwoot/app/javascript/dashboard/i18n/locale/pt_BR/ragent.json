@@ -109,6 +109,10 @@
         "ERROR": "Não foi possível enviar o arquivo.",
         "CONFIRM_REMOVE": "Remover este arquivo do agente?"
       },
+      "VERSIONS": "Versões",
+      "ACTIVE": "Ativa",
+      "RESTORE": "Publicar esta versão",
+      "RESTORED": "Versão {n} publicada de novo",
       "OUTPUT_FORMAT": "Formato da resposta",
       "OUTPUT_FORMAT_HELP": "Define como o agente escreve e como a resposta é exibida: Markdown completo na web ou texto do WhatsApp.",
       "OUTPUT_FORMATS": {

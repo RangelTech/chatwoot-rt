@@ -109,6 +109,10 @@
         "ERROR": "Could not upload the file.",
         "CONFIRM_REMOVE": "Remove this file from the agent?"
       },
+      "VERSIONS": "Versions",
+      "ACTIVE": "Active",
+      "RESTORE": "Publish this version",
+      "RESTORED": "Version {n} published again",
       "OUTPUT_FORMAT": "Reply format",
       "OUTPUT_FORMAT_HELP": "Sets how the agent writes and how the reply is shown: full Markdown on the web or WhatsApp text.",
       "OUTPUT_FORMATS": {

@@ -40,6 +40,10 @@ class RtAiAgents extends ApiClient {
     return axios.post(`${this.url}/${id}/create_version`, { notes });
   }
 
+  versions(id) {
+    return axios.get(`${this.url}/${id}/versions`);
+  }
+
   publish(id, versionId) {
     return axios.post(`${this.url}/${id}/publish`, { version_id: versionId });
   }

@@ -15,6 +15,7 @@ const newName = ref('');
 const newDescription = ref('');
 const editing = ref(null);
 const files = ref([]);
+const versions = ref([]);
 const manifest = ref({ tools: [] });
 const combos = ref([]);
 const selectedCombo = ref('');
@@ -90,6 +91,26 @@ const edit = async agent => {
     : 'markdown';
   problems.value = [];
   fileError.value = '';
+  try {
+    versions.value = (await rtAiAgents.versions(agent.id)).data || [];
+  } catch (error) {
+    versions.value = [];
+  }
+};
+
+// Rollback: versões são imutáveis; voltar é publicar de novo uma versão antiga.
+const restore = async version => {
+  busy.value = true;
+  try {
+    await rtAiAgents.publish(editing.value.id, version.id);
+    useAlert(t('RAGENT.AGENTS.RESTORED', { n: version.number }));
+    editing.value = null;
+    await load();
+  } catch (error) {
+    useAlert(t('RAGENT.AGENTS.ERROR'));
+  } finally {
+    busy.value = false;
+  }
 };
 
 const mainFile = computed(
@@ -395,6 +416,25 @@ const archive = async agent => {
             @click="pickFile(null)"
           />
         </div>
+      </section>
+      <section v-if="versions.length" class="flex flex-col gap-2 rounded-xl border border-n-weak p-3">
+        <h3 class="text-heading-3 text-n-slate-12">
+          {{ t('RAGENT.AGENTS.VERSIONS') }}
+        </h3>
+        <ul class="flex flex-col gap-1">
+          <li v-for="v in versions" :key="v.id" class="flex items-center gap-2 text-body-main text-n-slate-11">
+            <span>{{ t('RAGENT.AGENTS.VERSION', { n: v.number }) }}</span>
+            <span v-if="v.id === editing.active_version_id" class="text-n-teal-11">{{ t('RAGENT.AGENTS.ACTIVE') }}</span>
+            <Button
+              v-else
+              size="sm"
+              variant="faded"
+              :label="t('RAGENT.AGENTS.RESTORE')"
+              :disabled="busy"
+              @click="restore(v)"
+            />
+          </li>
+        </ul>
       </section>
       <ul v-if="problems.length" class="rounded-lg border border-n-ruby-9 p-3 text-body-main text-n-ruby-11">
         <li v-for="(p, i) in problems" :key="i">
