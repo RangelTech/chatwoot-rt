@@ -13,8 +13,7 @@ const { t } = useI18n();
 const route = useRoute();
 const base = `/api/v1/accounts/${route.params.accountId}/rt_ai`;
 
-import { useRoute as useRouteForTab } from 'vue-router';
-const tab = ref(useRouteForTab().name === 'ragent_routines' ? 'routines' : 'company');
+const tab = ref(route.name === 'ragent_routines' ? 'routines' : 'company');
 const companySkills = ref([]);
 const mySkills = ref([]);
 const routines = ref([]);
