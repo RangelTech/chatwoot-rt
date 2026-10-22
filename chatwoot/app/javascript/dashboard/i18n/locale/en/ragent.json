@@ -516,7 +516,9 @@
         "EMAIL": "Email (IMAP/SMTP)",
         "PAYMENT": "Payment (Mercado Pago)",
         "GOOGLE": "Google (connect account)",
-        "MICROSOFT": "Outlook / Microsoft (connect account)"
+        "MICROSOFT": "Outlook / Microsoft (connect account)",
+        "AWS": "AWS (JSON keys)",
+        "AZURE": "Azure (JSON)"
       },
       "TYPE_HELP": {
         "SECRET": "A named value, such as an API key. The agent receives it as an environment variable with the same name.",
@@ -526,7 +528,9 @@
         "EMAIL": "A mailbox over IMAP and SMTP. The agent receives host, user and password in EMAIL_<NAME>_* variables.",
         "PAYMENT": "Mercado Pago access token, used to charge via Pix. Applies to the whole company.",
         "GOOGLE": "Opens the Google page so you can authorize calendar and spreadsheet access. The agent receives the token in GOOGLE_<NAME>_TOKEN.",
-        "MICROSOFT": "Opens the Microsoft page so you can authorize calendar and meeting access. The agent receives the token in MICROSOFT_<NAME>_TOKEN."
+        "MICROSOFT": "Opens the Microsoft page so you can authorize calendar and meeting access. The agent receives the token in MICROSOFT_<NAME>_TOKEN.",
+        "AWS": "JSON with access_key_id, secret_access_key, region.",
+        "AZURE": "JSON with tenant_id, client_id, client_secret."
       },
       "FIELDS": {
         "NAME": "Name",
@@ -587,7 +591,10 @@
       "SANDBOX": "Test mode",
       "PRODUCTION": "Production",
       "EMPTY": "No credentials yet. Click New credential.",
-      "VARS_HELP": "The Variables column shows the names the agent skill uses to read each credential in the terminal. The value is never shown."
+      "VARS_HELP": "The Variables column shows the names the agent skill uses to read each credential in the terminal. The value is never shown.",
+      "TEST": "Test",
+      "TEST_FAILED": "The test could not run.",
+      "WORKSPACE_INTRO": "Your company has a workspace shared by all users. Agents can work in it when their skills allow."
     },
     "INBOXES": {
       "TITLE": "Service queues",

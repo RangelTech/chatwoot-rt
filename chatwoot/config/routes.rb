@@ -133,6 +133,7 @@ Rails.application.routes.draw do
             post 'credentials', to: 'credentials#create'
             post 'credentials/oauth/:provider', to: 'credentials#oauth_start'
             put 'credentials/:type/:id', to: 'credentials#update'
+            post 'credentials/:type/:id/test', to: 'credentials#test'
             delete 'credentials/:type/:id', to: 'credentials#destroy'
             get 'resources/environment_services/:service/logs', to: 'resources#service_logs'
             post 'resources/environment_services/:service/actions/:do', to: 'resources#service_action'
