@@ -25,7 +25,8 @@ class Rt::Routing::LegacyMigration
       inbox = @account.inboxes.find_by(id: config.fetch('inbox_id'))
       raise ArgumentError, "caixa #{config['inbox_id']} nao pertence a conta" unless inbox
 
-      ai_team = find_team(config.fetch('ai_team_id'), 'fila de IA')
+      template_id = config.fetch('template_id').to_s
+      ai_team = queue_team_for(find_team(config.fetch('ai_team_id'), 'fila de IA'), template_id)
       handoff_team = find_team(config['handoff_team_id'], 'fila de repasse', required: false)
       assert_ai_team_safe!(ai_team)
 
@@ -42,7 +43,7 @@ class Rt::Routing::LegacyMigration
       binding.assign_attributes(
         account: @account,
         respondent_kind: 'ia',
-        template_id: config.fetch('template_id').to_s,
+        template_id: template_id,
         mode: config['autopilot'] == false ? 'desligado' : 'piloto',
         allowed_destination_team_ids: handoff_team ? [handoff_team.id] : []
       )
@@ -88,6 +89,18 @@ class Rt::Routing::LegacyMigration
   end
 
   private
+
+  # Um agente por fila: caixas do mesmo tenant com agentes diferentes nao podem dividir a mesma fila de IA.
+  # Reaproveita a fila padrao se for livre ou do mesmo agente; senao, a fila "IA - <agente>" (criada uma vez).
+  def queue_team_for(default_team, template_id)
+    current = Rt::QueueBinding.find_by(team_id: default_team.id)
+    return default_team if current.nil? || current.template_id.blank? || current.template_id == template_id
+
+    existing = Rt::QueueBinding.where(account_id: @account.id, respondent_kind: 'ia', template_id: template_id).first
+    return existing.team if existing
+
+    @account.teams.create!(name: "IA - #{template_id[0, 8]}", description: 'Fila de IA criada na migracao', allow_auto_assign: false)
+  end
 
   def find_team(id, label, required: true)
     return nil if id.blank? && !required

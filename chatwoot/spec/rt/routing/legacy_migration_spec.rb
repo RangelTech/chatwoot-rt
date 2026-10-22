@@ -69,4 +69,22 @@ RSpec.describe Rt::Routing::LegacyMigration do
 
     expect(conversation.reload.team).to eq(human_team)
   end
+
+  it 'caixas com agentes diferentes ganham filas de IA diferentes (um agente por fila)' do
+    other_inbox = create(:inbox, account: account)
+    described_class.apply(account: account, configurations: [
+                            configuration,
+                            configuration.merge(inbox_id: other_inbox.id, template_id: 'template-outro')
+                          ])
+    first = Rt::InboxEntryQueue.find_by!(inbox: inbox).team
+    second = Rt::InboxEntryQueue.find_by!(inbox: other_inbox).team
+    expect(first).to eq(ai_team)
+    expect(second).not_to eq(ai_team)
+    expect(Rt::QueueBinding.find_by!(team: second)).to have_attributes(template_id: 'template-outro', respondent_kind: 'ia')
+    expect(Rt::QueueBinding.find_by!(team: ai_team).template_id).to eq('template-legado')
+    # idempotente: repetir nao cria uma terceira fila
+    expect do
+      described_class.apply(account: account, configurations: [configuration.merge(inbox_id: other_inbox.id, template_id: 'template-outro')])
+    end.not_to(change { account.teams.count })
+  end
 end
