@@ -60,11 +60,26 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   end
 
   # Flags de IA por Account (spec 10 §0.6): o Super Admin decide, o motor obedece.
+  # Spec 11 §20: plano do cliente (variável de permissionamento).
+  def update_ai_plan
+    ai = Rt::AiAccount.find_or_create_by!(account_id: requested_resource.id)
+    plan = params[:plan].to_s
+    if Rt::AiAccount::PLAN_KEYS.include?(plan) && plan != ai.plan
+      ai.update!(plan: plan, plan_changed_at: Time.current)
+      Rt::AccountLifecycle.enqueue(requested_resource.id, 'provision')
+    end
+    # rubocop:disable Rails/I18nLocaleTexts
+    redirect_to [namespace, requested_resource], notice: "Plano: #{plan}"
+    # rubocop:enable Rails/I18nLocaleTexts
+  end
+
   def update_ai_flags
     ai = Rt::AiAccount.find_or_create_by!(account_id: requested_resource.id)
     sent = params[:ai_flags].respond_to?(:to_unsafe_h) ? params[:ai_flags].to_unsafe_h : {}
     flags = Rt::AiAccount::DEFAULT_FLAGS.keys.index_with { |key| sent[key] == '1' }
-    ai.update!(flags: ai.flags.merge(flags))
+    # guarda só o que difere do padrão do plano (sobrescrita manual)
+    base = Rt::AiAccount::DEFAULT_FLAGS.merge(ai.plan_flags)
+    ai.update!(flags: flags.reject { |k, v| base[k] == v })
     # rubocop:disable Rails/I18nLocaleTexts
     redirect_to [namespace, requested_resource], notice: 'Flags de IA atualizadas'
     # rubocop:enable Rails/I18nLocaleTexts
