@@ -1,7 +1,7 @@
 # Machine-readable contract for the customizations carried by chatwoot-rt.
 # Keep this file current whenever an upstream Chatwoot upgrade is prepared.
 schema_version: 1
-upstream_version: "4.16.2"
+upstream_version: "4.17.0"
 extensions:
   - id: sso_session_sync
     status: active
