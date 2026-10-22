@@ -298,6 +298,7 @@ extensions:
       - app/views/devise/mailer/confirmation_instructions.html.erb
       - app/views/installation/onboarding/index.html.erb
       - app/views/layouts/mailer/base.liquid
+      - app/views/layouts/super_admin/application.html.erb
       - app/views/layouts/vueapp.html.erb
       - app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
       - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
@@ -333,6 +334,7 @@ extensions:
       app/views/devise/mailer/confirmation_instructions.html.erb: "LUAR"
       app/views/installation/onboarding/index.html.erb: "LUAR"
       app/views/layouts/mailer/base.liquid: "#75C8F2"
+      app/views/layouts/super_admin/application.html.erb: "INSTALLATION_NAME"
       app/views/layouts/vueapp.html.erb: "#0A1733"
       app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid: "LUAR"
       app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid: "LUAR"
