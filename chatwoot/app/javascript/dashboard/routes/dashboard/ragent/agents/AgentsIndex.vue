@@ -59,7 +59,9 @@ const fileInput = ref(null);
 const replaceTarget = ref(null);
 
 const visibleAgents = computed(() =>
-  agents.value.filter(a => !a.system_key && a.agent_kind === 'skills')
+  agents.value.filter(
+    a => (!a.system_key || a.system_key === 'moon') && a.agent_kind === 'skills'
+  )
 );
 
 const load = async () => {
@@ -321,13 +323,18 @@ const archive = async agent => {
               : t('RAGENT.AGENTS.DRAFT')
           }}
         </span>
-        <Button size="sm" :label="t('RAGENT.AGENTS.EDIT')" @click="edit(a)" />
-        <Button
-          size="sm"
-          color="ruby"
-          :label="t('RAGENT.AGENTS.ARCHIVE')"
-          @click="archive(a)"
-        />
+        <span v-if="a.system_key === 'moon'" class="text-body-main text-n-slate-11">
+          {{ t('RAGENT.AGENTS.MOON_FIXED') }}
+        </span>
+        <template v-else>
+          <Button size="sm" :label="t('RAGENT.AGENTS.EDIT')" @click="edit(a)" />
+          <Button
+            size="sm"
+            color="ruby"
+            :label="t('RAGENT.AGENTS.ARCHIVE')"
+            @click="archive(a)"
+          />
+        </template>
       </li>
       <li v-if="!visibleAgents.length && !loading" class="px-4 py-6 text-n-slate-11">
         {{ t('RAGENT.AGENTS.EMPTY') }}

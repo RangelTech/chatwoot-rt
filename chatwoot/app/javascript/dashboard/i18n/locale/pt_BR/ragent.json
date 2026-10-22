@@ -74,7 +74,11 @@
       "MIC": "Gravar áudio",
       "MIC_DONE": "Anexar",
       "MIC_CANCEL": "Cancelar",
-      "MIC_DENIED": "Não foi possível usar o microfone. Libere a permissão no navegador."
+      "MIC_DENIED": "Não foi possível usar o microfone. Libere a permissão no navegador.",
+      "MOON_RESET": "Resetar memória do Sr Moon",
+      "MOON_RESET_CONFIRM": "Apagar tudo o que o Sr Moon aprendeu sobre você? Suas conversas e as skills da empresa não são afetadas.",
+      "MOON_RESET_OK": "Memória do Sr Moon apagada.",
+      "MOON_RESET_ERROR": "Não foi possível resetar agora."
     },
     "AGENTS": {
       "TITLE": "Agentes",
@@ -125,7 +129,8 @@
       },
       "SKILLS": "Skills deste agente",
       "SKILLS_EMPTY": "Nenhuma skill da empresa ainda. Crie em IA → Skills.",
-      "SKILL_FILES": "{n} arquivo(s)"
+      "SKILL_FILES": "{n} arquivo(s)",
+      "MOON_FIXED": "Assistente padrão, atualizado pela LUAR"
     },
     "SKILLS": {
       "TITLE": "Skills e tarefas agendadas",

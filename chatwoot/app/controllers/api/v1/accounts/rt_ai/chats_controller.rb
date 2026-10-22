@@ -3,7 +3,7 @@
 class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
 
-  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download]
+  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download, :moon_reset]
   before_action -> { require_permission('ai.chat.run') }, only: [:stream_ticket, :cancel, :feedback]
   before_action :need_uuid, only: [:messages, :cancel, :feedback, :artifacts, :artifact_download]
   before_action :need_artifact_uuid, only: [:artifact_download]
@@ -24,10 +24,22 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
     return if performed?
 
     items = (data.is_a?(Array) ? data : data['items'] || []).select { |t| t['active_version_id'] || t['active_version'] }
-    render json: items.reject { |t| t['system_key'].present? }
+    # Spec 11 §23: o Sr Moon aparece primeiro, só para quem tem `ai.moon.use`; demais templates de sistema ficam de fora.
+    moon_ok = Current.account_user.permissions.include?('ai.moon.use')
+    items = items.select { |t| t['system_key'].blank? || (t['system_key'] == 'moon' && moon_ok) }
+    render json: items.sort_by { |t| t['system_key'] == 'moon' ? 0 : 1 }
   end
 
   # Contexto assinado de uso único (≤ 60 s) que o navegador envia ao stream da mesma origem.
+  # Spec 11 §23: apaga o que o Sr Moon aprendeu deste usuário (administrador pode apagar de todos).
+  def moon_reset
+    return head :forbidden unless Current.account_user.permissions.include?('ai.moon.use')
+
+    everyone = ActiveModel::Type::Boolean.new.cast(params[:everyone]) &&
+               Current.account_user.permissions.include?('ai.agents.edit')
+    render json: engine_post("/api/me/moon/reset?everyone=#{everyone}")
+  end
+
   def stream_ticket
     claims = engine_context(scopes: Current.account_user.permissions.grep(/\Aai\./))
     render json: { ticket: Rt::EngineClient.sign(claims), expires_in: Rt::EngineClient::TTL }
