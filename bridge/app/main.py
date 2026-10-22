@@ -45,13 +45,19 @@ def run_migrations() -> list[str]:
 
 async def _recover_after_start() -> None:
     """Apos reiniciar, responde o que o webhook perdido deixou sem resposta (ultimos 15 min)."""
-    await asyncio.sleep(20)
-    try:
-        recovered = await agent_bot.recover_unanswered(15)
-        if recovered:
-            logger.info("recuperadas %s conversas sem resposta", recovered)
-    except Exception:  # noqa: BLE001
-        logger.exception("varredura de startup falhou")
+    # 45 s: o processo antigo termina as runs em voo antes da varredura.
+    await asyncio.sleep(45)
+    first = True
+    while True:
+        try:
+            # Depois da 1a passada, so mensagens com mais de 2 min sem resposta.
+            recovered = await agent_bot.recover_unanswered(15, 0 if first else 120)
+            if recovered:
+                logger.info("recuperadas %s conversas sem resposta", recovered)
+        except Exception:  # noqa: BLE001
+            logger.exception("varredura falhou")
+        first = False
+        await asyncio.sleep(60)
 
 
 @asynccontextmanager

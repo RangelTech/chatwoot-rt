@@ -31,11 +31,12 @@ class RtInternal::RoutingController < ActionController::API
   # e do cliente e nao teve resposta (ex.: a bridge reiniciou e o webhook se perdeu). Serve a varredura da bridge.
   def pending
     since = (params[:minutes].presence || 15).to_i.clamp(1, 120).minutes.ago
+    min_age = params[:min_age].to_i.clamp(0, 3600).seconds.ago
     entries = Rt::InboxEntryQueue.where(routing_mode: 'filas').includes(:inbox)
     items = entries.flat_map do |entry|
       Conversation.where(inbox_id: entry.inbox_id, status: %i[open pending]).where('last_activity_at >= ?', since).filter_map do |conv|
         last = conv.messages.where(private: false, message_type: %i[incoming outgoing]).order(:id).last
-        next unless last&.incoming? && last.created_at >= since
+        next unless last&.incoming? && last.created_at >= since && last.created_at <= min_age
         next unless Rt::Routing::RespondentView.call(conv)[:respondent] == 'ia'
 
         { account_id: conv.account_id, conversation_id: conv.display_id, inbox_id: conv.inbox_id,

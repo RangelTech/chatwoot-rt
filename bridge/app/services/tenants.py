@@ -247,6 +247,25 @@ def legacy_routing_migration_batches(tenant_id: str | None = None) -> list[dict]
             args,
         ).fetchall()
 
+    # Linha por caixa sem time herda os times padrao do tenant (linha sem caixa).
+    with get_connection() as conn:
+        tenant_defaults = {
+            str(r["tenant_id"]): r
+            for r in conn.execute(
+                "SELECT tenant_id, ai_team_id, handoff_team_id FROM tenant_ai_config"
+                " WHERE chatwoot_inbox_id IS NULL"
+            ).fetchall()
+        }
+    rows = [
+        {
+            **r,
+            "ai_team_id": r["ai_team_id"]
+            or (tenant_defaults.get(str(r["tenant_id"])) or {}).get("ai_team_id"),
+            "handoff_team_id": r["handoff_team_id"]
+            or (tenant_defaults.get(str(r["tenant_id"])) or {}).get("handoff_team_id"),
+        }
+        for r in rows
+    ]
     selected: dict[tuple[str, int], dict] = {}
     for row in defaults:
         selected[(str(row["tenant_id"]), int(row["inbox_id"]))] = row

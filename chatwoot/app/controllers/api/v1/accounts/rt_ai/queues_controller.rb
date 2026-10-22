@@ -20,7 +20,7 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
       team = Current.account.teams.create!(team_attributes)
       binding = Rt::QueueBinding.create!(binding_attributes(team))
     end
-    render json: queue_json(binding.team, binding), status: :created
+    render json: queue_json(binding.team, binding).merge(bridge: sync_bridge(binding)), status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { code: 'queue_rejected', message: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
   end
@@ -31,7 +31,7 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
       @binding.team.update!(allow_auto_assign: false) if queue_params[:respondent_kind] == 'ia'
       @binding.update!(binding_attributes(@binding.team))
     end
-    render json: queue_json(@binding.team, @binding)
+    render json: queue_json(@binding.team, @binding).merge(bridge: sync_bridge(@binding))
   rescue ActiveRecord::RecordInvalid => e
     render json: { code: 'queue_rejected', message: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
   end
@@ -77,7 +77,8 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
     record = Rt::InboxEntryQueue.find_or_initialize_by(inbox: inbox)
     record.assign_attributes(account: Current.account, routing_mode: params.require(:routing_mode), team_id: params[:team_id].presence)
     record.save!
-    render json: inbox_json(inbox, record)
+    bot = record.routing_mode == 'legado' ? :skipped : Rt::Routing::BridgeSync.ensure_inbox_bot(inbox)
+    render json: inbox_json(inbox, record).merge(bot: bot)
   rescue ActiveRecord::RecordNotFound
     render json: { code: 'not_found', message: 'Caixa de entrada não encontrada' }, status: :not_found
   rescue ActiveRecord::RecordInvalid => e
@@ -85,6 +86,13 @@ class Api::V1::Accounts::RtAi::QueuesController < Api::V1::Accounts::RtAi::BaseC
   end
 
   private
+
+  # O agente vive na fila: criar/editar fila de IA garante a chave do tenant na bridge.
+  def sync_bridge(binding)
+    return :skipped unless binding.ia?
+
+    Rt::Routing::BridgeSync.ensure_key(account: Current.account, claims: engine_context)
+  end
 
   def load_binding
     @binding = Rt::QueueBinding.find_by!(account_id: Current.account.id, team_id: params[:id])
