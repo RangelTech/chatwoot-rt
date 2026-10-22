@@ -269,7 +269,18 @@
         "PROVIDER": "Provedor",
         "MODEL": "Modelo",
         "TOKENS": "Tokens",
-        "DAY": "Dia"
+        "DAY": "Dia",
+        "TENANT": "Empresa",
+        "NAME": "Nome",
+        "RPM": "Limite por minuto",
+        "STATUS": "Situação",
+        "CREATEDAT": "Criada em",
+        "COUNTS": "Cadastros",
+        "CONNECTIONS": "Provedores conectados",
+        "COMBOS": "Combos",
+        "NODES": "Nós",
+        "LIMIT": "Limite",
+        "USEDLASTMINUTE": "Usadas no último minuto"
       },
       "FIELDS": {
         "NAME": "Nome",
