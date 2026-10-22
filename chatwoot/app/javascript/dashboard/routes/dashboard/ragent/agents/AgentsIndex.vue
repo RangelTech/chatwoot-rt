@@ -20,7 +20,20 @@ const manifest = ref({ tools: [] });
 const combos = ref([]);
 const selectedCombo = ref('');
 const legacyModelAlias = ref('');
-const toolsText = ref('');
+// Spec 11 §4: o agente escolhe skills da empresa (checkbox); o campo "Ferramentas" saiu.
+const skillOptions = ref([]);
+const linkedSkillIds = ref([]);
+const skillsBase = () => `/api/v1/accounts/${window.location.pathname.split('/')[3]}/rt_ai/skills/agent`;
+const loadSkillLinks = async id => {
+  try {
+    const { data } = await window.axios.get(`${skillsBase()}/${id}`);
+    skillOptions.value = data.skills || [];
+    linkedSkillIds.value = skillOptions.value.filter(x => x.linked).map(x => x.id);
+  } catch (error) {
+    skillOptions.value = [];
+    linkedSkillIds.value = [];
+  }
+};
 const confirmActions = ref(false);
 const allowLuar = ref(false);
 const OUTPUT_FORMATS = ['markdown', 'whatsapp', 'text'];
@@ -83,7 +96,7 @@ const edit = async agent => {
   }
   selectedCombo.value = manifest.value.model?.combo || '';
   legacyModelAlias.value = manifest.value.model?.alias || '';
-  toolsText.value = (manifest.value.tools || []).join(', ');
+  await loadSkillLinks(agent.id);
   confirmActions.value = Boolean(manifest.value.limits?.confirm_actions);
   allowLuar.value = Boolean(manifest.value.limits?.luar);
   outputFormat.value = OUTPUT_FORMATS.includes(manifest.value.output?.format)
@@ -137,16 +150,16 @@ const payload = () => ({
       confirm_actions: confirmActions.value,
       luar: allowLuar.value,
     },
-    tools: toolsText.value
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean),
+    tools: manifest.value.tools || [],
   },
 });
 
 const save = async () => {
   busy.value = true;
   try {
+    await window.axios.put(`${skillsBase()}/${editing.value.id}`, {
+      skill_ids: linkedSkillIds.value,
+    });
     const { data } = await rtAiAgents.saveDraft(editing.value.id, payload());
     problems.value = data.problems || [];
     useAlert(t('RAGENT.AGENTS.SAVED'));
@@ -314,10 +327,23 @@ const archive = async agent => {
           class="!mb-0 w-full font-mono"
         />
       </label>
-      <label class="text-body-main text-n-slate-11">
-        {{ t('RAGENT.AGENTS.TOOLS') }}
-        <input v-model="toolsText" type="text" class="!mb-0 w-full" />
-      </label>
+      <fieldset class="flex flex-col gap-1 text-body-main text-n-slate-11">
+        <legend class="mb-1">{{ t('RAGENT.AGENTS.SKILLS') }}</legend>
+        <p v-if="!skillOptions.length" class="text-n-slate-10">
+          {{ t('RAGENT.AGENTS.SKILLS_EMPTY') }}
+        </p>
+        <label
+          v-for="sk in skillOptions"
+          :key="sk.id"
+          class="flex items-center gap-2"
+        >
+          <input v-model="linkedSkillIds" type="checkbox" :value="sk.id" class="!mb-0" />
+          <span class="text-n-slate-12">{{ sk.name }}</span>
+          <span v-if="sk.files" class="text-n-slate-10">
+            ({{ t('RAGENT.AGENTS.SKILL_FILES', { n: sk.files }) }})
+          </span>
+        </label>
+      </fieldset>
       <label class="flex flex-col gap-1 text-body-main text-n-slate-11">
         {{ t('RAGENT.AGENTS.MODEL_COMBO') }}
         <select
