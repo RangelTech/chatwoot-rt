@@ -24,7 +24,10 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
     return if performed?
 
     items = (data.is_a?(Array) ? data : data['items'] || []).select { |t| t['active_version_id'] || t['active_version'] }
-    render json: items.reject { |t| t['system_key'].present? }
+    # Spec 11 §23: o Sr Moon aparece primeiro, só para quem tem `ai.moon.use`; demais templates de sistema ficam de fora.
+    moon_ok = Current.account_user.permissions.include?('ai.moon.use')
+    items = items.select { |t| t['system_key'].blank? || (t['system_key'] == 'moon' && moon_ok) }
+    render json: items.sort_by { |t| t['system_key'] == 'moon' ? 0 : 1 }
   end
 
   # Contexto assinado de uso único (≤ 60 s) que o navegador envia ao stream da mesma origem.

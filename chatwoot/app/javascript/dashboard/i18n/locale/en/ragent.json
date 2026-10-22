@@ -125,7 +125,8 @@
       },
       "SKILLS": "Skills for this agent",
       "SKILLS_EMPTY": "No company skills yet.",
-      "SKILL_FILES": "{n} file(s)"
+      "SKILL_FILES": "{n} file(s)",
+      "MOON_FIXED": "Default assistant, updated by LUAR"
     },
     "SKILLS": {
       "TITLE": "Skills and routines",

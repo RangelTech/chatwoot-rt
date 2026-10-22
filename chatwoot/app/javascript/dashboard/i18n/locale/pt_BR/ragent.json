@@ -125,7 +125,8 @@
       },
       "SKILLS": "Skills deste agente",
       "SKILLS_EMPTY": "Nenhuma skill da empresa ainda. Crie em IA → Skills.",
-      "SKILL_FILES": "{n} arquivo(s)"
+      "SKILL_FILES": "{n} arquivo(s)",
+      "MOON_FIXED": "Assistente padrão, atualizado pela LUAR"
     },
     "SKILLS": {
       "TITLE": "Skills e tarefas agendadas",
