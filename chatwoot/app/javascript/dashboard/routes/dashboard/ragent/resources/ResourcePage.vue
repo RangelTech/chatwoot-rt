@@ -51,6 +51,18 @@ const PER_PAGE = 25;
 const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
+const providerGroups = computed(() => {
+  const map = new Map();
+  items.value.forEach(it => {
+    const name = String(it.provider || 'custom');
+    if (!map.has(name)) map.set(name, { name, items: [], active: 0 });
+    const g = map.get(name);
+    g.items.push(it);
+    if (it.is_active ?? it.isActive ?? true) g.active += 1;
+  });
+  return Array.from(map.values());
+});
+
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return t(value ? 'RAGENT.RES.YES' : 'RAGENT.RES.NO');
@@ -397,7 +409,45 @@ const loadProviderModels = async item => {
       <Button :label="t('RAGENT.RES.SAVE')" :disabled="busy" @click="submit" />
     </section>
 
-    <div v-if="items.length" class="overflow-x-auto rounded-xl border border-n-weak">
+    <!-- Spec 11 §8: provedores em cartões por provedor, com as contas conectadas dentro -->
+    <div v-if="key === 'providers' && items.length" class="grid gap-4 md:grid-cols-2">
+      <section
+        v-for="g in providerGroups"
+        :key="g.name"
+        class="flex flex-col gap-2 rounded-xl border border-n-weak p-4"
+      >
+        <header class="flex items-center gap-2">
+          <h2 class="text-heading-3 text-n-slate-12">{{ g.name }}</h2>
+          <span class="ms-auto rounded-full bg-n-alpha-2 px-2 py-0.5 text-sm text-n-slate-11">
+            {{ t('RAGENT.RES.PROVIDER_CONNECTED', { n: g.active }, g.active) }}
+          </span>
+        </header>
+        <ul class="divide-y divide-n-weak">
+          <li v-for="it in g.items" :key="it.id" class="flex flex-wrap items-center gap-2 py-2">
+            <span class="min-w-0 flex-1 truncate text-n-slate-12">{{ it.name || it.model }}</span>
+            <span
+              class="rounded-full px-2 py-0.5 text-sm"
+              :class="(it.is_active ?? it.isActive ?? true) ? 'bg-n-teal-3 text-n-teal-11' : 'bg-n-alpha-2 text-n-slate-11'"
+            >
+              {{ t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.STATE_ACTIVE' : 'RAGENT.RES.STATE_OFF') }}
+            </span>
+            <template v-if="canManage && it.id">
+              <Button size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.ACTIONS.TEST')" @click="runItemAction(it, 'test')" />
+              <Button size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.ACTIONS.MODELS')" @click="loadProviderModels(it)" />
+              <Button
+                size="sm"
+                variant="faded"
+                :disabled="busy"
+                :label="t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.ACTIONS.DEACTIVATE' : 'RAGENT.RES.ACTIONS.ACTIVATE')"
+                @click="toggleActive(it)"
+              />
+              <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
+            </template>
+          </li>
+        </ul>
+      </section>
+    </div>
+    <div v-if="items.length && key !== 'providers'" class="overflow-x-auto rounded-xl border border-n-weak">
       <table class="w-full text-start text-body-main">
         <thead>
           <tr class="border-b border-n-weak text-n-slate-11">

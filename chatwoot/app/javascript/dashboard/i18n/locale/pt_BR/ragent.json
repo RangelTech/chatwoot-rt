@@ -462,7 +462,10 @@
           "WAITING": "Ainda aguardando a aprovação.",
           "CONNECTED": "Conectado: {name}.",
           "SIMULATOR": "Modo simulação: nenhuma conta real é usada.",
-          "AUTHORIZE_SIM": "Autorizar (simulação)"
+          "AUTHORIZE_SIM": "Autorizar (simulação)",
+          "COPY": "Copiar link",
+          "COPIED": "Link copiado",
+          "STEP_PASTE": "Depois de autorizar, copie o endereço inteiro da barra do navegador (começa com http://127.0.0.1…/callback?code=) e cole abaixo."
         },
         "QUOTA": {
           "BUTTON": "Limites",
@@ -501,7 +504,10 @@
         "PREV": "Anterior",
         "NEXT": "Próxima",
         "PAGE": "Página {page} de {pages} ({total} execuções)"
-      }
+      },
+      "PROVIDER_CONNECTED": "{n} conectado | {n} conectado | {n} conectados",
+      "STATE_ACTIVE": "Ativa",
+      "STATE_OFF": "Desligada"
     },
     "CRED": {
       "TITLE": "Credenciais",

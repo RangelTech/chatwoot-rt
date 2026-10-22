@@ -11,6 +11,27 @@ const { axios } = window;
 const { t } = useI18n();
 
 const PROVIDERS = ['codex', 'claude', 'gemini-cli', 'github'];
+const LABELS = {
+  codex: 'OpenAI Codex (ChatGPT)',
+  claude: 'Claude Code (Anthropic)',
+  'gemini-cli': 'Gemini CLI (Google)',
+  github: 'GitHub Copilot',
+};
+const copied = ref(false);
+const copyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(flow.value.auth_url);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  } catch (e) {
+    copied.value = false;
+  }
+};
+const openPopup = () => {
+  window.open(flow.value.auth_url, 'luar-oauth', 'width=520,height=720,noopener');
+};
 const provider = ref('codex');
 const flow = ref(null);
 const callback = ref('');
@@ -96,10 +117,18 @@ const poll = async () => {
     <p class="text-body-main text-n-slate-11">
       {{ t('RAGENT.RES.GW.OAUTH.HELP') }}
     </p>
-    <div class="flex gap-2">
-      <select v-model="provider" class="!mb-0 flex-1" :disabled="!!flow">
-        <option v-for="p in PROVIDERS" :key="p" :value="p">{{ p }}</option>
-      </select>
+    <div class="flex flex-wrap gap-2">
+      <button
+        v-for="p in PROVIDERS"
+        :key="p"
+        type="button"
+        class="rounded-xl border px-3 py-2 text-start text-body-main"
+        :class="provider === p ? 'border-n-brand bg-n-alpha-2 text-n-slate-12' : 'border-n-weak text-n-slate-11'"
+        :disabled="!!flow"
+        @click="provider = p"
+      >
+        {{ LABELS[p] }}
+      </button>
       <Button
         v-if="!flow"
         :label="t('RAGENT.RES.GW.OAUTH.START')"
@@ -112,15 +141,15 @@ const poll = async () => {
       <p class="text-body-main text-n-slate-11">
         {{ t('RAGENT.RES.GW.OAUTH.STEP_OPEN') }}
       </p>
-      <a
-        v-if="String(flow.auth_url).startsWith('https://')"
-        :href="flow.auth_url"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="break-all text-n-brand underline"
-      >
-        {{ t('RAGENT.RES.GW.OAUTH.OPEN') }}
-      </a>
+      <div v-if="String(flow.auth_url).startsWith('https://')" class="flex flex-wrap gap-2">
+        <Button :label="t('RAGENT.RES.GW.OAUTH.OPEN')" @click="openPopup" />
+        <Button
+          variant="faded"
+          :label="copied ? t('RAGENT.RES.GW.OAUTH.COPIED') : t('RAGENT.RES.GW.OAUTH.COPY')"
+          @click="copyLink"
+        />
+      </div>
+      <p class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.GW.OAUTH.STEP_PASTE') }}</p>
       <label class="text-body-main text-n-slate-11">
         {{ t('RAGENT.RES.GW.OAUTH.PASTE') }}
         <input
