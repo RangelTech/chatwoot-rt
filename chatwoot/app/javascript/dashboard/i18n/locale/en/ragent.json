@@ -462,7 +462,10 @@
           "WAITING": "Still waiting for approval.",
           "CONNECTED": "Connected {name}.",
           "SIMULATOR": "Simulation mode: no real account is used.",
-          "AUTHORIZE_SIM": "Authorize (simulation)"
+          "AUTHORIZE_SIM": "Authorize (simulation)",
+          "COPY": "Copy link",
+          "COPIED": "Link copied",
+          "STEP_PASTE": "After authorizing, copy the full address from the browser bar and paste it below."
         },
         "QUOTA": {
           "BUTTON": "Limits",
@@ -501,7 +504,10 @@
         "PREV": "Previous",
         "NEXT": "Next",
         "PAGE": "Page {page} of {pages} ({total} runs)"
-      }
+      },
+      "PROVIDER_CONNECTED": "{n} connected | {n} connected | {n} connected",
+      "STATE_ACTIVE": "Active",
+      "STATE_OFF": "Off"
     },
     "CRED": {
       "TITLE": "Credentials",
