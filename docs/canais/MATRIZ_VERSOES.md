@@ -19,3 +19,13 @@ Fonte unica das versoes **fixadas**. Espelha `vps_rt_infra/stacks/canais/version
 - Dois ciclos sem atualizar um bridge = revisar risco (o upstream acompanha mudancas do provedor).
 - Versoes anteriores (28/08/2026, `latest`/`ig-latest`, cookies) estao **aposentadas**; nao reutilizar.
 - Evolution API (`evoapicloud/evolution-api:v2.3.7`): convive ate a paridade (ver `PARIDADE_EVOLUTION.md`), depois parado sem apagar volumes.
+
+## Digests aplicados na VPS (21/10/2026)
+| Imagem | Tag | Digest |
+|---|---|---|
+| mautrix-meta (Messenger) | v26.10 | sha256:22bfa54084b6855188f5146b325ee007a298443a9617caead06cc5fc0ba0d687 |
+| mautrix-instagram | ig-v26.10 | sha256:a65249320ab4fba15587b77b9aa7d4024e4ff3e68ade1077da6000a899abbf26 |
+| mautrix-whatsapp | v26.10 | sha256:c807054cb015d0f5c90d20d85aac216d062b4a6f4ae834b931fd5e7f03e27391 |
+| Synapse | v1.159.0 | sha256:edf259d2b575b669a3e81024918ab8d5cfb7d2fba5a53c9e09695f1abc5645cb |
+| postgres | 16 | sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690 |
+| ReLttk (dentro do chatwoot-bridge) | commit 6483b27f441aaf13ebb3ad82b4c49014216a9733 (15/10/2026) | MIT; pip: websockets lz4 qrcode stealth-requests pycryptodome |

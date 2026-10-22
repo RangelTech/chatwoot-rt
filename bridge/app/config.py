@@ -77,6 +77,8 @@ class Settings(BaseSettings):
     tiktok_network: str = "canais_net"
     # QA/CDP: passos de login deterministicos, sem rede e sem conta real. NUNCA em producao real.
     channels_simulator: bool = False
+    # com o simulador ligado: quais provedores simular (vazio = todos); os demais usam bridge real
+    channels_sim_providers: str = ""
     channels_sim_scan_after_s: float = 20.0
     channels_sim_approve_after_s: float = 8.0
 

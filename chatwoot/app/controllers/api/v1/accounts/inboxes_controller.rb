@@ -1,7 +1,7 @@
 class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   include Api::V1::InboxesHelper
   before_action :fetch_inbox,
-                except: [:index, :create, :provision_evolution, :iniciar_social_unofficial, :concluir_social_unofficial]
+                except: [:index, :create, :provision_evolution]
   before_action :fetch_agent_bot, only: [:set_agent_bot]
   # we are already handling the authorization in fetch inbox
   before_action :check_authorization, except: [:show]
@@ -130,23 +130,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     render status: :ok, json: { message: I18n.t('messages.inbox_deletetion_response') }
   end
 
-  # Fase CH (CH-9): captura de cookie aposentada. O assistente "Conectar canal" substitui estes
-  # endpoints; ficam respondendo 410 Gone apontando o caminho novo (nenhum dado é apagado).
-  def iniciar_social_unofficial
-    render_social_unofficial_gone
-  end
-
-  def concluir_social_unofficial
-    render_social_unofficial_gone
-  end
-
   private
-
-  def render_social_unofficial_gone
-    render json: { error: 'A conexão por cookie foi descontinuada. Use o assistente Conectar canal (usuário e senha ou QR code).',
-                   error_code: 'gone', replacement: "/api/v1/accounts/#{Current.account.id}/channel_connections" },
-           status: :gone
-  end
 
   def fetch_inbox
     @inbox = Current.account.inboxes.find(params[:id])

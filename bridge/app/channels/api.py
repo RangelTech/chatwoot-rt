@@ -20,26 +20,59 @@ as_router = APIRouter(prefix="/_matrix/app/v1", tags=["channels-appservice"])
 _gateway: Gateway | None = None
 
 
+ALL_PROVIDERS = ("instagram", "messenger", "whatsapp", "tiktok")
+
+
+def _sim_providers() -> set[str]:
+    """Provedores simulados. CHANNELS_SIMULATOR=1 liga o simulador; CHANNELS_SIM_PROVIDERS
+    (ex.: "tiktok,whatsapp") limita a alguns e deixa os demais REAIS (troca por canal)."""
+    if not settings.channels_simulator:
+        return set()
+    wanted = {p.strip() for p in settings.channels_sim_providers.split(",") if p.strip()}
+    return (wanted & set(ALL_PROVIDERS)) or set(ALL_PROVIDERS)
+
+
 def build_default_gateway() -> Gateway:
-    if settings.channels_simulator:
-        return _build_simulated_gateway()
-    sender = appservice.MatrixSender()
+    from pathlib import Path
+    from tempfile import gettempdir
+
+    from app.channels.providers.tiktok import SubprocessLauncher
+    from app.channels.sim_tiktok import SimTikTokAdapter
+    from app.channels.simulator import SimBridge, SimSender
+
+    sim = _sim_providers()
+    adapters: dict = {}
+    real_sender = appservice.MatrixSender()
     secret = settings.bridge_provisioning_secret
-    adapters: dict = {
-        "instagram": MatrixBridgeAdapter(
-            "instagram", ProvisioningClient(settings.bridge_instagram_url, secret), sender
-        ),
-        "messenger": MatrixBridgeAdapter(
-            "messenger", ProvisioningClient(settings.bridge_messenger_url, secret), sender
-        ),
-        "whatsapp": MatrixBridgeAdapter(
-            "whatsapp", ProvisioningClient(settings.bridge_whatsapp_url, secret), sender
-        ),
+    real_urls = {
+        "instagram": settings.bridge_instagram_url,
+        "messenger": settings.bridge_messenger_url,
+        "whatsapp": settings.bridge_whatsapp_url,
     }
-    tiktok = _tiktok_adapter()
+    sim_prov = None
+    for name, url in real_urls.items():
+        if name in sim:
+            if sim_prov is None:
+                bridge = SimBridge(
+                    settings.channels_sim_approve_after_s, settings.channels_sim_scan_after_s
+                )
+                sim_prov = ProvisioningClient(
+                    "http://sim", "simulador", transport=bridge.transport()
+                )
+            adapters[name] = MatrixBridgeAdapter(name, sim_prov, SimSender())
+        else:
+            adapters[name] = MatrixBridgeAdapter(name, ProvisioningClient(url, secret), real_sender)
+    if "tiktok" in sim:
+        tiktok = SimTikTokAdapter(
+            SubprocessLauncher(Path(gettempdir()) / "luar-sim-tiktok", "fake", qr_ttl=20),
+            scan_after_s=settings.channels_sim_scan_after_s,
+        )
+    else:
+        tiktok = _tiktok_adapter()
     if tiktok:
         adapters["tiktok"] = tiktok
-    gw = Gateway(adapters, matrix=appservice.MatrixHS())
+    # Synapse so e usado pelos provedores reais
+    gw = Gateway(adapters, matrix=appservice.MatrixHS(), simulated=sim)
     if tiktok:
         tiktok.sink = gw
     return gw
@@ -64,35 +97,6 @@ def _tiktok_adapter():
     else:
         launcher = SubprocessLauncher(root, driver="relttk" if mode == "relttk" else "fake")
     return TikTokAdapter(launcher)
-
-
-def _build_simulated_gateway() -> Gateway:
-    """QA/CDP: tudo em memoria, passos deterministicos (ver simulator.py)."""
-    from pathlib import Path
-    from tempfile import gettempdir
-
-    from app.channels.providers.tiktok import SubprocessLauncher
-    from app.channels.sim_tiktok import SimTikTokAdapter
-    from app.channels.simulator import SimBridge, SimSender
-
-    bridge = SimBridge(settings.channels_sim_approve_after_s, settings.channels_sim_scan_after_s)
-    sender = SimSender()
-    prov = ProvisioningClient("http://sim", "simulador", transport=bridge.transport())
-    tiktok = SimTikTokAdapter(
-        SubprocessLauncher(Path(gettempdir()) / "luar-sim-tiktok", "fake", qr_ttl=20),
-        scan_after_s=settings.channels_sim_scan_after_s,
-    )
-    gw = Gateway(
-        {
-            "instagram": MatrixBridgeAdapter("instagram", prov, sender),
-            "messenger": MatrixBridgeAdapter("messenger", prov, sender),
-            "whatsapp": MatrixBridgeAdapter("whatsapp", prov, sender),
-            "tiktok": tiktok,
-        }
-    )
-    tiktok.sink = gw
-    gw.simulated = True
-    return gw
 
 
 def get_gateway() -> Gateway:
