@@ -174,6 +174,16 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
       expect(response).to have_http_status(:bad_request)
     end
 
+    it 'translates the gateway refusal for a provider the company does not have' do
+      body = { 'error' => 'provider of "anthropic/x" is not configured in this tenant' }
+      error = Rt::GatewayClient::Error.new('400', status: 400, body: body)
+      allow(Rt::GatewayClient).to receive(:post).and_raise(error)
+      post url, params: { name: 'x', models: %w[anthropic/x] }, headers: admin.create_new_auth_token, as: :json
+      message = response.parsed_body['message']
+      expect(message).to eq('O provedor do modelo "anthropic/x" não está configurado nesta empresa.')
+      expect(message).not_to match(/tenant/i)
+    end
+
     it 'updates only the sent combo fields and denies it to readers' do
       allow(Rt::GatewayClient).to receive(:put).and_return('id' => 'c')
       id = SecureRandom.uuid

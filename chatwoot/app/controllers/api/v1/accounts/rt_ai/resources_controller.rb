@@ -212,9 +212,23 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   end
 
   # Erro de validação do gateway (ex.: provedor que o tenant não tem) é texto de negócio, sem segredo.
+  # O gateway responde em inglês e fala em "tenant": o cliente recebe o equivalente em português, sem o termo interno.
+  GATEWAY_MESSAGES = [
+    [/provider of "([^"]+)" is not configured/i, ->(m) { "O provedor do modelo \"#{m[1]}\" não está configurado nesta empresa." }],
+    [/combo .*not found|unknown combo/i, ->(_) { 'Combo não encontrado nesta empresa.' }],
+    [/already exists|duplicate/i, ->(_) { 'Já existe um item com esse nome.' }]
+  ].freeze
+  GATEWAY_DEFAULT_MESSAGE = 'O gateway recusou a operação. Revise os dados e tente novamente.'.freeze
+
   def gateway_message(error)
     text = error.body.is_a?(Hash) ? error.body['error'] : nil
-    text.is_a?(String) ? text.first(300) : nil
+    return nil unless text.is_a?(String)
+
+    GATEWAY_MESSAGES.each do |pattern, builder|
+      match = pattern.match(text)
+      return builder.call(match) if match
+    end
+    GATEWAY_DEFAULT_MESSAGE
   end
 
   def gateway_failed(error)
