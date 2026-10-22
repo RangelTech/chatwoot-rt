@@ -157,3 +157,15 @@ def test_sim_inbound_some_fora_do_simulador(sim, monkeypatch):
         json={"account_id": 1, "connection_id": _cid(c)},
     )
     assert r.status_code == 404
+
+
+def test_simulador_por_provedor(monkeypatch):
+    from app.channels.api import _sim_providers
+
+    monkeypatch.setattr(settings, "channels_simulator", False)
+    assert _sim_providers() == set()
+    monkeypatch.setattr(settings, "channels_simulator", True)
+    monkeypatch.setattr(settings, "channels_sim_providers", "")
+    assert _sim_providers() == {"instagram", "messenger", "whatsapp", "tiktok"}
+    monkeypatch.setattr(settings, "channels_sim_providers", "tiktok, whatsapp,xx")
+    assert _sim_providers() == {"tiktok", "whatsapp"}

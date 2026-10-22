@@ -257,7 +257,9 @@ def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
 
     calls = {"handled": [], "claimed": set(), "released": []}
     item = {
-        "account_id": 7, "conversation_id": 3, "inbox_id": 9,
+        "account_id": 7,
+        "conversation_id": 3,
+        "inbox_id": 9,
         "message": {"id": 55, "content": "oi?", "message_type": "incoming"},
     }
 
@@ -278,7 +280,8 @@ def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
     released = calls["released"]
     monkeypatch.setattr(agent_bot.tenants, "release_message", lambda t, m: released.append(m))
     monkeypatch.setattr(
-        agent_bot.tenants, "claim_message",
+        agent_bot.tenants,
+        "claim_message",
         lambda t, m: calls["claimed"].add(m) or True,
     )
     assert asyncio.run(agent_bot.recover_unanswered(15)) == 1

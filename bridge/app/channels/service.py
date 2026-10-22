@@ -93,9 +93,11 @@ class Gateway:
         adapters: dict[str, ProviderAdapter],
         http: httpx.AsyncClient | None = None,
         matrix: Any = None,
+        simulated: set[str] | None = None,
     ):
         self.adapters = adapters
         self._http = http
+        self.simulated = simulated or set()
         self.matrix = matrix  # appservice -> Synapse (registro de usuario, join); None nos testes
 
     # --- util ----------------------------------------------------------------
@@ -133,7 +135,7 @@ class Gateway:
         mx = matrix_user_for(account_id, row["id"])
         store.set_matrix_user(row["id"], mx)
         row = self._row(row["id"], account_id)
-        if self.matrix is not None:
+        if self.matrix is not None and provider not in self.simulated:
             try:
                 await self.matrix.ensure_user(mx)
             except ProviderError as exc:
