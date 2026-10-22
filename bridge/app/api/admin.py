@@ -464,6 +464,24 @@ async def provision_menu_demo(payload: MenuDemoIn):
     }
 
 
+@router.get("/ai-config/status", dependencies=[Depends(require_admin)])
+async def ai_config_status(tenant_id: str):
+    """O tenant ja tem chave de integracao para a bridge responder numa fila de IA?"""
+    config = tenants.ai_config_for(tenant_id, None)
+    with_key = bool(config and config["integration_key_encrypted"])
+    if not with_key:
+        from app.db import get_connection
+
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM tenant_ai_config WHERE tenant_id = %s"
+                " AND integration_key_encrypted IS NOT NULL LIMIT 1",
+                (tenant_id,),
+            ).fetchone()
+        with_key = row is not None
+    return {"has_integration_key": with_key}
+
+
 @router.post("/ai-config", dependencies=[Depends(require_admin)])
 async def set_ai_config(payload: AiConfigIn):
     config = tenants.upsert_ai_config(

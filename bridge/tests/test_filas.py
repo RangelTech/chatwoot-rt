@@ -263,7 +263,7 @@ def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
         "message": {"id": 55, "content": "oi?", "message_type": "incoming"},
     }
 
-    async def fake_pending(minutes=15):
+    async def fake_pending(minutes=15, min_age=0):
         return [item]
 
     async def fake_resolve(account_id, conversation_id, legacy=None):
@@ -284,6 +284,7 @@ def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
         "claim_message",
         lambda t, m: calls["claimed"].add(m) or True,
     )
+    agent_bot._RECOVER_TRIED.clear()
     assert asyncio.run(agent_bot.recover_unanswered(15)) == 1
     assert calls["handled"] == [55]
     assert calls["released"] == [55] and calls["claimed"] == {55}

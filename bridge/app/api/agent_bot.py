@@ -438,6 +438,14 @@ def _legacy_respondent(tenant_id: str, conversation_id: int, inbox_id: int | Non
     return "ia" if state in AI_STATES and config is not None and config["autopilot"] else "humano"
 
 
+async def _inbox_in_queues_mode(account_id: int, conversation_id: int) -> bool:
+    """Em modo `filas` a bridge nao guarda estado de conversa: quem responde vem do Luar."""
+    if not routing.configured():
+        return False
+    decision = await routing.resolve(int(account_id), conversation_id)
+    return bool(decision and decision.get("routing_mode") == "filas")
+
+
 async def _handle_message_filas(
     tenant_id: str, account_id: int, payload: dict, decision: dict
 ) -> None:
@@ -751,7 +759,9 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
     # Mensagem de um atendente humano tira a IA do comando na hora.
     if message_type == "outgoing" and not payload.get("private"):
         sender_type = (payload.get("sender") or {}).get("type", "")
-        if sender_type == "user" and conversation_id:
+        if sender_type == "user" and conversation_id and not await _inbox_in_queues_mode(
+            account_id, conversation_id
+        ):
             tenants.set_conversation_state(
                 tenant_id=tenant_id, conversation_id=conversation_id, state="human_active"
             )
@@ -800,7 +810,10 @@ async def agent_bot_webhook(request: Request, background: BackgroundTasks):
     return {"status": "accepted"}
 
 
-async def recover_unanswered(minutes: int = 15) -> int:
+_RECOVER_TRIED: set[tuple[str, int]] = set()
+
+
+async def recover_unanswered(minutes: int = 15, min_age: int = 0) -> int:
     """Varredura de startup: reprocessa a ultima mensagem do cliente que ficou sem resposta de IA.
 
     So roda em modo `filas`. Como ha uma unica instancia da bridge, nada esta em voo ao subir:
@@ -810,7 +823,7 @@ async def recover_unanswered(minutes: int = 15) -> int:
     if not routing.configured():
         return 0
     count = 0
-    for item in await routing.pending(minutes):
+    for item in await routing.pending(minutes, min_age):
         try:
             link = _tenant_by_account(int(item["account_id"]))
             if link is None:
@@ -818,6 +831,9 @@ async def recover_unanswered(minutes: int = 15) -> int:
             tenant_id = str(link["tenant_id"])
             message = item["message"]
             message_id = int(message["id"])
+            if (tenant_id, message_id) in _RECOVER_TRIED:
+                continue
+            _RECOVER_TRIED.add((tenant_id, message_id))
             decision = await routing.resolve(int(item["account_id"]), int(item["conversation_id"]))
             if not decision or decision.get("respondent") != "ia":
                 continue

@@ -115,4 +115,19 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Queues', type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  it 'liga o Agent Bot da conta a caixa ao sair do modo legado, uma unica vez' do
+    around_env = { BRIDGE_URL: 'http://bridge.test:8100' }
+    with_modified_env(around_env) do
+      2.times do
+        put "#{url}/entry", params: { inbox_id: inbox.id, routing_mode: 'filas', team_id: human_team.id },
+                            headers: admin.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body['bot']).to eq('ok')
+      end
+    end
+    expect(account.agent_bots.where(name: 'LUAR filas').count).to eq(1)
+    expect(AgentBotInbox.where(inbox: inbox).count).to eq(1)
+    expect(account.agent_bots.find_by(name: 'LUAR filas').outgoing_url).to eq('http://bridge.test:8100/agent-bot')
+  end
 end
