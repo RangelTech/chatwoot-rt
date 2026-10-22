@@ -537,7 +537,10 @@ async def _handle_message_filas(
         # Anti-duplicata: outra execucao (webhook reenviado, varredura) ja respondeu?
         latest = await routing.history(account_id, conversation_id)
         if message_id and any(
-            e.get("role") == "ia" and not e.get("internal") and int(e.get("id") or 0) > message_id
+            e.get("role") == "ia"
+            and not e.get("internal")
+            and e.get("content") != PROGRESS_MESSAGE  # o aviso de progresso nao e resposta
+            and int(e.get("id") or 0) > message_id
             for e in latest
         ):
             logger.info("resposta descartada na conversa %s: ja respondida", conversation_id)

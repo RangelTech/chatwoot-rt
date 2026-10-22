@@ -288,3 +288,32 @@ def test_recover_unanswered_reprocessa_uma_vez(monkeypatch):
     assert asyncio.run(agent_bot.recover_unanswered(15)) == 1
     assert calls["handled"] == [55]
     assert calls["released"] == [55] and calls["claimed"] == {55}
+
+
+def test_progresso_ligado_nao_derruba_a_resposta_final(client, tenant_id, monkeypatch):
+    """Gate FINAL: o aviso de progresso (role ia, id maior) era tomado por resposta duplicada."""
+    from app.api.agent_bot import PROGRESS_MESSAGE
+    from app.services import chatwoot, tenants
+
+    _tenant_pronto(tenant_id)
+    tenants.upsert_ai_config(
+        tenant_id=tenant_id,
+        chatwoot_inbox_id=11,
+        template_id=TEMPLATE_A,
+        integration_key="chave",
+        show_progress=True,
+    )
+    cenario = Cenario(monkeypatch)
+    cenario.decisions = [_decisao()]
+
+    async def cria_e_registra(account_id, token, conversation_id, content, **kw):
+        cenario.enviadas.append((content, kw))
+        cenario.entries.append(
+            {"id": 100 + len(cenario.entries), "role": "ia", "internal": False, "content": content}
+        )
+        return {}
+
+    monkeypatch.setattr(chatwoot, "create_message", cria_e_registra)
+    assert client.post("/agent-bot", json=_msg(41)).json()["status"] == "accepted"
+    textos = [c for c, kw in cenario.enviadas if not kw.get("private")]
+    assert textos == [PROGRESS_MESSAGE, "ola"]
