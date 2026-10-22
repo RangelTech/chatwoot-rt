@@ -104,6 +104,11 @@ Rails.application.routes.draw do
             resources :members, only: [:index, :update]
             resource :me, only: [:show], controller: :me
             # Da empresa (compartilhadas pelo tenant); declaradas antes de :skills para não cair em :id.
+            get 'skills/company/:id/files', to: 'skills#company_files'
+            post 'skills/company/:id/files', to: 'skills#company_file_upload'
+            delete 'skills/company/:id/files/:file_id', to: 'skills#company_file_destroy'
+            get 'skills/agent/:template_id', to: 'skills#agent_skills'
+            put 'skills/agent/:template_id', to: 'skills#agent_skills_update'
             get 'skills/company', to: 'skills#company'
             post 'skills/company', to: 'skills#company_create'
             get 'skills/company/:id', to: 'skills#company_show'

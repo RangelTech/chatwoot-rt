@@ -8,9 +8,9 @@ class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseC
   PASSTHROUGH_STATUSES = [400, 404, 409, 422].freeze
   COMPANY_MANAGE = %w[ai.skills.manage_company ai.agents.edit].freeze
 
-  before_action -> { require_permission('ai.skills.view') }, only: [:index, :show, :company, :company_show]
+  before_action -> { require_permission('ai.skills.view') }, only: [:index, :show, :company, :company_show, :company_files, :agent_skills]
   before_action -> { require_permission('ai.skills.manage_own') }, only: [:create, :update, :act, :destroy]
-  before_action :require_company_manage, only: [:company_create, :company_update, :company_destroy, :company_act]
+  before_action :require_company_manage, only: [:company_file_upload, :company_file_destroy, :agent_skills_update, :company_create, :company_update, :company_destroy, :company_act]
   before_action -> { require_permission('ai.routines.view') }, only: [:routines, :routine_runs]
   before_action -> { require_permission('ai.routines.manage') }, only: [:routine_create, :routine_update, :routine_act, :routine_destroy]
   before_action -> { require_permission('ai.memories.review') }, only: [:memory_proposals, :memory_act]
@@ -42,6 +42,40 @@ class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseC
 
   def destroy
     render_engine engine_delete("/api/me/skills/#{params[:id]}")
+  end
+
+  # ---- Arquivos da skill da empresa e vínculo agente <-> skills (spec 11 §4)
+  def company_files
+    return head :not_found unless params[:id].to_s.match?(UUID)
+
+    render_engine engine_get("/api/skills/company/#{params[:id]}/files")
+  end
+
+  def company_file_upload
+    return head :not_found unless params[:id].to_s.match?(UUID)
+
+    render_engine engine_post("/api/skills/company/#{params[:id]}/files",
+                              { name: params[:name].to_s, mime: params[:mime].to_s.presence,
+                                content_b64: params[:content_b64].to_s })
+  end
+
+  def company_file_destroy
+    return head :not_found unless params[:id].to_s.match?(UUID) && params[:file_id].to_s.match?(UUID)
+
+    render_engine engine_delete("/api/skills/company/#{params[:id]}/files/#{params[:file_id]}")
+  end
+
+  def agent_skills
+    return head :not_found unless params[:template_id].to_s.match?(UUID)
+
+    render_engine engine_get("/api/skills/agent/#{params[:template_id]}")
+  end
+
+  def agent_skills_update
+    return head :not_found unless params[:template_id].to_s.match?(UUID)
+
+    render_engine engine_put("/api/skills/agent/#{params[:template_id]}",
+                             { skill_ids: Array(params[:skill_ids]).map(&:to_s) })
   end
 
   # ---- Da empresa

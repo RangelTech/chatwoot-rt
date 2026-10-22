@@ -122,7 +122,10 @@
         "MARKDOWN": "Markdown (títulos, listas, tabelas, código)",
         "WHATSAPP": "WhatsApp (*negrito*, _itálico_, sem tabelas)",
         "TEXT": "Texto simples"
-      }
+      },
+      "SKILLS": "Skills deste agente",
+      "SKILLS_EMPTY": "Nenhuma skill da empresa ainda. Crie em IA → Skills.",
+      "SKILL_FILES": "{n} arquivo(s)"
     },
     "SKILLS": {
       "TITLE": "Skills e tarefas agendadas",
@@ -175,7 +178,13 @@
       "EMPTY_PACKAGE": "Este agente ainda não tem skills no pacote publicado. Abra o agente para adicionar.",
       "AGENT_PACKAGE": "Agente {agent}",
       "AGENT_FILE": "AGENTE.md (instruções do agente)",
-      "OPEN_AGENT": "Abrir agentes"
+      "OPEN_AGENT": "Abrir agentes",
+      "FILES": "Arquivos da skill",
+      "FILES_ADD": "Adicionar arquivos",
+      "FILES_REMOVE": "Remover",
+      "FILES_HELP": "Cardápio, tabela de preços, manuais. O agente lê estes arquivos quando o texto da skill citar o nome. Até 10 MB cada; 500 MB no total da empresa.",
+      "FILE_TOO_BIG": "{name} passa de 10 MB.",
+      "FILE_ERROR": "Não foi possível enviar {name}."
     },
     "MENU": {
       "TITLE": "IA",

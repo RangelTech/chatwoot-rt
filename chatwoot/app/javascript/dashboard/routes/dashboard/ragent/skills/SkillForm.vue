@@ -1,4 +1,5 @@
 <script setup>
+import SkillFiles from './SkillFiles.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -154,5 +155,10 @@ const save = async () => {
         />
       </div>
     </template>
+    <SkillFiles
+      v-if="scope === 'company' && skill?.id"
+      :base="base"
+      :skill-id="skill.id"
+    />
   </form>
 </template>
