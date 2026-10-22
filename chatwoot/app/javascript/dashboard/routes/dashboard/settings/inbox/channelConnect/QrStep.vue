@@ -35,27 +35,43 @@ const draw = async () => {
   }
 };
 
+// Relogio do servidor e do navegador podem diferir (visto em producao: 9 min).
+// A contagem usa o tempo RELATIVO (refresh_after_s no momento em que o QR chegou).
+let shownAt = Date.now();
+let baseline = null;
+const markNew = () => {
+  shownAt = Date.now();
+  baseline = props.step.qr?.refresh_after_s ?? null;
+};
 const tick = () => {
-  const exp = props.step.qr?.expires_at;
-  if (!exp) {
+  const qr = props.step.qr;
+  if (!qr) {
     secondsLeft.value = null;
     return;
   }
-  secondsLeft.value = Math.max(
-    0,
-    Math.ceil((Date.parse(exp) - Date.now()) / 1000)
-  );
+  if (baseline !== null) {
+    secondsLeft.value = Math.max(
+      0,
+      Math.ceil(baseline - (Date.now() - shownAt) / 1000)
+    );
+    return;
+  }
+  secondsLeft.value = qr.expires_at
+    ? Math.max(0, Math.ceil((Date.parse(qr.expires_at) - Date.now()) / 1000))
+    : null;
 };
 
 watch(
-  () => [props.step.qr?.data, props.step.qr?.expires_at],
+  () => props.step.qr?.data,
   () => {
+    markNew();
     draw();
     tick();
   }
 );
 
 onMounted(() => {
+  markNew();
   draw();
   tick();
   ticker = setInterval(tick, 1000);

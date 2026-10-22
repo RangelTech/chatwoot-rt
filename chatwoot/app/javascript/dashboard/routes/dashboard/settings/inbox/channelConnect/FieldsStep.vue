@@ -78,9 +78,9 @@ const onSubmit = () => {
         ? values[f.id].trim()
         : values[f.id];
   });
-  // limpa ANTES de sair do componente
-  Object.keys(values).forEach(k => {
-    values[k] = '';
+  // limpa ANTES de sair do componente: so segredos; o usuario fica para a nova tentativa
+  fields.value.forEach(f => {
+    if (f.secret || f.type === 'password' || f.type === '2fa_code') values[f.id] = '';
   });
   emit('submit', data);
 };

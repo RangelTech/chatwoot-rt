@@ -119,16 +119,16 @@ describe('QrStep', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  const qrStep = (data, exp) => ({
+  const qrStep = (data, exp, refresh = 10) => ({
     step_id: 'q',
     kind: 'qr',
-    qr: { data, expires_at: exp, refresh_after_s: 10 },
+    qr: { data, expires_at: exp, refresh_after_s: refresh },
   });
 
   it('renderiza o QR, conta regressivamente e redesenha quando renova', async () => {
     const wrapper = mount(QrStep, {
       props: {
-        step: qrStep('QR-1', '2026-10-20T12:00:30Z'),
+        step: qrStep('QR-1', '2026-10-20T12:00:30Z', 30),
         provider: 'tiktok',
       },
       global,
@@ -152,6 +152,21 @@ describe('QrStep', () => {
     const second = wrapper.find('[data-test="qr-image"]').attributes('src');
     expect(second).not.toBe(first);
     expect(wrapper.text()).toContain('CHANNEL_CONNECT.STEPS.QR_HELP_TIKTOK');
+  });
+
+  it('contagem independe do relogio do servidor (usa refresh_after_s)', async () => {
+    // servidor 9 min adiantado: expires_at muito no futuro; a tela mostra o tempo relativo
+    const wrapper = mount(QrStep, {
+      props: {
+        step: qrStep('QR-SKEW', '2026-10-20T12:09:20Z', 20),
+        provider: 'whatsapp',
+      },
+      global,
+    });
+    await flushPromises();
+    expect(wrapper.find('[data-test="qr-countdown"]').text()).toContain(
+      '"seconds":20'
+    );
   });
 
   it('mostra instrucao do WhatsApp e o codigo de pareamento', () => {

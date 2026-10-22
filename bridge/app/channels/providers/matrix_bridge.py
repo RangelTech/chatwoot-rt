@@ -309,6 +309,10 @@ class MatrixBridgeAdapter:
         nxt.setdefault("login_id", pid)
         return self._remember(conn, nxt)
 
+    def last_step(self, conn: ConnectionCtx) -> Step | None:
+        v = self._last.get(conn.id)
+        return v.step if v else None
+
     async def poll_step(self, conn: ConnectionCtx) -> StepView:
         cur = self._proc.get(conn.id)
         if not cur:
