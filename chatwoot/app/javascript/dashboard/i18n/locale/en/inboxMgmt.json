@@ -584,6 +584,11 @@
         "SIGN_IN": "Sign in with Google",
         "EMAIL_PLACEHOLDER": "Enter email address",
         "ERROR_MESSAGE": "There was an error connecting to Google, please try again"
+      },
+      "TABS": {
+        "OFFICIAL": "Official",
+        "UNOFFICIAL": "Unofficial",
+        "UNOFFICIAL_WARNING": "Unofficial connections can be blocked by the source platform. Use your own account, at your own risk."
       }
     },
     "DETAILS": {

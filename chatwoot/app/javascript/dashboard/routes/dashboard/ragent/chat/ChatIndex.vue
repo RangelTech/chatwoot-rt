@@ -311,11 +311,6 @@ const stop = async () => {
         <h1 class="text-heading-2 text-n-slate-12">
           {{ t('RAGENT.CHAT.TITLE') }}
         </h1>
-        <span
-          class="rounded-md bg-n-alpha-2 px-2 py-0.5 text-body-main text-n-slate-11"
-        >
-          {{ t('RAGENT.CHAT.NOT_SENT_TO_CUSTOMER') }}
-        </span>
         <select
           v-if="hasTemplates"
           v-model="templateId"

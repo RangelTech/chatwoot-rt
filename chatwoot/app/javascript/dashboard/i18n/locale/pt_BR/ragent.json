@@ -6,7 +6,6 @@
       "HISTORY": "Histórico",
       "CLOSE_HISTORY": "Fechar histórico",
       "UNTITLED": "Chat sem título",
-      "NOT_SENT_TO_CUSTOMER": "Chat de teste — não envia ao cliente",
       "AGENT": "Agente",
       "PICK_AGENT": "Escolha um agente",
       "PLACEHOLDER": "Digite sua mensagem",
@@ -122,9 +121,9 @@
       }
     },
     "SKILLS": {
-      "TITLE": "Skills e rotinas",
+      "TITLE": "Skills e tarefas agendadas",
       "LEARNED": "Aprendidas por você",
-      "ROUTINES": "Rotinas",
+      "ROUTINES": "Tarefas agendadas",
       "MEMORIES": "Sugestões de memória",
       "APPROVE": "Aprovar",
       "DISCARD": "Descartar",
@@ -134,7 +133,7 @@
       "RESUME": "Retomar",
       "DELETE": "Apagar",
       "EMPTY": "Nenhuma skill sua ainda. Crie uma ou ensine no chat.",
-      "EMPTY_ROUTINES": "Nenhuma rotina ainda.",
+      "EMPTY_ROUTINES": "Nenhuma tarefa agendada ainda.",
       "EMPTY_MEMORIES": "Nenhuma sugestão para revisar.",
       "ERROR": "Não foi possível concluir a ação.",
       "STATUS": {
@@ -178,7 +177,7 @@
       "TITLE": "IA",
       "CHAT": "Chat com IA",
       "AGENTS": "Agentes",
-      "SKILLS": "Skills e rotinas",
+      "SKILLS": "Skills",
       "PROVIDERS": "Provedores",
       "COMBOS": "Combos",
       "CREDENTIALS": "Credenciais",
@@ -188,7 +187,9 @@
       "ENVIRONMENT": "Ambiente",
       "USAGE": "Uso",
       "QUOTAS": "Limites",
-      "REQUESTS": "Requisições"
+      "REQUESTS": "Requisições",
+      "AI_SETTINGS": "Inteligência artificial",
+      "ADVANCED": "Avançado"
     },
     "RES": {
       "NEW": "Novo",
@@ -623,11 +624,11 @@
       "SHORTCUT_FAILED": "Não foi possível preparar a fila do agente"
     },
     "ROUTINE": {
-      "HELP": "Rotinas acordam o agente num horário e rodam a instrução que você escreveu. O resultado fica no histórico e vira uma conversa.",
-      "NEW": "Nova rotina",
-      "NEW_TITLE": "Nova rotina",
-      "EDIT_TITLE": "Editar rotina",
-      "NO_AGENT": "Publique um agente para poder criar rotinas.",
+      "HELP": "Seu agente executa isto sozinho no horário e o resultado aparece no seu chat. O resultado fica no histórico e vira uma conversa.",
+      "NEW": "Nova tarefa agendada",
+      "NEW_TITLE": "Nova tarefa agendada",
+      "EDIT_TITLE": "Editar tarefa agendada",
+      "NO_AGENT": "Publique um agente para poder criar tarefas agendadas.",
       "NAME": "Nome",
       "INSTRUCTION": "O que o agente deve fazer",
       "INSTRUCTION_HINT": "Ex.: Resuma as vendas de ontem e liste os pedidos em aberto.",
@@ -648,9 +649,9 @@
       "DAYS": "dom,seg,ter,qua,qui,sex,sáb",
       "MIN_INTERVAL": "O intervalo mínimo entre execuções é de 15 minutos.",
       "CRON_PREVIEW": "Expressão: {cron}",
-      "ACTIVE": "Rotina ativa",
-      "SAVED": "Rotina salva",
-      "CONFIRM_DELETE": "Apagar esta rotina?",
+      "ACTIVE": "Tarefa agendada ativa",
+      "SAVED": "Tarefa agendada salva",
+      "CONFIRM_DELETE": "Apagar esta tarefa agendada?",
       "DESC_HOURLY": "Toda hora, no minuto {minute}",
       "DESC_DAILY": "Todo dia às {time}",
       "DESC_WEEKLY": "{days} às {time}",

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useMapGetter } from 'dashboard/composables/store';
@@ -25,23 +25,6 @@ const enabledFeatures = computed(() => currentAccount.value?.features || {});
 // (1) homologação Meta, o botão não pode aparecer gravando a tela do
 // Chatwoot pro App Review; (2) controle de acesso, Configurações -> Conta já
 // é área só de administrador. Default mudou de true pra false.
-const UNOFFICIAL_CHANNEL_KEYS = [
-  'evolution_api',
-  'instagram_unofficial',
-  'facebook_unofficial',
-  'tiktok_unofficial',
-  'whatsapp_unofficial',
-];
-
-const showUnofficialChannels = ref(false);
-watch(
-  currentAccount,
-  () => {
-    const stored = currentAccount.value?.settings?.show_unofficial_channels;
-    showUnofficialChannels.value = stored ?? false;
-  },
-  { deep: true, immediate: true }
-);
 
 const hasTiktokConfigured = computed(() => {
   return window.chatwootConfig?.tiktokAppId;
@@ -168,11 +151,23 @@ const channelList = computed(() => {
   return channels;
 });
 
+// Spec 11 §12: duas abas; só o que existe no produto aparece (sem SMS, Line, Telegram, API, voz, Evolution).
+const OFFICIAL_KEYS = ['whatsapp', 'instagram', 'facebook', 'email', 'website', 'tiktok'];
+const UNOFFICIAL_ORDER = [
+  'whatsapp_unofficial',
+  'wapi',
+  'facebook_unofficial',
+  'instagram_unofficial',
+  'tiktok_unofficial',
+];
+const tab = ref('official');
 const visibleChannelList = computed(() => {
-  if (showUnofficialChannels.value) return channelList.value;
-  return channelList.value.filter(
-    channel => !UNOFFICIAL_CHANNEL_KEYS.includes(channel.key)
-  );
+  if (tab.value === 'official') {
+    return channelList.value.filter(c => OFFICIAL_KEYS.includes(c.key));
+  }
+  return UNOFFICIAL_ORDER.map(k =>
+    channelList.value.find(c => c.key === k)
+  ).filter(Boolean);
 });
 
 const initChannelAuth = channel => {
@@ -186,6 +181,34 @@ const initChannelAuth = channel => {
 
 <template>
   <div class="max-w-3xl">
+    <div class="flex gap-2 px-8 pt-6" role="tablist">
+      <button
+        v-for="item in ['official', 'unofficial']"
+        :key="item"
+        type="button"
+        role="tab"
+        :aria-selected="tab === item"
+        class="px-4 py-1.5 text-sm rounded-full border"
+        :class="
+          tab === item
+            ? 'bg-n-brand text-white border-n-brand'
+            : 'border-n-weak text-n-slate-11'
+        "
+        @click="tab = item"
+      >
+        {{
+          item === 'official'
+            ? t('INBOX_MGMT.ADD.TABS.OFFICIAL')
+            : t('INBOX_MGMT.ADD.TABS.UNOFFICIAL')
+        }}
+      </button>
+    </div>
+    <p
+      v-if="tab === 'unofficial'"
+      class="px-8 pt-3 text-sm text-n-slate-11"
+    >
+      {{ t('INBOX_MGMT.ADD.TABS.UNOFFICIAL_WARNING') }}
+    </p>
     <div
       class="grid max-w-3xl grid-cols-1 xs:grid-cols-2 mx-0 gap-6 sm:grid-cols-3 p-8"
     >
