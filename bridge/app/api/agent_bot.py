@@ -468,7 +468,13 @@ async def _handle_message_filas(
         return
     agent_id = str(decision.get("agent") or config.get("template_id") or "")
     attrs = _ia_attrs(agent_id)
-    integration_key = decrypt(config["integration_key_encrypted"])
+    try:
+        integration_key = decrypt(config["integration_key_encrypted"])
+    except Exception:  # noqa: BLE001 - chave ilegivel: sem IA nesta caixa, um humano assume
+        logger.warning("chave de integracao ilegivel na conversa %s", conversation_id)
+        if message_id:
+            tenants.release_message(tenant_id, message_id)
+        return
 
     kernel_attachments: list[dict] = []
     if audio_attachment is not None:
@@ -528,6 +534,14 @@ async def _handle_message_filas(
             tenants.mark_agent_seen(tenant_id, conversation_id, agent_id, message_id)
             return
 
+        # Anti-duplicata: outra execucao (webhook reenviado, varredura) ja respondeu?
+        latest = await routing.history(account_id, conversation_id)
+        if message_id and any(
+            e.get("role") == "ia" and not e.get("internal") and int(e.get("id") or 0) > message_id
+            for e in latest
+        ):
+            logger.info("resposta descartada na conversa %s: ja respondida", conversation_id)
+            return
         admin = _account_admin(tenant_id)
         if admin is None:
             return
