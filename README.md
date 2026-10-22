@@ -76,6 +76,14 @@ Os modelos estão em `infra/env/*.env.example`. As principais da ponte: `DATABAS
 
 `docs/runbooks/` (onboarding de empresa, canais Meta) e `docs/decisions/` (fronteiras, marca e planos). Manutenção do fork: `docs/architecture/fork-maintenance.md`.
 
+## Contratos e APIs
+
+- Ponte ↔ motor: chamadas ao `luar_engine` com contexto assinado; o contrato fica no `luar_engine` (`backend/docs/harness-internal-api.md`).
+- Gateway de canais: [`docs/canais/CONTRATO_GATEWAY.md`](docs/canais/CONTRATO_GATEWAY.md). Matriz de versões dos provedores: [`docs/canais/MATRIZ_VERSOES.md`](docs/canais/MATRIZ_VERSOES.md).
+- Omnichannel: [`docs/architecture/omnichannel.md`](docs/architecture/omnichannel.md).
+
+Runbooks de canal: [`docs/canais/runbooks/`](docs/canais/runbooks/) (reconectar, atualizar bridge, revogar, restaurar, vazamento de sessão, provedor muda). Upgrade do Chatwoot: [`docs/runbooks/upgrade-mensal.md`](docs/runbooks/upgrade-mensal.md).
+
 ## Como contribuir
 
 Uma branch por tarefa, Conventional Commits em português, PR com CI verde. Deploy nunca sai daqui.
