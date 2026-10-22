@@ -10,10 +10,10 @@ module Rt::AccountLifecycle
     after_destroy_commit { Rt::AccountLifecycle.enqueue(id, 'deprovision') }
   end
 
-  def self.enqueue(account_id, kind)
+  def self.enqueue(account_id, kind, user_id: nil)
     return if ENV['RT_ENGINE_URL'].blank?
 
-    Rt::OutboxEvent.create!(account_id: account_id, kind: kind)
+    Rt::OutboxEvent.create!(account_id: account_id, kind: kind, user_id: user_id, occurred_at: Time.current)
     Rt::OutboxJob.perform_later
   end
 

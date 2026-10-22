@@ -4,7 +4,8 @@ class Rt::OutboxJob < ApplicationJob
   queue_as :low
 
   PATHS = { 'provision' => '/internal/ui/provision', 'suspend' => '/internal/ui/suspend',
-            'resume' => '/internal/ui/resume', 'deprovision' => '/internal/ui/deprovision' }.freeze
+            'resume' => '/internal/ui/resume', 'deprovision' => '/internal/ui/deprovision',
+            'member_revoked' => '/internal/ui/member-revoked' }.freeze
 
   def perform
     Rt::OutboxEvent.due.limit(20).each { |event| deliver(event) }
@@ -13,11 +14,25 @@ class Rt::OutboxJob < ApplicationJob
   private
 
   def deliver(event)
+    return finish_member_revoked(event) if event.kind == 'member_revoked'
+
     account = Account.find_by(id: event.account_id)
     payload = { account_id: event.account_id, name: account&.name.to_s }
     result = Rt::EngineClient.post(PATHS.fetch(event.kind), payload)
     event.update!(state: 'done', last_error: nil)
     record_state(event, result, account)
+  rescue StandardError => e
+    mark_failed(event, e)
+  end
+
+  # Usuário removido da empresa: o motor desativa a projeção, corta as execuções e rejeita os
+  # contextos anteriores. Se a pessoa já foi readicionada até a entrega, não há o que revogar.
+  def finish_member_revoked(event)
+    unless event.user_id && AccountUser.exists?(account_id: event.account_id, user_id: event.user_id)
+      Rt::EngineClient.post(PATHS.fetch(event.kind), { account_id: event.account_id, chatwoot_user_id: event.user_id,
+                                                       revoked_at: (event.occurred_at || event.created_at).to_f })
+    end
+    event.update!(state: 'done', last_error: nil)
   rescue StandardError => e
     mark_failed(event, e)
   end
