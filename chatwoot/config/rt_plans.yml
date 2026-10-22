@@ -1,0 +1,32 @@
+# Spec 11 §20: fonte única dos direitos por plano (produto e site leem este arquivo).
+# Plano define o padrão das flags; sobrescrita manual no Super Admin continua valendo.
+nova:
+  name: Nova
+  price_brl: 197
+  max_inboxes: 1
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: false, outbound_enabled: false, lowrefusal_enabled: false, gpu_enabled: false }
+crescente:
+  name: Crescente
+  price_brl: 397
+  max_inboxes: null
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: true, outbound_enabled: true, lowrefusal_enabled: false, gpu_enabled: false }
+quarto:
+  name: Quarto
+  price_brl: 597
+  max_inboxes: null
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: true, outbound_enabled: true, lowrefusal_enabled: false, gpu_enabled: false }
+cheia:
+  name: Cheia
+  price_brl: 797
+  max_inboxes: null
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: true, outbound_enabled: true, lowrefusal_enabled: true, gpu_enabled: false }
+eclipse:
+  name: Eclipse
+  price_brl: 997
+  max_inboxes: null
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: true, outbound_enabled: true, lowrefusal_enabled: true, gpu_enabled: true }
+interno:
+  name: Interno
+  price_brl: 0
+  max_inboxes: null
+  flags: { ai_enabled: true, chat_enabled: true, harness_enabled: true, kanban_enabled: true, environment_enabled: true, outbound_enabled: true, lowrefusal_enabled: true, gpu_enabled: true }
