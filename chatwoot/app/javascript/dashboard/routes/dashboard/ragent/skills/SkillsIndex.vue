@@ -126,7 +126,7 @@ const when = iso =>
 const statusLabel = s => t(`RAGENT.SKILLS.STATUS.${String(s).toUpperCase()}`);
 const runLabel = s => t(`RAGENT.ROUTINE.RUN.${String(s).toUpperCase()}`);
 const chatPath = id =>
-  `/app/accounts/${route.params.accountId}/ragent/chat/${id}`;
+  `/app/accounts/${route.params.accountId}/ia/chat/${id}`;
 
 const pkgSkills = computed(() =>
   companySkills.value.filter(s => s.scope === 'template')
@@ -150,7 +150,7 @@ const agentGroups = computed(() => {
   return [...groups.values()];
 });
 const agentsPath = computed(
-  () => `/app/accounts/${route.params.accountId}/ragent/agents`
+  () => `/app/accounts/${route.params.accountId}/ia/agents`
 );
 const sharedSkills = computed(() =>
   companySkills.value.filter(s => s.scope === 'company')
