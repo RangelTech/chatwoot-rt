@@ -486,6 +486,10 @@
           "STRATEGY": "When a model fails",
           "FALLBACK": "Try the next model in order",
           "ROUND_ROBIN": "Spread requests across models",
+          "FUSION": "Fusion: several models answer and a judge picks the best",
+          "FUSION_HELP": "Each question goes to every model in the list (at least 2) and the judge merges the best. Costs more, better quality.",
+          "JUDGE": "Judge model",
+          "JUDGE_AUTO": "Automatic (first in the list)",
           "ORDER": "Models, in order of use",
           "ADD": "Add",
           "ADD_PLACEHOLDER": "provider/model or another combo"
