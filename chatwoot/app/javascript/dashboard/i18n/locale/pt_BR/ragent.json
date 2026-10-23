@@ -72,6 +72,8 @@
         "SUBAGENTS_PROGRESS": "{done} de {total} concluídos"
       },
       "MIC": "Gravar áudio",
+      "DICTATING": "Ouvindo…",
+      "DICTATION_ERROR": "Não foi possível transcrever no navegador. Você pode gravar o áudio para transcrição pelo servidor.",
       "MIC_DONE": "Ditar",
       "MIC_CANCEL": "Cancelar",
       "MIC_NO_DICTATION": "Sem provedor de voz, o áudio foi anexado (cadastre Groq ou OpenAI em Provedores para ditar).",

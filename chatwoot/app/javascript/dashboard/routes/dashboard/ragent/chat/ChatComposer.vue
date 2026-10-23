@@ -19,6 +19,8 @@ const MAX_FILES = 10;
 const draft = ref('');
 const files = ref([]);
 const picker = ref(null);
+const dictating = ref(false);
+let recognition = null;
 
 const canSend = computed(
   () =>
@@ -54,6 +56,33 @@ const onPick = event => {
 const onDrop = event => {
   if (!props.readOnly && !props.sending) addFiles(event.dataTransfer.files);
 };
+
+// Spec 12 §5: privacidade e latência primeiro. Chrome/Edge transcrevem o
+// ditado diretamente no navegador; nenhum áudio é enviado à LUAR nesse fluxo.
+const startBrowserDictation = () => {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) return false;
+
+  const initialDraft = draft.value;
+  recognition = new Recognition();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onstart = () => { dictating.value = true; };
+  recognition.onresult = event => {
+    let transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; i += 1) transcript += event.results[i][0].transcript;
+    draft.value = [initialDraft, transcript.trim()].filter(Boolean).join(initialDraft && transcript ? ' ' : '');
+  };
+  recognition.onerror = event => {
+    if (event.error !== 'aborted') useAlert(t('RAGENT.CHAT.DICTATION_ERROR'));
+  };
+  recognition.onend = () => { dictating.value = false; recognition = null; };
+  recognition.start();
+  return true;
+};
+
+const stopBrowserDictation = () => recognition?.stop();
 
 // Spec 11 §3: microfone. Grava, anexa o áudio e o motor transcreve antes de passar ao agente.
 const recording = ref(false);
@@ -128,6 +157,10 @@ const startRecording = async () => {
   }
 };
 
+const startDictation = () => {
+  if (!startBrowserDictation()) startRecording();
+};
+
 const stopRecording = (cancel = false) => {
   stopTimer();
   recording.value = false;
@@ -137,7 +170,10 @@ const stopRecording = (cancel = false) => {
   }
 };
 
-onBeforeUnmount(() => stopRecording(true));
+onBeforeUnmount(() => {
+  stopBrowserDictation();
+  stopRecording(true);
+});
 
 const timeLabel = computed(
   () =>
@@ -210,15 +246,20 @@ const submit = () => {
           @click="picker.click()"
         />
         <Button
-          v-if="!recording"
+          v-if="!recording && !dictating"
           icon="i-lucide-mic"
           variant="ghost"
           color="slate"
           :title="t('RAGENT.CHAT.MIC')"
           :aria-label="t('RAGENT.CHAT.MIC')"
           :disabled="sending || disabled"
-          @click="startRecording"
+          @click="startDictation"
         />
+        <div v-else-if="dictating" class="flex items-center gap-2 text-body-main text-n-ruby-11">
+          <span class="size-2 rounded-full bg-n-ruby-9 animate-pulse" aria-hidden="true" />
+          {{ t('RAGENT.CHAT.DICTATING') }}
+          <Button :label="t('RAGENT.CHAT.MIC_DONE')" size="sm" @click="stopBrowserDictation" />
+        </div>
         <div v-else class="flex items-center gap-2 text-body-main text-n-ruby-11">
           <span class="size-2 rounded-full bg-n-ruby-9 animate-pulse" aria-hidden="true" />
           {{ timeLabel }}
