@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { formatDate, formatNumber, percent } from './format';
 import ServicesSection from './ServicesSection.vue';
-import HostsPanel from './HostsPanel.vue';
 
 const props = defineProps({ data: { type: Object, required: true } });
 const { t, te } = useI18n();
@@ -223,5 +222,4 @@ const meterText = m =>
       </section>
     </template>
   </div>
-  <HostsPanel class="mt-4" />
 </template>

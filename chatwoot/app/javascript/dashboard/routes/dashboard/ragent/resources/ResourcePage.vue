@@ -1,5 +1,6 @@
 <script setup>
 import AiSettingsTabs from '../AiSettingsTabs.vue';
+import HostsPanel from './HostsPanel.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -543,6 +544,7 @@ const loadProviderModels = async item => {
     <ProviderCostPanel v-if="raw && key === 'usage' && raw.byProvider" :data="raw" />
     <UsagePanel v-else-if="raw && key === 'usage'" :data="raw" />
     <EnvironmentPanel v-else-if="raw && key === 'environment'" :data="raw" />
+    <HostsPanel v-if="key === 'environment'" />
     <dl
       v-else-if="raw"
       class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-xl border border-n-weak p-4 text-body-main sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
