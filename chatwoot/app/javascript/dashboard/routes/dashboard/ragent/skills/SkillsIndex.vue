@@ -80,6 +80,9 @@ const run = async (verb, url) => {
 
 const confirmed = key => window.confirm(t(key));
 
+const promote = s =>
+  confirmed('RAGENT.SKILLS.CONFIRM_PROMOTE') &&
+  run('post', `${base}/skills/${s.id}/act/promote`);
 const skillAct = (s, action) =>
   run('post', `${base}/skills/${s.id}/act/${action}`);
 const skillDelete = s =>
@@ -407,6 +410,13 @@ const tabs = computed(() => [
                 size="sm"
                 :label="t('RAGENT.SKILLS.ENABLE')"
                 @click="skillAct(s, 'enable')"
+              />
+              <Button
+                v-if="canManageCompany && s.status === 'active'"
+                size="sm"
+                variant="faded"
+                :label="t('RAGENT.SKILLS.PROMOTE')"
+                @click="promote(s)"
               />
               <Button
                 size="sm"

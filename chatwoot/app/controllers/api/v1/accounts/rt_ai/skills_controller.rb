@@ -3,7 +3,7 @@
 # tenant e só muda com `ai.skills.manage_company` ou `ai.agents.edit`.
 class Api::V1::Accounts::RtAi::SkillsController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
-  ACTIONS = %w[approve discard disable enable].freeze
+  ACTIONS = %w[approve discard disable enable promote].freeze
   COMPANY_ACTIONS = %w[enable disable].freeze
   PASSTHROUGH_STATUSES = [400, 404, 409, 422].freeze
   COMPANY_MANAGE = %w[ai.skills.manage_company ai.agents.edit].freeze
