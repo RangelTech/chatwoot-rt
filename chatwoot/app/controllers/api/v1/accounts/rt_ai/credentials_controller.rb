@@ -35,15 +35,32 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
   before_action :need_id, only: [:update, :destroy, :test]
 
   def index
+    # Esta tela consulta seis coleções independentes no motor. Fazê-las em série
+    # transformava uma página simples em seis RTTs. O contexto comum é calculado
+    # uma vez; cada chamada recebe um nonce novo, pois o motor rejeita replay.
+    base_claims = engine_context
+    responses = Queue.new
+    workers = LISTS.map do |path|
+      Thread.new do
+        rows = Rt::EngineClient.get(path, claims: base_claims.merge(nonce: SecureRandom.hex(16)))
+        responses << [path, rows, nil]
+      rescue Rt::EngineClient::Error => e
+        responses << [path, nil, e]
+      end
+    end
+    workers.each(&:join)
+
     items = []
     failures = 0
-    LISTS.each do |path|
-      rows = Rt::EngineClient.get(path, claims: engine_context)
+    LISTS.size.times do
+      path, rows, error = responses.pop
+      if error
+        failures += 1
+        Rails.logger.warn("rt_ai credentials list #{path}: #{error.message}")
+        next
+      end
       rows = [rows] if rows.is_a?(Hash)
       items.concat(Array(rows).filter_map { |row| present(LIST_TYPE[path], row) })
-    rescue Rt::EngineClient::Error => e
-      failures += 1
-      Rails.logger.warn("rt_ai credentials list #{path}: #{e.message}")
     end
     return engine_failed(Rt::EngineClient::Error.new('all lists failed', status: 502)) if failures == LISTS.size
 
