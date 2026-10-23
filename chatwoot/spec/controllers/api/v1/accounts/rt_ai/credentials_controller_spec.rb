@@ -51,6 +51,22 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
       expect(response.body).not_to include('NAO-PODE-VAZAR')
     end
 
+    it 'reuses the signed context attributes while issuing a unique nonce per source' do
+      contexts = []
+      lock = Mutex.new
+      allow(Rt::EngineClient).to receive(:get) do |_path, claims:|
+        lock.synchronize { contexts << claims }
+        []
+      end
+
+      get base, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(contexts.size).to eq(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size)
+      expect(contexts.map { |claims| claims[:nonce] }.uniq.size).to eq(contexts.size)
+      expect(contexts.map { |claims| claims.except(:nonce) }.uniq.size).to eq(1)
+    end
+
     it 'keeps working when one source fails and fails only when all do' do
       allow(Rt::EngineClient).to receive(:get) do |path, **|
         raise Rt::EngineClient::Error.new('boom', status: 500) if path == '/api/datasources'
