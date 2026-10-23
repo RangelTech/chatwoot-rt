@@ -47,6 +47,13 @@ export const routes = [
     component: SkillsIndex,
   },
   {
+    // Item "Tarefas agendadas" do menu IA: mesma tela de Skills, aberta na aba de tarefas.
+    path: frontendURL('accounts/:accountId/ia/routines'),
+    name: 'ragent_routines',
+    meta: { permissions: ['ai.skills.view'] },
+    component: SkillsIndex,
+  },
+  {
     path: frontendURL('accounts/:accountId/ia/inboxes'),
     name: 'ragent_inboxes',
     meta: { permissions: ['ai.inbox_routing.view'] },
