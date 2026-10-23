@@ -27,6 +27,7 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
   # Uma consulta por origem no motor (segredo/SSH/GCP dividem a mesma).
   LISTS = TYPES.values.pluck(:list).uniq.freeze
   LIST_TYPE = TYPES.to_h { |type, cfg| [cfg[:list], type] }.freeze
+  CACHE_TTL = 15.seconds
 
   before_action -> { require_permission('ai.credentials.view') }, only: [:index]
   before_action -> { require_permission('ai.credentials.manage') }, only: [:create, :update, :destroy, :oauth_start, :test]
@@ -35,6 +36,10 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
   before_action :need_id, only: [:update, :destroy, :test]
 
   def index
+    if (items = Rails.cache.read(credentials_cache_key))
+      return render json: { items: items }
+    end
+
     # Esta tela consulta seis coleções independentes no motor. Fazê-las em série
     # transformava uma página simples em seis RTTs. O contexto comum é calculado
     # uma vez; cada chamada recebe um nonce novo, pois o motor rejeita replay.
@@ -64,7 +69,10 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
     end
     return engine_failed(Rt::EngineClient::Error.new('all lists failed', status: 502)) if failures == LISTS.size
 
-    render json: { items: items.sort_by { |i| [i[:type], i[:name].to_s.downcase] } }
+    items = items.sort_by { |i| [i[:type], i[:name].to_s.downcase] }
+    # Uma lista parcial nunca entra no cache: ela deve se recompor na próxima leitura.
+    Rails.cache.write(credentials_cache_key, items, expires_in: CACHE_TTL) if failures.zero?
+    render json: { items: items }
   end
 
   def create
@@ -88,8 +96,10 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
     path = @rt_type == 'payment' ? "/api/payments/credentials/#{params[:id]}" : "#{TYPES[@rt_type][:list]}/#{params[:id]}"
     # DELETE do motor devolve 204 sem corpo em alguns tipos; o cliente só precisa saber que deu certo.
     Rt::EngineClient.delete(path, claims: engine_context)
+    expire_credentials_cache!
     render json: { status: 'ok' }
   rescue JSON::ParserError
+    expire_credentials_cache!
     render json: { status: 'ok' }
   rescue Rt::EngineClient::Error => e
     engine_failed(e)
@@ -126,6 +136,7 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
   def render_saved(data)
     return if performed?
 
+    expire_credentials_cache!
     render json: present(@rt_type, data) || { status: 'ok' }
   end
 
@@ -138,6 +149,14 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
 
     # Pagamento é uma credencial por empresa: criar e substituir são o mesmo PUT do motor.
     verb == :post && @rt_type != 'payment' ? engine_post(path, body) : engine_put(path, body)
+  end
+
+  def credentials_cache_key
+    "rt_ai:credentials:v1:#{Current.account.id}"
+  end
+
+  def expire_credentials_cache!
+    Rails.cache.delete(credentials_cache_key)
   end
 
   def build_body(given, id)
