@@ -17,9 +17,15 @@ const name = ref(props.initial?.name || '');
 const models = ref([...(props.initial?.models || [])]);
 const draft = ref('');
 const strategy = ref(props.initial?.strategy?.fallbackStrategy || 'fallback');
-const STRATEGIES = ['fallback', 'round-robin'];
+const STRATEGIES = ['fallback', 'round-robin', 'fusion'];
+const judge = ref(props.initial?.strategy?.judgeModel || '');
 
-const canSave = computed(() => name.value.trim() && models.value.length);
+const canSave = computed(
+  () =>
+    name.value.trim() &&
+    models.value.length &&
+    (strategy.value !== 'fusion' || models.value.length >= 2)
+);
 
 const add = () => {
   const value = draft.value.trim();
@@ -38,7 +44,13 @@ const save = () =>
   emit('save', {
     name: name.value.trim(),
     models: models.value,
-    strategy: { fallbackStrategy: strategy.value },
+    strategy:
+      strategy.value === 'fusion'
+        ? {
+            fallbackStrategy: 'fusion',
+            ...(judge.value ? { judgeModel: judge.value } : {}),
+          }
+        : { fallbackStrategy: strategy.value },
   });
 </script>
 
@@ -62,6 +74,22 @@ const save = () =>
         <option v-for="s in STRATEGIES" :key="s" :value="s">
           {{ t(`RAGENT.RES.GW.COMBO.${s.toUpperCase().replace('-', '_')}`) }}
         </option>
+      </select>
+    </label>
+    <p
+      v-if="strategy === 'fusion'"
+      class="text-body-main text-n-slate-11"
+    >
+      {{ t('RAGENT.RES.GW.COMBO.FUSION_HELP') }}
+    </p>
+    <label
+      v-if="strategy === 'fusion'"
+      class="text-body-main text-n-slate-11"
+    >
+      {{ t('RAGENT.RES.GW.COMBO.JUDGE') }}
+      <select v-model="judge" class="!mb-0 w-full">
+        <option value="">{{ t('RAGENT.RES.GW.COMBO.JUDGE_AUTO') }}</option>
+        <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
       </select>
     </label>
     <div class="flex flex-col gap-2">

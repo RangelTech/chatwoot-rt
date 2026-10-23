@@ -486,6 +486,10 @@
           "STRATEGY": "Quando um modelo falha",
           "FALLBACK": "Tentar o próximo modelo da ordem",
           "ROUND_ROBIN": "Distribuir as chamadas entre os modelos",
+          "FUSION": "Fusão: vários modelos respondem e um juiz escolhe a melhor",
+          "FUSION_HELP": "Cada pergunta vai para todos os modelos da lista (mínimo 2) e o juiz combina o melhor. Custa mais, responde com mais qualidade.",
+          "JUDGE": "Modelo juiz",
+          "JUDGE_AUTO": "Automático (o primeiro da lista)",
           "ORDER": "Modelos, na ordem de uso",
           "ADD": "Adicionar",
           "ADD_PLACEHOLDER": "provedor/modelo ou outro combo"
