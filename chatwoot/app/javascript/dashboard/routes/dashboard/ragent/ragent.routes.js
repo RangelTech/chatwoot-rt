@@ -9,8 +9,50 @@ import { ROUTES } from './resources/resourceConfig';
 
 const meta = { permissions: ['ai.chat.view'] };
 
-// A URL pública não carrega o nome técnico antigo; os endereços `/ragent/*` seguem valendo (redirecionam).
+const settingsPath = key => frontendURL(`accounts/:accountId/settings/ai/${key}`);
+
+// As páginas de uso ficam no menu principal. Cadastros ficam em Configurações
+// -> Inteligência artificial. A separação evita que a tela diária vire um
+// painel administrativo com abas.
+const settingsRoutes = [
+  ['agents', 'ai.agents.view', AgentsIndex],
+  ['skills', 'ai.skills.view', SkillsIndex],
+  ['routines', 'ai.skills.view', SkillsIndex],
+  ['queues', 'ai.inbox_routing.view', InboxesPage],
+  ['credentials', 'ai.credentials.view', CredentialsPage],
+  ['providers', 'ai.providers.view', ResourcePage],
+  ['combos', 'ai.providers.view', ResourcePage],
+  ['integrations', 'ai.integrations.view', ResourcePage],
+  ['quotas', 'ai.usage.view', ResourcePage],
+  ['requests', 'ai.usage.view', ResourcePage],
+];
+
+const legacySettingsPaths = {
+  agents: 'agents',
+  skills: 'skills',
+  routines: 'routines',
+  providers: 'providers',
+  combos: 'combos',
+  credentials: 'credentials',
+  inboxes: 'queues',
+  integrations: 'integrations',
+  quotas: 'quotas',
+  requests: 'requests',
+};
+
+// Endereços antigos permanecem úteis em favoritos e em links enviados antes
+// da Spec 12, mas sempre levam para a arquitetura nova.
+const legacyAiRedirects = Object.entries(legacySettingsPaths).map(([from, to]) => ({
+  path: frontendURL(`accounts/:accountId/ia/${from}`),
+  redirect: route => ({
+    path: route.path.replace(`/ia/${from}`, `/settings/ai/${to}`),
+    query: route.query,
+    hash: route.hash,
+  }),
+}));
+
 export const legacyRedirects = [
+  ...legacyAiRedirects,
   {
     path: frontendURL('accounts/:accountId/ragent/:rest(.*)*'),
     redirect: to => ({
@@ -35,37 +77,30 @@ export const routes = [
     component: ChatIndex,
   },
   {
-    path: frontendURL('accounts/:accountId/ia/agents'),
-    name: 'ragent_agents',
-    meta: { permissions: ['ai.agents.view'] },
-    component: AgentsIndex,
+    path: frontendURL('accounts/:accountId/ia/usage'),
+    name: 'ragent_usage',
+    meta: { permissions: ['ai.usage.view'], resource: 'usage' },
+    component: ResourcePage,
   },
   {
-    path: frontendURL('accounts/:accountId/ia/skills'),
-    name: 'ragent_skills',
-    meta: { permissions: ['ai.skills.view'] },
-    component: SkillsIndex,
+    path: frontendURL('accounts/:accountId/ia/environment'),
+    name: 'ragent_environment',
+    meta: { permissions: ['ai.environment.view'], resource: 'environment' },
+    component: ResourcePage,
   },
   {
-    // Item "Tarefas agendadas" do menu IA: mesma tela de Skills, aberta na aba de tarefas.
-    path: frontendURL('accounts/:accountId/ia/routines'),
-    name: 'ragent_routines',
-    meta: { permissions: ['ai.skills.view'] },
-    component: SkillsIndex,
+    path: frontendURL('accounts/:accountId/ia/runs'),
+    name: 'ragent_runs',
+    meta: { permissions: ['ai.runs.view'], resource: 'runs' },
+    component: ResourcePage,
   },
-  {
-    path: frontendURL('accounts/:accountId/ia/inboxes'),
-    name: 'ragent_inboxes',
-    meta: { permissions: ['ai.inbox_routing.view'] },
-    component: InboxesPage,
-  },
-  {
-    path: frontendURL('accounts/:accountId/ia/credentials'),
-    name: 'ragent_credentials',
-    meta: { permissions: ['ai.credentials.view'] },
-    component: CredentialsPage,
-  },
-  ...ROUTES.map(([key, permission]) => ({
+  ...settingsRoutes.map(([key, permission, component]) => ({
+    path: settingsPath(key),
+    name: `ragent_${key}`,
+    meta: { permissions: [permission], resource: ['providers', 'combos', 'integrations', 'quotas', 'requests'].includes(key) ? key : undefined },
+    component,
+  })),
+  ...ROUTES.filter(([key]) => !['usage', 'environment', 'runs', 'providers', 'combos', 'integrations', 'quotas', 'requests'].includes(key)).map(([key, permission]) => ({
     path: frontendURL(`accounts/:accountId/ia/${key}`),
     name: `ragent_${key}`,
     meta: { permissions: [permission], resource: key },
