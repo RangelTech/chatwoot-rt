@@ -28,6 +28,16 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
     end
   end
 
+  def stub_credentials_cache
+    cached_items = nil
+    cache = double('credentials cache')
+    allow(Rails).to receive(:cache).and_return(cache)
+    allow(cache).to receive(:read) { cached_items }
+    allow(cache).to receive(:write) { |_key, value, expires_in:| cached_items = value }
+    allow(cache).to receive(:delete) { cached_items = nil }
+    cache
+  end
+
   describe 'GET index' do
     it 'merges every credential source into one list without any value' do
       stub_lists(
@@ -70,10 +80,12 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
 
     it 'caches only a complete account-scoped list for a short period' do
       stub_lists
+      cache = stub_credentials_cache
 
       get base, headers: admin.create_new_auth_token, as: :json
       expect(response).to have_http_status(:success)
       expect(Rt::EngineClient).to have_received(:get).exactly(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size).times
+      expect(cache).to have_received(:write).with("rt_ai:credentials:v1:#{account.id}", anything, expires_in: 15.seconds)
 
       get base, headers: admin.create_new_auth_token, as: :json
       expect(response).to have_http_status(:success)
@@ -117,12 +129,14 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
 
     it 'invalidates the cached list after saving a credential' do
       stub_lists
+      cache = stub_credentials_cache
       get base, headers: admin.create_new_auth_token, as: :json
       allow(Rt::EngineClient).to receive(:post).and_return('id' => SecureRandom.uuid)
 
       post base, params: { type: 'secret', name: 'novo', value: 'segredo' }, headers: admin.create_new_auth_token, as: :json
       get base, headers: admin.create_new_auth_token, as: :json
 
+      expect(cache).to have_received(:delete).with("rt_ai:credentials:v1:#{account.id}")
       expect(Rt::EngineClient).to have_received(:get).exactly(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size * 2).times
     end
 
