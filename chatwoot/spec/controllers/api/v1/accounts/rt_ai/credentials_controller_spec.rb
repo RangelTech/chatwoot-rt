@@ -15,6 +15,7 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
 
   before do
     Rt::AiAccount.create!(account: account, ai_state: 'active', engine_tenant_id: SecureRandom.uuid, flags: { 'ai_enabled' => true })
+    Rails.cache.clear
   end
 
   around do |example|
@@ -67,6 +68,18 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
       expect(contexts.map { |claims| claims.except(:nonce) }.uniq.size).to eq(1)
     end
 
+    it 'caches only a complete account-scoped list for a short period' do
+      stub_lists
+
+      get base, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::EngineClient).to have_received(:get).exactly(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size).times
+
+      get base, headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      expect(Rt::EngineClient).to have_received(:get).exactly(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size).times
+    end
+
     it 'keeps working when one source fails and fails only when all do' do
       allow(Rt::EngineClient).to receive(:get) do |path, **|
         raise Rt::EngineClient::Error.new('boom', status: 500) if path == '/api/datasources'
@@ -100,6 +113,17 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Credentials', type: :request do
           'meta' => { 'host' => '10.0.0.1', 'port' => 22, 'user' => 'root' } },
         anything
       )
+    end
+
+    it 'invalidates the cached list after saving a credential' do
+      stub_lists
+      get base, headers: admin.create_new_auth_token, as: :json
+      allow(Rt::EngineClient).to receive(:post).and_return('id' => SecureRandom.uuid)
+
+      post base, params: { type: 'secret', name: 'novo', value: 'segredo' }, headers: admin.create_new_auth_token, as: :json
+      get base, headers: admin.create_new_auth_token, as: :json
+
+      expect(Rt::EngineClient).to have_received(:get).exactly(Api::V1::Accounts::RtAi::CredentialsController::LISTS.size * 2).times
     end
 
     it 'stores a GCP service account as a gcp secret' do
