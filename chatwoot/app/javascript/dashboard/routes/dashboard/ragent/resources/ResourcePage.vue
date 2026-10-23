@@ -1,5 +1,4 @@
 <script setup>
-import AiSettingsTabs from '../AiSettingsTabs.vue';
 import HostsPanel from './HostsPanel.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -323,7 +322,6 @@ const loadProviderModels = async item => {
 
 <template>
   <div class="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-6">
-    <AiSettingsTabs />
     <header class="flex items-center gap-3">
       <h1 class="text-heading-1 text-n-slate-12">
         {{ t(`RAGENT.RES.${config.title}.TITLE`) }}

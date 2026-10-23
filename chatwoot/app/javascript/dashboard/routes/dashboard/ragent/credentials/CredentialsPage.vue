@@ -1,5 +1,4 @@
 <script setup>
-import AiSettingsTabs from '../AiSettingsTabs.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -244,7 +243,6 @@ const isOauthItem = item => ['google', 'microsoft'].includes(item.type);
   <div
     class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6"
   >
-    <AiSettingsTabs />
     <p class="rounded-xl bg-n-alpha-2 p-3 text-body-main text-n-slate-11">
       {{ t('RAGENT.CRED.WORKSPACE_INTRO') }}
     </p>
