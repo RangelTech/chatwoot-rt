@@ -561,6 +561,12 @@ const menuItems = computed(() => {
           activeOn: ['ragent_usage'],
         },
         {
+          name: 'RagentRoutines',
+          label: t('RAGENT.MENU.ROUTINES'),
+          to: accountScopedRoute('ragent_routines'),
+          activeOn: ['ragent_routines'],
+        },
+        {
           name: 'RagentRuns',
           label: t('RAGENT.MENU.RUNS'),
           to: accountScopedRoute('ragent_runs'),

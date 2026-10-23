@@ -207,7 +207,8 @@
       "QUOTAS": "Limits",
       "REQUESTS": "Requests",
       "AI_SETTINGS": "Artificial intelligence",
-      "ADVANCED": "Advanced"
+      "ADVANCED": "Advanced",
+      "ROUTINES": "Scheduled tasks"
     },
     "RES": {
       "NEW": "New",
