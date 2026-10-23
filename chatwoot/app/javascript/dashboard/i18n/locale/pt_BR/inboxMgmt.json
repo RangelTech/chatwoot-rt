@@ -50,7 +50,7 @@
         "PICK_NAME": "Escolha um nome para sua caixa de entrada",
         "PICK_A_VALUE": "Escolha um valor",
         "CREATE_INBOX": "Criar Caixa de Entrada",
-        "RESTRICTED_WARNING": "A criação de caixas de entrada do Facebook está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no Chatwoot. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
+        "RESTRICTED_WARNING": "A criação de caixas de entrada do Facebook está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no LUAR. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
         "STATUS_LINK": "Ver atualizações de status"
       },
       "INSTAGRAM": {
@@ -61,8 +61,8 @@
         "ERROR_AUTH": "Houve um erro ao conectar ao Instagram, por favor, tente novamente",
         "NEW_INBOX_SUGGESTION": "Esta conta do Instagram estava conectada a uma caixa de entrada diferente e agora foi migrada para aqui. Todas as novas mensagens aparecerão aqui. A caixa de entrada antiga não poderá mais enviar ou receber mensagens para esta conta.",
         "DUPLICATE_INBOX_BANNER": "Esta conta do Instagram foi migrada para a nova caixa de entrada de canal do Instagram. Você não poderá mais enviar/receber mensagens do Instagram desta caixa de entrada.",
-        "RESTRICTED_WARNING": "A criação de caixas de entrada do Instagram está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no Chatwoot. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
-        "SETTINGS_RESTRICTED_WARNING": "As mensagens do Instagram estão sendo afetadas por um problema na API da Meta, e não por uma falha no Chatwoot. Algumas mensagens ou ações podem sofrer atrasos ou ficar temporariamente indisponíveis. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
+        "RESTRICTED_WARNING": "A criação de caixas de entrada do Instagram está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no LUAR. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
+        "SETTINGS_RESTRICTED_WARNING": "As mensagens do Instagram estão sendo afetadas por um problema na API da Meta, e não por uma falha no LUAR. Algumas mensagens ou ações podem sofrer atrasos ou ficar temporariamente indisponíveis. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
         "STATUS_LINK": "Ver atualizações de status"
       },
       "TIKTOK": {
@@ -329,17 +329,17 @@
           "MANUAL_LINK_TEXT": "fluxo de configuração manual",
           "ACCESS_REQUEST": {
             "TITLE": "Configuração rápida com a Meta",
-            "DESCRIPTION": "Conecte um novo número ou um número existente do aplicativo WhatsApp Business sem configuração manual. Para solicitar essa opção, informe à nossa equipe o que sua empresa faz, como você usará o WhatsApp e qual conta do Chatwoot precisa de acesso.",
+            "DESCRIPTION": "Conecte um novo número ou um número existente do aplicativo WhatsApp Business sem configuração manual. Para solicitar essa opção, informe à nossa equipe o que sua empresa faz, como você usará o WhatsApp e qual conta do LUAR precisa de acesso.",
             "FOOTNOTE": "Analisaremos sua solicitação e informaremos se essa opção pode ser habilitada. Você também pode continuar com a configuração manual abaixo.",
             "BUTTON": "Solicitar acesso"
           },
-          "RESTRICTED_WARNING": "O WhatsApp Embedded Signup está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no Chatwoot. Você pode utilizar a configuração manual para números compatíveis com a Cloud API. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
+          "RESTRICTED_WARNING": "O WhatsApp Embedded Signup está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no LUAR. Você pode utilizar a configuração manual para números compatíveis com a Cloud API. Estamos trabalhando em conjunto com a Meta para resolver a situação o mais rápido possível.",
           "STATUS_LINK": "Ver atualizações de status",
           "CALLING_ENABLE_FAILED": "Sua caixa de entrada do WhatsApp está pronta, mas as chamadas de voz não puderam ser ativadas — este número ainda não está cadastrado na API de Chamadas do WhatsApp Business. Entre em contato com a Meta ou com seu provedor de soluções WhatsApp Business para realizar o cadastro e, depois, ative as chamadas nas configurações de Chamadas da caixa de entrada."
         },
         "API": {
           "ERROR_MESSAGE": "Não foi possível salvar o canal do WhatsApp",
-          "MANUAL_RESTRICTION_WARNING": "O WhatsApp Embedded Signup está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no Chatwoot. A configuração manual funciona apenas para números que já estão conectados à WhatsApp Cloud API. Números que utilizam a coexistência com o aplicativo WhatsApp Business ainda não são compatíveis com esse fluxo. Estamos trabalhando em conjunto com a Meta para resolver o problema o mais rápido possível. Agradecemos pela sua paciência.",
+          "MANUAL_RESTRICTION_WARNING": "O WhatsApp Embedded Signup está temporariamente indisponível devido a um problema na API da Meta, e não por uma falha no LUAR. A configuração manual funciona apenas para números que já estão conectados à WhatsApp Cloud API. Números que utilizam a coexistência com o aplicativo WhatsApp Business ainda não são compatíveis com esse fluxo. Estamos trabalhando em conjunto com a Meta para resolver o problema o mais rápido possível. Agradecemos pela sua paciência.",
           "STATUS_LINK": "Ver atualizações de status"
         }
       },
@@ -955,7 +955,7 @@
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_ADD_TITLE": "Adicionar Token de Gerenciamento de Negócios",
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_REPLACE_TITLE": "Substituir Token de Gerenciamento de Negócios",
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_CONFIGURED": "Token de gerenciamento de negócios configurado",
-      "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_UPDATE_SUBHEADER": "Forneça um token com acesso a esta conta do WhatsApp Business quando o Chatwoot não conseguir recuperar seus modelos de mensagem. O Chatwoot utiliza esse token apenas para sincronizar os modelos de mensagem.",
+      "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_UPDATE_SUBHEADER": "Forneça um token com acesso a esta conta do WhatsApp Business quando o LUAR não conseguir recuperar seus modelos de mensagem. O LUAR utiliza esse token apenas para sincronizar os modelos de mensagem.",
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_UPDATE_PLACEHOLDER": "Digite o token de gerenciamento de negócios",
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_ADD_BUTTON": "Adicionar",
       "WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_REPLACE_BUTTON": "Substituir",
