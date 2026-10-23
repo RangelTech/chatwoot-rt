@@ -3,7 +3,7 @@
 class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseController
   UUID = /\A[0-9a-f-]{36}\z/i
 
-  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download, :moon_reset]
+  before_action -> { require_permission('ai.chat.view') }, only: [:index, :messages, :templates, :artifacts, :artifact_download, :moon_reset, :transcribe]
   before_action -> { require_permission('ai.chat.run') }, only: [:stream_ticket, :cancel, :feedback]
   before_action :need_uuid, only: [:messages, :cancel, :feedback, :artifacts, :artifact_download]
   before_action :need_artifact_uuid, only: [:artifact_download]
@@ -38,6 +38,12 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
     everyone = ActiveModel::Type::Boolean.new.cast(params[:everyone]) == true &&
                Current.account_user.permissions.include?('ai.agents.edit')
     result = engine_post("/api/me/moon/reset?everyone=#{everyone}")
+    render json: result unless performed?
+  end
+
+  # Spec 11 §3: ditado. O áudio vai ao motor, que usa o provedor de voz da empresa.
+  def transcribe
+    result = engine_post('/api/me/transcribe', { content_b64: params[:content_b64].to_s, mime: params[:mime].to_s.presence || 'audio/webm' })
     render json: result unless performed?
   end
 
