@@ -125,7 +125,7 @@ class Api::V1::Accounts::RtAi::CredentialsController < Api::V1::Accounts::RtAi::
 
   def build_body(given, id)
     case @rt_type
-    when 'secret', 'gcp' then secret_body(@rt_type, given, id)
+    when 'secret', 'gcp', 'aws', 'azure' then secret_body(@rt_type, given, id)
     when 'ssh' then secret_body('ssh', given, id, meta: given.slice('host', 'port', 'user'))
     when 'database' then build_database(given, id)
     when 'email' then build_email(given, id)
