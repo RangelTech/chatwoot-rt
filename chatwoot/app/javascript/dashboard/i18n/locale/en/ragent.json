@@ -72,8 +72,9 @@
         "SUBAGENTS_PROGRESS": "{done} of {total} finished"
       },
       "MIC": "Record audio",
-      "MIC_DONE": "Attach",
+      "MIC_DONE": "Dictate",
       "MIC_CANCEL": "Cancel",
+      "MIC_NO_DICTATION": "No voice provider; the audio was attached (add Groq or OpenAI under Providers to dictate).",
       "MIC_DENIED": "Could not use the microphone. Allow it in the browser.",
       "MOON_RESET": "Reset Sr Moon memory",
       "MOON_RESET_CONFIRM": "Erase everything Sr Moon learned about you?",

@@ -68,6 +68,36 @@ const stopTimer = () => {
   timer = null;
 };
 
+const transcribing = ref(false);
+const toBase64 = file =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+// Ditado: transcreve e escreve no campo. Sem provedor de voz, anexa o áudio (o motor transcreve ao enviar).
+const dictate = async file => {
+  transcribing.value = true;
+  try {
+    const { data } = await window.axios.post(
+      `/api/v1/accounts/${window.location.pathname.split('/')[3]}/rt_ai/chats/transcribe`,
+      { content_b64: await toBase64(file), mime: file.type }
+    );
+    if (data.text) {
+      draft.value = draft.value ? `${draft.value} ${data.text}` : data.text;
+      return;
+    }
+    addFiles([file]);
+  } catch (error) {
+    addFiles([file]);
+    useAlert(t('RAGENT.CHAT.MIC_NO_DICTATION'));
+  } finally {
+    transcribing.value = false;
+  }
+};
+
 const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -84,7 +114,7 @@ const startRecording = async () => {
       const file = new File([new Blob(chunks, { type: mime })], `voz-${Date.now()}.${ext}`, {
         type: mime,
       });
-      addFiles([file]);
+      dictate(file);
     };
     recorder.start();
     recording.value = true;
