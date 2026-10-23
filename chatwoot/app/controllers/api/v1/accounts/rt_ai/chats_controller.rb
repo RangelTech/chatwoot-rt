@@ -35,9 +35,10 @@ class Api::V1::Accounts::RtAi::ChatsController < Api::V1::Accounts::RtAi::BaseCo
   def moon_reset
     return head :forbidden unless Current.account_user.permissions.include?('ai.moon.use')
 
-    everyone = ActiveModel::Type::Boolean.new.cast(params[:everyone]) &&
+    everyone = ActiveModel::Type::Boolean.new.cast(params[:everyone]) == true &&
                Current.account_user.permissions.include?('ai.agents.edit')
-    render json: engine_post("/api/me/moon/reset?everyone=#{everyone}")
+    result = engine_post("/api/me/moon/reset?everyone=#{everyone}")
+    render json: result unless performed?
   end
 
   def stream_ticket
