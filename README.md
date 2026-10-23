@@ -1,6 +1,6 @@
 # luar_chatwoot
 
-O produto Luar que o cliente enxerga: caixa de entrada, conversas, Kanban, telas de IA, identidade e marca. É um fork do Chatwoot Community (versão base 4.16.2) com uma ponte própria (`bridge/`) que fala com o motor de IA e com os canais.
+O produto Luar que o cliente enxerga: caixa de entrada, conversas, Kanban, telas de IA, identidade e marca. É um fork do Chatwoot Community (versão base 4.17.1) com uma ponte própria (`bridge/`) que fala com o motor de IA e com os canais.
 
 > Nome anterior: `chatwoot-rt`. O GitHub redireciona o endereço antigo.
 
