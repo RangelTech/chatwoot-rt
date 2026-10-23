@@ -189,7 +189,9 @@
       "FILES_REMOVE": "Remove",
       "FILES_HELP": "Menus, price tables, manuals. Up to 10 MB each; 500 MB per company.",
       "FILE_TOO_BIG": "{name} is over 10 MB.",
-      "FILE_ERROR": "Could not upload {name}."
+      "FILE_ERROR": "Could not upload {name}.",
+      "PROMOTE": "Make company skill",
+      "CONFIRM_PROMOTE": "Make this a company skill? It leaves your personal skills and cannot be made personal again."
     },
     "MENU": {
       "TITLE": "AI",
