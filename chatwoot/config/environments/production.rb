@@ -52,8 +52,19 @@ Rails.application.configure do
   # Prepend all log lines with the following tags.
   config.log_tags = [:request_id]
 
-  # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  # Cache compartilhado entre os workers Puma. O FileStore local fazia leituras
+  # do BFF (como /credentials) perderem o cache na concorrência e voltarem ao
+  # motor a cada request. Reutiliza a conexão Redis já usada pelo Chatwoot,
+  # mas em um namespace próprio para não misturar cache com filas ou presença.
+  config.cache_store = :redis_cache_store, {
+    url: ENV.fetch('REDIS_URL', 'redis://127.0.0.1:6379'),
+    password: ENV.fetch('REDIS_PASSWORD', nil).presence,
+    ssl_params: { verify_mode: Chatwoot.redis_ssl_verify_mode },
+    namespace: 'chatwoot-cache',
+    pool_size: ENV.fetch('RAILS_MAX_THREADS', 5).to_i,
+    pool_timeout: 1,
+    reconnect_attempts: 2
+  }
 
   # Use a real queuing backend for Active Job (and separate queues per environment)
   config.active_job.queue_adapter = :sidekiq
