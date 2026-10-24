@@ -158,6 +158,9 @@ Rails.application.routes.draw do
             post 'providers_oauth/:provider/poll', to: 'provider_oauth#poll'
             post 'providers_oauth/:provider/import', to: 'provider_oauth#import'
             get 'resources/providers/:id/quota', to: 'provider_oauth#quota'
+            # Catálogo público gerado do registro do 9Router. Esta rota não fala
+            # com o gateway nem recebe tenant pelo navegador.
+            get 'resources/providers/catalog', to: 'resources#provider_catalog'
             # Leitura por item explicitamente allowlisted; o browser não informa URL do Gateway.
             get 'resources/:key/:id/models', to: 'resources#models'
             get 'resources/:key', to: 'resources#index'

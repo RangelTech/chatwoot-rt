@@ -239,7 +239,7 @@
       "TEST_BATCH_OK": "Todas as conexões foram testadas.",
       "TEST_BATCH_FAILED": "{n} conexão falhou no teste.",
       "PROVIDER_SEARCH": "Buscar provedor, conta ou modelo",
-      "PROVIDER_FILTER": { "ALL": "Todos", "CONNECTED": "Ativas", "DISABLED": "Desativadas" },
+      "PROVIDER_FILTER": { "ALL": "Todos", "CONNECTED": "Conectados", "OAUTH": "Assinatura ou login", "FREE": "Gratuitos", "APIKEY": "Chave de API" },
       "PROVIDERS": {
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
@@ -527,7 +527,11 @@
       },
       "PROVIDER_CONNECTED": "{n} conectado | {n} conectado | {n} conectados",
       "STATE_ACTIVE": "Ativa",
-      "STATE_OFF": "Desligada"
+      "STATE_OFF": "Desligada",
+      "PROVIDER_NOT_CONNECTED": "Nenhuma conta conectada ainda.",
+      "ADD_ACCOUNT": "Adicionar conta",
+      "GET_API_KEY": "Obter chave",
+      "CATALOG_UNAVAILABLE": "O catálogo de provedores não está disponível agora. Tente novamente."
     },
     "CRED": {
       "TITLE": "Credenciais",

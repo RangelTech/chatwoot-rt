@@ -19,6 +19,17 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  it 'serves the generated public provider catalog without calling the gateway' do
+    allow(Rt::GatewayClient).to receive(:get)
+
+    get "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/catalog", headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(response.parsed_body.fetch('source')).to eq('9router')
+    expect(response.parsed_body.fetch('providers')).to include(include('id' => 'openai'))
+    expect(Rt::GatewayClient).not_to have_received(:get)
+  end
+
   it 'lets an administrator list and create providers, forwarding only allowed fields' do
     allow(Rt::GatewayClient).to receive(:get).and_return('connections' => [])
     allow(Rt::GatewayClient).to receive(:post).and_return('connection' => { 'id' => 'x' })
