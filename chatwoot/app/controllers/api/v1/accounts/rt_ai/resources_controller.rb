@@ -24,11 +24,12 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
                         fields: %w[name] }
   }.freeze
 
-  before_action :find_resource, except: [:service_action, :service_logs]
+  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog]
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
   before_action -> { require_permission('ai.environment.manage') }, only: [:service_action, :service_logs]
   before_action :need_service_name, only: [:service_action, :service_logs]
+  before_action -> { require_permission('ai.providers.view') }, only: [:provider_catalog]
   before_action :need_id, only: [:update, :destroy, :member_action, :models]
 
   def index
@@ -96,6 +97,15 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   # Últimas 200 linhas do log do serviço (o motor redige segredos e audita a leitura).
   def service_logs
     render_engine engine_get("/api/environment/services/#{params[:service]}/logs")
+  end
+
+  # Metadados de UI versionados no próprio deploy (nome, categoria, ícone e
+  # modos de autenticação). Não há chaves, URLs de gateway ou informações de
+  # contas aqui; conexões continuam vindo exclusivamente pelo BFF tenant-scoped.
+  def provider_catalog
+    render json: JSON.parse(File.read(Rails.root.join('app/javascript/dashboard/routes/dashboard/ragent/provider_catalog.json')))
+  rescue Errno::ENOENT, JSON::ParserError
+    render json: { providers: [], generated_at: nil }, status: :service_unavailable
   end
 
   private

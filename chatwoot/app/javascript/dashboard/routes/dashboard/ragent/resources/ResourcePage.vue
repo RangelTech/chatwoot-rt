@@ -42,6 +42,8 @@ const busy = ref(false);
 const newKey = ref('');
 const providerModels = ref([]);
 const providerQuota = ref(null);
+const providerCatalog = ref([]);
+const providerCatalogFailed = ref(false);
 const showOauth = ref(false);
 const editingCombo = ref(null);
 const comboSuggestions = ref([]);
@@ -49,27 +51,44 @@ const page = ref(1);
 const total = ref(0);
 const PER_PAGE = 25;
 const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
+const providerSearch = ref('');
+const providerFilter = ref('all');
 
-// Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
+// O catálogo contém somente metadados públicos gerados no build a partir do
+// registro do 9Router. As contas vêm da lista tenant-scoped do BFF.
 const providerGroups = computed(() => {
   const map = new Map();
   const query = providerSearch.value.trim().toLowerCase();
-  items.value.filter(it => {
-    const active = it.is_active ?? it.isActive ?? true;
-    const matchesState = providerFilter.value === 'all' || (providerFilter.value === 'connected' && active) || (providerFilter.value === 'disabled' && !active);
-    const haystack = [it.provider, it.name, it.model].filter(Boolean).join(' ').toLowerCase();
-    return matchesState && (!query || haystack.includes(query));
-  }).forEach(it => {
-    const name = String(it.provider || 'custom');
-    if (!map.has(name)) map.set(name, { name, items: [], active: 0 });
-    const g = map.get(name);
-    g.items.push(it);
-    if (it.is_active ?? it.isActive ?? true) g.active += 1;
+  providerCatalog.value.forEach(provider => {
+    const haystack = [provider.id, provider.name, provider.category].filter(Boolean).join(' ').toLowerCase();
+    if (!query || haystack.includes(query)) map.set(provider.id, { provider, items: [], active: 0 });
   });
-  return Array.from(map.values());
+  items.value.forEach(it => {
+    const providerId = String(it.provider || 'custom');
+    if (!map.has(providerId)) map.set(providerId, { provider: { id: providerId, name: providerId, category: 'custom', auth_modes: ['apikey'], models: [] }, items: [], active: 0 });
+    const group = map.get(providerId);
+    group.items.push(it);
+    if (it.is_active ?? it.isActive ?? true) group.active += 1;
+  });
+  return Array.from(map.values()).filter(group => {
+    if (providerFilter.value === 'connected') return group.items.length > 0;
+    if (providerFilter.value === 'oauth') return group.provider.has_oauth || group.provider.auth_modes?.includes('oauth');
+    if (providerFilter.value === 'free') return group.provider.has_free || group.provider.category === 'free' || group.provider.category === 'freeTier';
+    if (providerFilter.value === 'apikey') return group.provider.auth_modes?.includes('apikey') || group.provider.category === 'apikey';
+    return true;
+  });
 });
-const providerSearch = ref('');
-const providerFilter = ref('all');
+
+const startProviderConnection = provider => {
+  form.value = {
+    provider: provider.id,
+    name: provider.name,
+    model: provider.models?.[0]?.id || '',
+  };
+  creating.value = true;
+};
+
+// Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
@@ -161,12 +180,26 @@ const load = async () => {
   }
 };
 
+const loadProviderCatalog = async () => {
+  if (key.value !== 'providers') return;
+  providerCatalogFailed.value = false;
+  try {
+    const { data } = await axios.get(`${base.value}/catalog`);
+    providerCatalog.value = Array.isArray(data?.providers) ? data.providers : [];
+  } catch (error) {
+    providerCatalog.value = [];
+    providerCatalogFailed.value = true;
+  }
+};
+
 const goTo = n => {
   page.value = Math.min(Math.max(1, n), pages.value);
   load();
 };
 
-onMounted(load);
+onMounted(async () => {
+  await Promise.all([load(), loadProviderCatalog()]);
+});
 watch(key, () => {
   page.value = 1;
   total.value = 0;
@@ -178,6 +211,7 @@ watch(key, () => {
   newKey.value = '';
   form.value = {};
   load();
+  loadProviderCatalog();
 });
 
 const canManage = computed(() => !!config.value.manage);
@@ -429,22 +463,33 @@ const loadProviderModels = async item => {
     </section>
 
     <!-- Spec 11 §8: provedores em cartões por provedor, com as contas conectadas dentro -->
-    <div v-if="key === 'providers' && items.length" class="flex flex-wrap gap-2">
+    <div v-if="key === 'providers' && (items.length || providerCatalog.length)" class="flex flex-wrap gap-2">
       <input v-model="providerSearch" class="!mb-0 min-w-56 flex-1" :placeholder="t('RAGENT.RES.PROVIDER_SEARCH')" />
       <select v-model="providerFilter" class="!mb-0">
         <option value="all">{{ t('RAGENT.RES.PROVIDER_FILTER.ALL') }}</option>
         <option value="connected">{{ t('RAGENT.RES.PROVIDER_FILTER.CONNECTED') }}</option>
-        <option value="disabled">{{ t('RAGENT.RES.PROVIDER_FILTER.DISABLED') }}</option>
+        <option value="oauth">{{ t('RAGENT.RES.PROVIDER_FILTER.OAUTH') }}</option>
+        <option value="free">{{ t('RAGENT.RES.PROVIDER_FILTER.FREE') }}</option>
+        <option value="apikey">{{ t('RAGENT.RES.PROVIDER_FILTER.APIKEY') }}</option>
       </select>
     </div>
+    <p v-if="key === 'providers' && providerCatalogFailed" class="text-body-main text-n-slate-11" role="alert">
+      {{ t('RAGENT.RES.CATALOG_UNAVAILABLE') }}
+    </p>
     <div v-if="key === 'providers' && providerGroups.length" class="grid gap-4 md:grid-cols-2">
       <section
         v-for="g in providerGroups"
-        :key="g.name"
+        :key="g.provider.id"
         class="flex flex-col gap-2 rounded-xl border border-n-weak p-4"
       >
         <header class="flex items-center gap-2">
-          <h2 class="text-heading-3 text-n-slate-12">{{ g.name }}</h2>
+          <span class="flex size-9 items-center justify-center rounded-lg bg-n-alpha-2 text-sm font-semibold text-n-slate-12">
+            {{ g.provider.name.slice(0, 2).toUpperCase() }}
+          </span>
+          <div class="min-w-0 flex-1">
+            <h2 class="truncate text-heading-3 text-n-slate-12">{{ g.provider.name }}</h2>
+            <p class="text-sm text-n-slate-11">{{ g.provider.category }}</p>
+          </div>
           <span class="ms-auto rounded-full bg-n-alpha-2 px-2 py-0.5 text-sm text-n-slate-11">
             {{ t('RAGENT.RES.PROVIDER_CONNECTED', { n: g.active }, g.active) }}
           </span>
@@ -473,6 +518,11 @@ const loadProviderModels = async item => {
             </template>
           </li>
         </ul>
+        <p v-if="!g.items.length" class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PROVIDER_NOT_CONNECTED') }}</p>
+        <div v-if="canManage" class="flex flex-wrap gap-2">
+          <Button size="sm" variant="faded" :label="t('RAGENT.RES.ADD_ACCOUNT')" @click="startProviderConnection(g.provider)" />
+          <a v-if="g.provider.api_key_url" class="text-sm text-n-brand" :href="g.provider.api_key_url" target="_blank" rel="noopener noreferrer">{{ t('RAGENT.RES.GET_API_KEY') }}</a>
+        </div>
       </section>
     </div>
     <div v-if="items.length && key !== 'providers'" class="overflow-x-auto rounded-xl border border-n-weak">
