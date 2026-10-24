@@ -335,10 +335,12 @@ const runItemAction = async (item, name) => {
 const testProviderGroup = async group => {
   busy.value = true;
   try {
-    const results = await Promise.allSettled(group.items.map(item => axios.post(`${base.value}/${item.id}/actions/test`)));
-    const failures = results.filter(result => result.status === 'rejected').length;
+    const { data } = await axios.post(`${base.value}/test-batch`, { mode: 'provider', provider_id: group.provider.id });
+    const failures = Number(data?.summary?.failed) || 0;
     useAlert(failures ? t('RAGENT.RES.TEST_BATCH_FAILED', { n: failures }, failures) : t('RAGENT.RES.TEST_BATCH_OK'));
     await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
   } finally {
     busy.value = false;
   }
