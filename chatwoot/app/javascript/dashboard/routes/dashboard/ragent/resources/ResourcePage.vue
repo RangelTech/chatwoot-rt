@@ -513,7 +513,14 @@ const loadProviderModels = async item => {
     <section v-if="creating && key !== 'combos'" class="flex flex-col gap-2 rounded-xl border border-n-weak p-4">
       <label v-for="f in config.fields" :key="f.key" class="text-body-main text-n-slate-11">
         {{ t(`RAGENT.RES.FIELDS.${f.label}`) }}
-        <select v-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
+        <!-- A lista não pode ser a allowlist antiga e curta: ao abrir um cartão
+             do catálogo (ex.: Codex), a conta criada precisa permanecer naquele
+             provedor. O catálogo é metadado público; a validação final continua
+             no BFF tenant-scoped. -->
+        <select v-if="key === 'providers' && f.key === 'provider' && providerCatalog.length" v-model="form[f.key]" class="!mb-0 w-full">
+          <option v-for="provider in providerCatalog" :key="provider.id" :value="provider.id">{{ provider.name }}</option>
+        </select>
+        <select v-else-if="f.options" v-model="form[f.key]" class="!mb-0 w-full">
           <option v-for="o in f.options" :key="o" :value="o">{{ o }}</option>
         </select>
         <textarea v-else-if="f.json" v-model="form[f.key]" rows="4" class="!mb-0 w-full font-mono" :placeholder="f.placeholder || '{}'" />
