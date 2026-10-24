@@ -42,6 +42,7 @@ const busy = ref(false);
 const newKey = ref('');
 const providerModels = ref([]);
 const providerModelConnectionId = ref(null);
+const providerModelsManageable = ref(false);
 const customModelId = ref('');
 const customModelName = ref('');
 const providerQuota = ref(null);
@@ -435,9 +436,22 @@ const loadProviderModels = async item => {
     const { data } = await axios.get(`${base.value}/${item.id}/model_settings`);
     providerModels.value = Array.isArray(data?.models) ? data.models : [];
     providerModelConnectionId.value = item.id;
+    providerModelsManageable.value = true;
   } catch (error) {
-    providerModels.value = [];
-    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+    // O catálogo vivo por conexão é o caminho estável do Gateway. Enquanto as
+    // operações avançadas estiverem indisponíveis, nunca escondemos modelos
+    // que já funcionavam na tela nem exibimos ações que seriam rejeitadas.
+    try {
+      const { data } = await axios.get(`${base.value}/${item.id}/models`);
+      providerModels.value = Array.isArray(data?.models) ? data.models : [];
+      providerModelConnectionId.value = null;
+      providerModelsManageable.value = false;
+    } catch (_) {
+      providerModels.value = [];
+      providerModelConnectionId.value = null;
+      providerModelsManageable.value = false;
+      useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+    }
   } finally {
     busy.value = false;
   }
@@ -769,16 +783,18 @@ const deleteCustomProviderModel = async model => {
             <p v-if="model.model && model.name !== model.model" class="text-sm text-n-slate-11">{{ model.model }}</p>
           </div>
           <input
+            v-if="canManage && providerModelsManageable"
             :value="model.alias || model.model || model.id"
             class="!mb-0 min-w-40 flex-1"
             :aria-label="`Apelido de ${model.name || model.model}`"
             @change="updateProviderModel(model, 'alias', { alias: $event.target.value })"
           />
+          <span v-else class="min-w-40 text-sm text-n-slate-11">{{ model.alias || model.model || model.id }}</span>
           <span class="rounded-full px-2 py-0.5 text-sm" :class="model.disabled ? 'bg-n-ruby-3 text-n-ruby-11' : 'bg-n-teal-3 text-n-teal-11'">
             {{ model.disabled ? 'Bloqueado' : 'Liberado' }}
           </span>
           <Button
-            v-if="canManage"
+            v-if="canManage && providerModelsManageable"
             size="sm"
             variant="faded"
             :disabled="busy"
@@ -786,7 +802,7 @@ const deleteCustomProviderModel = async model => {
             @click="updateProviderModel(model, model.disabled ? 'enable' : 'disable')"
           />
           <Button
-            v-if="canManage && model.custom"
+            v-if="canManage && providerModelsManageable && model.custom"
             size="sm"
             color="ruby"
             :disabled="busy"
@@ -796,7 +812,7 @@ const deleteCustomProviderModel = async model => {
         </li>
       </ul>
       <p v-else class="text-body-main text-n-slate-11">Este provedor ainda não informou modelos. Adicione um modelo customizado se ele for compatível.</p>
-      <div v-if="canManage" class="mt-4 grid gap-2 rounded-lg bg-n-alpha-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <div v-if="canManage && providerModelsManageable" class="mt-4 grid gap-2 rounded-lg bg-n-alpha-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <input v-model="customModelId" class="!mb-0" placeholder="ID do modelo customizado" aria-label="ID do modelo customizado" />
         <input v-model="customModelName" class="!mb-0" placeholder="Nome para exibição (opcional)" aria-label="Nome do modelo customizado" />
         <Button size="sm" :disabled="busy || !customModelId.trim()" label="Adicionar modelo" @click="addCustomProviderModel" />
