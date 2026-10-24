@@ -54,6 +54,8 @@ const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 const providerSearch = ref('');
 const providerFilter = ref('all');
 const providerValidation = ref(null);
+const selectedProviderId = ref(null);
+const draggingProviderAccountId = ref(null);
 
 // O catálogo contém somente metadados públicos gerados no build a partir do
 // registro do 9Router. As contas vêm da lista tenant-scoped do BFF.
@@ -88,6 +90,15 @@ const startProviderConnection = provider => {
   };
   creating.value = true;
 };
+
+const selectedProviderGroup = computed(() =>
+  providerGroups.value.find(group => group.provider.id === selectedProviderId.value) || null
+);
+const providerAccounts = computed(() =>
+  [...(selectedProviderGroup.value?.items || [])].sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0))
+);
+const openProviderDetail = provider => { selectedProviderId.value = provider.id; };
+const closeProviderDetail = () => { selectedProviderId.value = null; draggingProviderAccountId.value = null; };
 
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 
@@ -392,6 +403,29 @@ const toggleActive = async item => {
   }
 };
 
+const reorderProviderAccounts = async targetId => {
+  const group = selectedProviderGroup.value;
+  const sourceId = draggingProviderAccountId.value;
+  draggingProviderAccountId.value = null;
+  if (!group || !sourceId || sourceId === targetId) return;
+  const ordered = [...group.items].sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0));
+  const from = ordered.findIndex(item => item.id === sourceId);
+  const to = ordered.findIndex(item => item.id === targetId);
+  if (from < 0 || to < 0) return;
+  const [moved] = ordered.splice(from, 1);
+  ordered.splice(to, 0, moved);
+  busy.value = true;
+  try {
+    await Promise.all(ordered.map((item, index) => axios.put(`${base.value}/${item.id}`, { priority: index + 1 })));
+    useAlert(t('RAGENT.RES.SAVED'));
+    await load();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
 const loadProviderModels = async item => {
   busy.value = true;
   try {
@@ -518,7 +552,27 @@ const loadProviderModels = async item => {
     <p v-if="key === 'providers' && providerCatalogFailed" class="text-body-main text-n-slate-11" role="alert">
       {{ t('RAGENT.RES.CATALOG_UNAVAILABLE') }}
     </p>
-    <div v-if="key === 'providers' && providerGroups.length" class="grid gap-4 md:grid-cols-2">
+    <section v-if="key === 'providers' && selectedProviderGroup" class="flex flex-col gap-4 rounded-xl border border-n-weak p-4">
+      <header class="flex flex-wrap items-center gap-3">
+        <Button size="sm" variant="faded" :label="t('RAGENT.RES.PROVIDER_BACK')" @click="closeProviderDetail" />
+        <div class="min-w-0 flex-1"><p class="text-sm text-n-slate-11">{{ t('RAGENT.RES.PROVIDER_DETAIL') }}</p><h2 class="text-heading-2 text-n-slate-12">{{ selectedProviderGroup.provider.name }}</h2></div>
+        <Button v-if="canManage" size="sm" :label="t('RAGENT.RES.ADD_ACCOUNT')" @click="startProviderConnection(selectedProviderGroup.provider)" />
+      </header>
+      <p class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PROVIDER_ORDER_HELP') }}</p>
+      <ul class="divide-y divide-n-weak">
+        <li v-for="it in providerAccounts" :key="it.id" :draggable="canManage" class="flex flex-wrap items-center gap-2 py-3" @dragstart="canManage && (draggingProviderAccountId = it.id)" @dragover.prevent @drop="canManage && reorderProviderAccounts(it.id)">
+          <span class="i-lucide-grip-vertical text-n-slate-10" aria-hidden="true" />
+          <span class="min-w-0 flex-1 text-n-slate-12">{{ it.name || it.model }}</span>
+          <span class="text-sm text-n-slate-11">{{ t('RAGENT.RES.PRIORITY', { n: it.priority || 0 }) }}</span>
+          <Button size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.ACTIONS.TEST')" @click="runItemAction(it, 'test')" />
+          <Button size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.ACTIONS.MODELS')" @click="loadProviderModels(it)" />
+          <Button size="sm" variant="faded" :disabled="busy" :label="t((it.is_active ?? it.isActive ?? true) ? 'RAGENT.RES.ACTIONS.DEACTIVATE' : 'RAGENT.RES.ACTIONS.ACTIVATE')" @click="toggleActive(it)" />
+          <Button size="sm" color="ruby" :label="t('RAGENT.RES.DELETE')" @click="remove(it)" />
+        </li>
+      </ul>
+      <p v-if="!providerAccounts.length" class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PROVIDER_NOT_CONNECTED') }}</p>
+    </section>
+    <div v-if="key === 'providers' && providerGroups.length && !selectedProviderGroup" class="grid gap-4 md:grid-cols-2">
       <section
         v-for="g in providerGroups"
         :key="g.provider.id"
@@ -535,6 +589,7 @@ const loadProviderModels = async item => {
           <span class="ms-auto rounded-full bg-n-alpha-2 px-2 py-0.5 text-sm text-n-slate-11">
             {{ t('RAGENT.RES.PROVIDER_CONNECTED', { n: g.active }, g.active) }}
           </span>
+          <Button size="sm" variant="faded" :label="t('RAGENT.RES.PROVIDER_DETAIL')" @click="openProviderDetail(g.provider)" />
           <Button v-if="canManage && g.items.length" size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.TEST_BATCH')" @click="testProviderGroup(g)" />
         </header>
         <ul class="divide-y divide-n-weak">

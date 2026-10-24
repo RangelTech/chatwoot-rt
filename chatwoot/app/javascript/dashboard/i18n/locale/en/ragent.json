@@ -234,6 +234,10 @@
       "AVAILABLE_MODELS": "Models available from this provider",
       "TEST_FAILED": "The connection test failed.",
       "PROVIDER_KEY_REQUIRED": "Enter the API key before testing.",
+      "PROVIDER_DETAIL": "Details",
+      "PROVIDER_BACK": "Back to providers",
+      "PROVIDER_ORDER_HELP": "Drag an account to set the priority used by rotation.",
+      "PRIORITY": "Priority {n}",
       "PROVIDERS": {
         "TITLE": "AI providers",
         "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."
