@@ -53,7 +53,13 @@ const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 // Valor de célula legível: data em pt-BR, número com separador, situação com rótulo; objeto nunca vira JSON.
 const providerGroups = computed(() => {
   const map = new Map();
-  items.value.forEach(it => {
+  const query = providerSearch.value.trim().toLowerCase();
+  items.value.filter(it => {
+    const active = it.is_active ?? it.isActive ?? true;
+    const matchesState = providerFilter.value === 'all' || (providerFilter.value === 'connected' && active) || (providerFilter.value === 'disabled' && !active);
+    const haystack = [it.provider, it.name, it.model].filter(Boolean).join(' ').toLowerCase();
+    return matchesState && (!query || haystack.includes(query));
+  }).forEach(it => {
     const name = String(it.provider || 'custom');
     if (!map.has(name)) map.set(name, { name, items: [], active: 0 });
     const g = map.get(name);
@@ -62,6 +68,8 @@ const providerGroups = computed(() => {
   });
   return Array.from(map.values());
 });
+const providerSearch = ref('');
+const providerFilter = ref('all');
 
 const cell = (value, column = '') => {
   if (value === null || value === undefined || value === '') return '—';
@@ -290,6 +298,18 @@ const runItemAction = async (item, name) => {
   }
 };
 
+const testProviderGroup = async group => {
+  busy.value = true;
+  try {
+    const results = await Promise.allSettled(group.items.map(item => axios.post(`${base.value}/${item.id}/actions/test`)));
+    const failures = results.filter(result => result.status === 'rejected').length;
+    useAlert(failures ? t('RAGENT.RES.TEST_BATCH_FAILED', { n: failures }, failures) : t('RAGENT.RES.TEST_BATCH_OK'));
+    await load();
+  } finally {
+    busy.value = false;
+  }
+};
+
 // O estado ativo e alterado pelo BFF tenant-scoped; nunca enviamos tenant, URL
 // do gateway ou qualquer credencial a partir do navegador.
 const toggleActive = async item => {
@@ -409,7 +429,15 @@ const loadProviderModels = async item => {
     </section>
 
     <!-- Spec 11 §8: provedores em cartões por provedor, com as contas conectadas dentro -->
-    <div v-if="key === 'providers' && items.length" class="grid gap-4 md:grid-cols-2">
+    <div v-if="key === 'providers' && items.length" class="flex flex-wrap gap-2">
+      <input v-model="providerSearch" class="!mb-0 min-w-56 flex-1" :placeholder="t('RAGENT.RES.PROVIDER_SEARCH')" />
+      <select v-model="providerFilter" class="!mb-0">
+        <option value="all">{{ t('RAGENT.RES.PROVIDER_FILTER.ALL') }}</option>
+        <option value="connected">{{ t('RAGENT.RES.PROVIDER_FILTER.CONNECTED') }}</option>
+        <option value="disabled">{{ t('RAGENT.RES.PROVIDER_FILTER.DISABLED') }}</option>
+      </select>
+    </div>
+    <div v-if="key === 'providers' && providerGroups.length" class="grid gap-4 md:grid-cols-2">
       <section
         v-for="g in providerGroups"
         :key="g.name"
@@ -420,6 +448,7 @@ const loadProviderModels = async item => {
           <span class="ms-auto rounded-full bg-n-alpha-2 px-2 py-0.5 text-sm text-n-slate-11">
             {{ t('RAGENT.RES.PROVIDER_CONNECTED', { n: g.active }, g.active) }}
           </span>
+          <Button v-if="canManage && g.items.length" size="sm" variant="faded" :disabled="busy" :label="t('RAGENT.RES.TEST_BATCH')" @click="testProviderGroup(g)" />
         </header>
         <ul class="divide-y divide-n-weak">
           <li v-for="it in g.items" :key="it.id" class="flex flex-wrap items-center gap-2 py-2">

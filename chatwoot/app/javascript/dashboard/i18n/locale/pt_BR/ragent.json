@@ -235,6 +235,11 @@
       "TEST_OK": "A conexão funciona.",
       "AVAILABLE_MODELS": "Modelos disponíveis neste provedor",
       "TEST_FAILED": "O teste de conexão falhou.",
+      "TEST_BATCH": "Testar todas",
+      "TEST_BATCH_OK": "Todas as conexões foram testadas.",
+      "TEST_BATCH_FAILED": "{n} conexão falhou no teste.",
+      "PROVIDER_SEARCH": "Buscar provedor, conta ou modelo",
+      "PROVIDER_FILTER": { "ALL": "Todos", "CONNECTED": "Ativas", "DISABLED": "Desativadas" },
       "PROVIDERS": {
         "TITLE": "Provedores de IA",
         "HELP": "Modelos e chaves que seus agentes podem usar. A chave nunca volta a ser exibida depois de salva."
