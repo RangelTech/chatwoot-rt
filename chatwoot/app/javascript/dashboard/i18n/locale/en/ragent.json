@@ -233,6 +233,7 @@
       "TEST_OK": "Connection works.",
       "AVAILABLE_MODELS": "Models available from this provider",
       "TEST_FAILED": "The connection test failed.",
+      "PROVIDER_KEY_REQUIRED": "Enter the API key before testing.",
       "PROVIDERS": {
         "TITLE": "AI providers",
         "HELP": "Models and API keys your agents can use. Keys are never shown again after saving."

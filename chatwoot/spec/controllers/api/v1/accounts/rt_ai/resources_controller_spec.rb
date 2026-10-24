@@ -105,6 +105,30 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     )
   end
 
+  it 'validates a provider key only through the tenant-scoped gateway BFF route' do
+    allow(Rt::GatewayClient).to receive(:post).and_return('valid' => true)
+
+    post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/validate",
+         params: { provider: 'openai', api_key: 'test-key', tenant_id: 'browser-must-not-control-this' },
+         headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(response.parsed_body).to include('valid' => true)
+    expect(Rt::GatewayClient).to have_received(:post).with(
+      account: account, path: '/api/providers/validate', payload: { provider: 'openai', apiKey: 'test-key' }
+    )
+  end
+
+  it 'rejects an invalid provider validation request before it reaches the gateway' do
+    allow(Rt::GatewayClient).to receive(:post)
+
+    post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/validate",
+         params: { provider: '../openai', api_key: 'test-key' }, headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(Rt::GatewayClient).not_to have_received(:post)
+  end
+
   it 'lists provider models only through the tenant-scoped gateway BFF route' do
     provider_id = SecureRandom.uuid
     allow(Rt::GatewayClient).to receive(:get).and_return('models' => [{ 'id' => 'model-a', 'name' => 'Model A' }])

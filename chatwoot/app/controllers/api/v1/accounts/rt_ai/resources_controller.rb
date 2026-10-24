@@ -26,13 +26,13 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
                         fields: %w[name] }
   }.freeze
 
-  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog, :provider_batch_test]
+  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog, :provider_validate, :provider_batch_test]
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
   before_action -> { require_permission('ai.environment.manage') }, only: [:service_action, :service_logs]
   before_action :need_service_name, only: [:service_action, :service_logs]
   before_action -> { require_permission('ai.providers.view') }, only: [:provider_catalog]
-  before_action -> { require_permission('ai.providers.manage') }, only: [:provider_batch_test]
+  before_action -> { require_permission('ai.providers.manage') }, only: [:provider_validate, :provider_batch_test]
   before_action :need_id, only: [:update, :destroy, :member_action, :models]
 
   def index
@@ -109,6 +109,21 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     render json: JSON.parse(File.read(Rails.root.join('app/javascript/dashboard/routes/dashboard/ragent/provider_catalog.json')))
   rescue Errno::ENOENT, JSON::ParserError
     render json: { providers: [], generated_at: nil }, status: :service_unavailable
+  end
+
+  # A chave nunca volta ao navegador. O BFF apenas encaminha a tentativa de
+  # validação ao Gateway já tenant-scoped e devolve o estado público.
+  def provider_validate
+    provider = params[:provider].to_s
+    api_key = params[:api_key].to_s
+    return render json: { code: 'invalid_provider', message: 'Provedor inválido' }, status: :unprocessable_entity unless PROVIDER_ID.match?(provider)
+    return render json: { code: 'missing_api_key', message: 'Informe a chave de API para testar' }, status: :unprocessable_entity if api_key.blank?
+
+    render_gateway Rt::GatewayClient.post(account: Current.account, path: '/api/providers/validate', payload: {
+                                             provider: provider, apiKey: api_key
+                                           })
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
   end
 
   # Porta fiel do teste em lote do 9Router. O BFF aceita somente o modo e o

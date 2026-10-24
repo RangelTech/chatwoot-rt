@@ -161,6 +161,7 @@ Rails.application.routes.draw do
             # Catálogo público gerado do registro do 9Router. Esta rota não fala
             # com o gateway nem recebe tenant pelo navegador.
             get 'resources/providers/catalog', to: 'resources#provider_catalog'
+            post 'resources/providers/validate', to: 'resources#provider_validate'
             post 'resources/providers/test-batch', to: 'resources#provider_batch_test'
             # Leitura por item explicitamente allowlisted; o browser não informa URL do Gateway.
             get 'resources/:key/:id/models', to: 'resources#models'

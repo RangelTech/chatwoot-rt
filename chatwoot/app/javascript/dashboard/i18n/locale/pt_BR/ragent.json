@@ -235,6 +235,7 @@
       "TEST_OK": "A conexão funciona.",
       "AVAILABLE_MODELS": "Modelos disponíveis neste provedor",
       "TEST_FAILED": "O teste de conexão falhou.",
+      "PROVIDER_KEY_REQUIRED": "Informe a chave de API antes de testar.",
       "TEST_BATCH": "Testar todas",
       "TEST_BATCH_OK": "Todas as conexões foram testadas.",
       "TEST_BATCH_FAILED": "{n} conexão falhou no teste.",
