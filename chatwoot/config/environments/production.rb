@@ -61,8 +61,6 @@ Rails.application.configure do
     password: ENV.fetch('REDIS_PASSWORD', nil).presence,
     ssl_params: { verify_mode: Chatwoot.redis_ssl_verify_mode },
     namespace: 'chatwoot-cache',
-    pool_size: ENV.fetch('RAILS_MAX_THREADS', 5).to_i,
-    pool_timeout: 1,
     reconnect_attempts: 2
   }
 
