@@ -773,7 +773,11 @@ const deleteCustomProviderModel = async model => {
       <header class="mb-3 flex flex-wrap items-center gap-2">
         <div class="min-w-0 flex-1">
           <h2 class="text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
-          <p class="text-sm text-n-slate-11">Libere, bloqueie ou dê um apelido para os modelos que este provedor pode usar.</p>
+          <p class="text-sm text-n-slate-11">
+            {{ providerModelsManageable
+              ? 'Libere, bloqueie ou dê um apelido para os modelos que este provedor pode usar.'
+              : 'Modelos descobertos nesta conexão.' }}
+          </p>
         </div>
       </header>
       <ul v-if="providerModels.length" class="divide-y divide-n-weak">
@@ -791,7 +795,7 @@ const deleteCustomProviderModel = async model => {
           />
           <span v-else class="min-w-40 text-sm text-n-slate-11">{{ model.alias || model.model || model.id }}</span>
           <span class="rounded-full px-2 py-0.5 text-sm" :class="model.disabled ? 'bg-n-ruby-3 text-n-ruby-11' : 'bg-n-teal-3 text-n-teal-11'">
-            {{ model.disabled ? 'Bloqueado' : 'Liberado' }}
+            {{ model.disabled ? 'Bloqueado' : (providerModelsManageable ? 'Liberado' : 'Disponível') }}
           </span>
           <Button
             v-if="canManage && providerModelsManageable"
