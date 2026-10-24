@@ -208,9 +208,9 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   end
 
   def gateway_put
-    body = params.permit(:name, :model, :api_key, :is_active, models: []).to_h
+    body = params.permit(:name, :model, :api_key, :is_active, :priority, models: []).to_h
     if @rt_resource[:gateway] == :providers
-      payload = { name: body['name'], apiKey: body['api_key'], defaultModel: body['model'], isActive: body['is_active'] }.compact
+      payload = { name: body['name'], apiKey: body['api_key'], defaultModel: body['model'], isActive: body['is_active'], priority: body['priority'] }.compact
     else
       payload = combo_payload
       return if performed?
