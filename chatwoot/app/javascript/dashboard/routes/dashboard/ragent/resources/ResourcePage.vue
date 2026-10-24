@@ -53,6 +53,7 @@ const PER_PAGE = 25;
 const pages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)));
 const providerSearch = ref('');
 const providerFilter = ref('all');
+const providerValidation = ref(null);
 
 // O catálogo contém somente metadados públicos gerados no build a partir do
 // registro do 9Router. As contas vêm da lista tenant-scoped do BFF.
@@ -219,6 +220,10 @@ const canManage = computed(() => !!config.value.manage);
 const submit = async () => {
   busy.value = true;
   try {
+    if (key.value === 'providers' && form.value.api_key) {
+      const valid = await validateProviderKey(false);
+      if (!valid) return;
+    }
     const body = {};
     config.value.fields.forEach(f => {
       const v = form.value[f.key];
@@ -235,6 +240,31 @@ const submit = async () => {
     useAlert(t('RAGENT.RES.ERROR'));
   } finally {
     busy.value = false;
+  }
+};
+
+// Uma conta com chave só é salva após a validação no Gateway. A chave entra
+// apenas no POST do BFF tenant-scoped e nunca é renderizada nem persistida no
+// estado da tela depois do envio.
+const validateProviderKey = async (notify = true) => {
+  providerValidation.value = null;
+  if (!form.value.provider || !form.value.api_key) {
+    providerValidation.value = false;
+    if (notify) useAlert(t('RAGENT.RES.PROVIDER_KEY_REQUIRED'));
+    return false;
+  }
+  try {
+    const { data } = await axios.post(`${base.value}/validate`, {
+      provider: form.value.provider,
+      api_key: form.value.api_key,
+    });
+    providerValidation.value = data?.valid === true;
+    if (notify) useAlert(providerValidation.value ? t('RAGENT.RES.TEST_OK') : (data?.error || t('RAGENT.RES.TEST_FAILED')));
+    return providerValidation.value;
+  } catch (error) {
+    providerValidation.value = false;
+    if (notify) useAlert(error?.response?.data?.message || t('RAGENT.RES.TEST_FAILED'));
+    return false;
   }
 };
 
@@ -461,6 +491,16 @@ const loadProviderModels = async item => {
           class="!mb-0 w-full"
         />
       </label>
+      <p v-if="key === 'providers' && providerValidation !== null" class="text-body-main" :class="providerValidation ? 'text-n-teal-11' : 'text-n-ruby-11'">
+        {{ providerValidation ? t('RAGENT.RES.TEST_OK') : t('RAGENT.RES.TEST_FAILED') }}
+      </p>
+      <Button
+        v-if="key === 'providers'"
+        variant="faded"
+        :label="t('RAGENT.RES.ACTIONS.TEST')"
+        :disabled="busy"
+        @click="validateProviderKey()"
+      />
       <Button :label="t('RAGENT.RES.SAVE')" :disabled="busy" @click="submit" />
     </section>
 
