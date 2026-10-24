@@ -534,7 +534,7 @@ const menuItems = computed(() => {
       name: 'Ragent',
       icon: 'i-lucide-sparkles',
       label: t('RAGENT.MENU.TITLE'),
-      activeOn: ['ragent_chat'],
+      activeOn: ['ragent_chat', 'ragent_usage', 'ragent_environment', 'ragent_runs'],
       children: [
         {
           name: 'RagentChat',
@@ -547,6 +547,12 @@ const menuItems = computed(() => {
           label: t('RAGENT.MENU.USAGE'),
           to: accountScopedRoute('ragent_usage'),
           activeOn: ['ragent_usage'],
+        },
+        {
+          name: 'RagentEnvironment',
+          label: t('RAGENT.MENU.ENVIRONMENT'),
+          to: accountScopedRoute('ragent_environment'),
+          activeOn: ['ragent_environment'],
         },
         {
           name: 'RagentRuns',
