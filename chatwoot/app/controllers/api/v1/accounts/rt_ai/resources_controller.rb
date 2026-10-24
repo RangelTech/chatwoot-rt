@@ -5,6 +5,8 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   UUID = /\A[0-9a-f-]{36}\z/i
   SERVICE_NAME = /\A[a-z][a-z0-9_-]{0,30}\z/
   SERVICE_ACTIONS = %w[start stop restart].freeze
+  PROVIDER_BATCH_MODES = %w[provider oauth free apikey compatible all].freeze
+  PROVIDER_ID = /\A[a-z0-9][a-z0-9_-]{0,80}\z/
 
   RESOURCES = {
     'providers' => { gateway: :providers, view: 'ai.providers.view', manage: 'ai.providers.manage',
@@ -24,12 +26,13 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
                         fields: %w[name] }
   }.freeze
 
-  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog]
+  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog, :provider_batch_test]
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
   before_action -> { require_permission('ai.environment.manage') }, only: [:service_action, :service_logs]
   before_action :need_service_name, only: [:service_action, :service_logs]
   before_action -> { require_permission('ai.providers.view') }, only: [:provider_catalog]
+  before_action -> { require_permission('ai.providers.manage') }, only: [:provider_batch_test]
   before_action :need_id, only: [:update, :destroy, :member_action, :models]
 
   def index
@@ -106,6 +109,23 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     render json: JSON.parse(File.read(Rails.root.join('app/javascript/dashboard/routes/dashboard/ragent/provider_catalog.json')))
   rescue Errno::ENOENT, JSON::ParserError
     render json: { providers: [], generated_at: nil }, status: :service_unavailable
+  end
+
+  # Porta fiel do teste em lote do 9Router. O BFF aceita somente o modo e o
+  # identificador de provedor validados; Current.account continua sendo a
+  # origem do tenant no GatewayClient.
+  def provider_batch_test
+    mode = params[:mode].to_s
+    provider_id = params[:provider_id].to_s
+    return render json: { code: 'invalid_batch_test', message: 'Teste em lote inválido' }, status: :unprocessable_entity unless PROVIDER_BATCH_MODES.include?(mode)
+    return render json: { code: 'invalid_batch_test', message: 'Provedor inválido' }, status: :unprocessable_entity if mode == 'provider' && !PROVIDER_ID.match?(provider_id)
+    return render json: { code: 'invalid_batch_test', message: 'Provedor não permitido para este modo' }, status: :unprocessable_entity if mode != 'provider' && provider_id.present?
+
+    payload = { mode: mode }
+    payload[:providerId] = provider_id if mode == 'provider'
+    render_gateway Rt::GatewayClient.post(account: Current.account, path: '/api/providers/test-batch', payload: payload)
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
   end
 
   private

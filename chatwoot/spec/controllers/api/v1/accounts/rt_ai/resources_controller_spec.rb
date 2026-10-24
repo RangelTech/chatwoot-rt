@@ -93,6 +93,18 @@ RSpec.describe 'Api::V1::Accounts::RtAi::Resources', type: :request do
     )
   end
 
+  it 'tests a provider group only through the tenant-scoped gateway batch route' do
+    allow(Rt::GatewayClient).to receive(:post).and_return('summary' => { 'total' => 2, 'passed' => 2, 'failed' => 0 })
+
+    post "/api/v1/accounts/#{account.id}/rt_ai/resources/providers/test-batch",
+         params: { mode: 'provider', provider_id: 'openai' }, headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    expect(Rt::GatewayClient).to have_received(:post).with(
+      account: account, path: '/api/providers/test-batch', payload: { mode: 'provider', providerId: 'openai' }
+    )
+  end
+
   it 'lists provider models only through the tenant-scoped gateway BFF route' do
     provider_id = SecureRandom.uuid
     allow(Rt::GatewayClient).to receive(:get).and_return('models' => [{ 'id' => 'model-a', 'name' => 'Model A' }])
