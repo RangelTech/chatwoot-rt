@@ -7,6 +7,8 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
   SERVICE_ACTIONS = %w[start stop restart].freeze
   PROVIDER_BATCH_MODES = %w[provider oauth free apikey compatible all].freeze
   PROVIDER_ID = /\A[a-z0-9][a-z0-9_-]{0,80}\z/
+  MODEL_ID = /\A[a-zA-Z0-9._:-]{1,160}\z/
+  MODEL_ALIAS = /\A[a-zA-Z0-9._ -]{1,80}\z/
 
   RESOURCES = {
     'providers' => { gateway: :providers, view: 'ai.providers.view', manage: 'ai.providers.manage',
@@ -26,14 +28,23 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
                         fields: %w[name] }
   }.freeze
 
-  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog, :provider_validate, :provider_batch_test]
+  before_action :find_resource, except: [:service_action, :service_logs, :provider_catalog, :provider_validate, :provider_batch_test,
+                                          :provider_model_settings, :disable_provider_model, :enable_provider_model,
+                                          :set_provider_model_alias, :add_provider_custom_model, :delete_provider_custom_model]
   before_action -> { require_permission(@rt_resource[:view]) }, only: [:index, :models]
   before_action -> { require_permission(@rt_resource[:manage].to_s) }, only: [:create, :update, :destroy, :action, :member_action]
   before_action -> { require_permission('ai.environment.manage') }, only: [:service_action, :service_logs]
   before_action :need_service_name, only: [:service_action, :service_logs]
   before_action -> { require_permission('ai.providers.view') }, only: [:provider_catalog]
   before_action -> { require_permission('ai.providers.manage') }, only: [:provider_validate, :provider_batch_test]
+  before_action -> { require_permission('ai.providers.view') }, only: [:provider_model_settings]
+  before_action -> { require_permission('ai.providers.manage') }, only: [:disable_provider_model, :enable_provider_model,
+                                                                          :set_provider_model_alias, :add_provider_custom_model,
+                                                                          :delete_provider_custom_model]
   before_action :need_id, only: [:update, :destroy, :member_action, :models]
+  before_action :need_provider_connection, only: [:provider_model_settings, :disable_provider_model, :enable_provider_model,
+                                                  :set_provider_model_alias, :add_provider_custom_model,
+                                                  :delete_provider_custom_model]
 
   def index
     return render_gateway(gateway_get) if @rt_resource[:gateway]
@@ -143,6 +154,78 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
     gateway_failed(e)
   end
 
+  # A lista do gateway junta catálogo, alias e modelos customizados. Ao devolver
+  # também os bloqueados, a tela pode reativá-los sem precisar conhecer outra
+  # rota interna do gateway ou o id do tenant.
+  def provider_model_settings
+    all = Rt::GatewayClient.get(account: Current.account, path: '/api/models')['models'] || []
+    disabled = Rt::GatewayClient.get(account: Current.account, path: "/api/models/disabled?providerAlias=#{CGI.escape(@provider_alias)}")['ids'] || []
+    custom = Rt::GatewayClient.get(account: Current.account, path: '/api/models/custom')['models'] || []
+    models = all.select { |model| provider_matches?(model['provider']) }.map do |model|
+      model.merge('disabled' => disabled.include?(model['model']))
+    end
+    custom.select { |model| provider_matches?(model['providerAlias']) }.each do |model|
+      next if models.any? { |listed| listed['model'] == model['id'] }
+
+      models << { 'model' => model['id'], 'name' => model['name'].presence || model['id'], 'alias' => model['id'],
+                  'custom' => true, 'disabled' => disabled.include?(model['id']), 'caps' => model['caps'] || {} }
+    end
+    render json: { provider: @provider_alias, models: models, disabled: disabled }
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def disable_provider_model
+    return invalid_model unless valid_model?
+
+    render_gateway Rt::GatewayClient.post(account: Current.account, path: '/api/models/disabled', payload: {
+                                             providerAlias: @provider_alias, ids: [params[:model].to_s]
+                                           })
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def enable_provider_model
+    return invalid_model unless valid_model?
+
+    render_gateway Rt::GatewayClient.delete(account: Current.account,
+                                             path: "/api/models/disabled?providerAlias=#{CGI.escape(@provider_alias)}&id=#{CGI.escape(params[:model].to_s)}")
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def set_provider_model_alias
+    return invalid_model unless valid_model? && MODEL_ALIAS.match?(params[:alias].to_s)
+
+    render_gateway Rt::GatewayClient.put(account: Current.account, path: '/api/models', payload: {
+                                            model: "#{@provider_alias}/#{params[:model]}", alias: params[:alias].to_s
+                                          })
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def add_provider_custom_model
+    return invalid_model unless valid_model?
+
+    name = params[:name].to_s
+    return invalid_model unless name.blank? || MODEL_ALIAS.match?(name)
+
+    render_gateway Rt::GatewayClient.post(account: Current.account, path: '/api/models/custom', payload: {
+                                             providerAlias: @provider_alias, id: params[:model].to_s, name: name.presence, type: 'llm'
+                                           })
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def delete_provider_custom_model
+    return invalid_model unless valid_model?
+
+    render_gateway Rt::GatewayClient.delete(account: Current.account,
+                                             path: "/api/models/custom?providerAlias=#{CGI.escape(@provider_alias)}&id=#{CGI.escape(params[:model].to_s)}&type=llm")
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
   private
 
   # Listas paginadas: só page/per_page numéricos seguem ao motor (nada livre do navegador).
@@ -157,6 +240,31 @@ class Api::V1::Accounts::RtAi::ResourcesController < Api::V1::Accounts::RtAi::Ba
 
   def need_service_name
     head :not_found unless SERVICE_NAME.match?(params[:service].to_s)
+  end
+
+  def need_provider_connection
+    return head :not_found unless UUID.match?(params[:id].to_s)
+
+    connection = (Rt::GatewayClient.get(account: Current.account, path: '/api/providers')['connections'] || [])
+                 .find { |item| item['id'] == params[:id].to_s }
+    return head :not_found unless connection
+
+    @provider_alias = connection['provider'].to_s
+    head :not_found unless PROVIDER_ID.match?(@provider_alias)
+  rescue Rt::GatewayClient::Error => e
+    gateway_failed(e)
+  end
+
+  def provider_matches?(provider)
+    provider.to_s == @provider_alias
+  end
+
+  def valid_model?
+    MODEL_ID.match?(params[:model].to_s)
+  end
+
+  def invalid_model
+    render json: { code: 'invalid_model', message: 'Modelo inválido' }, status: :unprocessable_entity
   end
 
   def find_resource

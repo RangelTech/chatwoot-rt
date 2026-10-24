@@ -41,6 +41,9 @@ const busy = ref(false);
 // Chave de integração: o servidor a devolve uma única vez, na criação.
 const newKey = ref('');
 const providerModels = ref([]);
+const providerModelConnectionId = ref(null);
+const customModelId = ref('');
+const customModelName = ref('');
 const providerQuota = ref(null);
 const providerCatalog = ref([]);
 const providerCatalogFailed = ref(false);
@@ -429,10 +432,60 @@ const reorderProviderAccounts = async targetId => {
 const loadProviderModels = async item => {
   busy.value = true;
   try {
-    const { data } = await axios.get(`${base.value}/${item.id}/models`);
+    const { data } = await axios.get(`${base.value}/${item.id}/model_settings`);
     providerModels.value = Array.isArray(data?.models) ? data.models : [];
+    providerModelConnectionId.value = item.id;
   } catch (error) {
     providerModels.value = [];
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const updateProviderModel = async (model, action, body = {}) => {
+  if (!providerModelConnectionId.value) return;
+  busy.value = true;
+  try {
+    const path = `${base.value}/${providerModelConnectionId.value}/models/${action}`;
+    if (action === 'disable') await axios.post(path, { model: model.model, ...body });
+    else if (action === 'enable') await axios.delete(path, { data: { model: model.model } });
+    else await axios.put(path, { model: model.model, ...body });
+    await loadProviderModels({ id: providerModelConnectionId.value });
+    useAlert(t('RAGENT.RES.SAVED'));
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const addCustomProviderModel = async () => {
+  if (!providerModelConnectionId.value || !customModelId.value.trim()) return;
+  busy.value = true;
+  try {
+    await axios.post(`${base.value}/${providerModelConnectionId.value}/models/custom`, {
+      model: customModelId.value.trim(), name: customModelName.value.trim(),
+    });
+    customModelId.value = '';
+    customModelName.value = '';
+    await loadProviderModels({ id: providerModelConnectionId.value });
+    useAlert(t('RAGENT.RES.SAVED'));
+  } catch (error) {
+    useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
+  } finally {
+    busy.value = false;
+  }
+};
+
+const deleteCustomProviderModel = async model => {
+  if (!providerModelConnectionId.value) return;
+  busy.value = true;
+  try {
+    await axios.delete(`${base.value}/${providerModelConnectionId.value}/models/custom`, { data: { model: model.model } });
+    await loadProviderModels({ id: providerModelConnectionId.value });
+    useAlert(t('RAGENT.RES.SAVED'));
+  } catch (error) {
     useAlert(error?.response?.data?.message || t('RAGENT.RES.ERROR'));
   } finally {
     busy.value = false;
@@ -702,11 +755,52 @@ const loadProviderModels = async item => {
       <span class="text-body-main text-n-slate-11">{{ t('RAGENT.RES.PAGER.PAGE', { page, pages, total }) }}</span>
       <Button size="sm" variant="faded" data-testid="pager-next" :disabled="page >= pages || loading" :label="t('RAGENT.RES.PAGER.NEXT')" @click="goTo(page + 1)" />
     </nav>
-    <section v-if="providerModels.length" class="rounded-xl border border-n-weak p-4">
-      <h2 class="mb-2 text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
-      <ul class="grid gap-1 text-body-main text-n-slate-11 sm:grid-cols-2">
-        <li v-for="model in providerModels" :key="model.id || model.name">{{ model.name || model.id }}</li>
+    <section v-if="providerModels.length || providerModelConnectionId" class="rounded-xl border border-n-weak p-4">
+      <header class="mb-3 flex flex-wrap items-center gap-2">
+        <div class="min-w-0 flex-1">
+          <h2 class="text-heading-4 text-n-slate-12">{{ t('RAGENT.RES.AVAILABLE_MODELS') }}</h2>
+          <p class="text-sm text-n-slate-11">Libere, bloqueie ou dê um apelido para os modelos que este provedor pode usar.</p>
+        </div>
+      </header>
+      <ul v-if="providerModels.length" class="divide-y divide-n-weak">
+        <li v-for="model in providerModels" :key="model.fullModel || model.model || model.id" class="flex flex-wrap items-center gap-2 py-3">
+          <div class="min-w-40 flex-1">
+            <p class="text-body-main text-n-slate-12">{{ model.name || model.model || model.id }}</p>
+            <p v-if="model.model && model.name !== model.model" class="text-sm text-n-slate-11">{{ model.model }}</p>
+          </div>
+          <input
+            :value="model.alias || model.model || model.id"
+            class="!mb-0 min-w-40 flex-1"
+            :aria-label="`Apelido de ${model.name || model.model}`"
+            @change="updateProviderModel(model, 'alias', { alias: $event.target.value })"
+          />
+          <span class="rounded-full px-2 py-0.5 text-sm" :class="model.disabled ? 'bg-n-ruby-3 text-n-ruby-11' : 'bg-n-teal-3 text-n-teal-11'">
+            {{ model.disabled ? 'Bloqueado' : 'Liberado' }}
+          </span>
+          <Button
+            v-if="canManage"
+            size="sm"
+            variant="faded"
+            :disabled="busy"
+            :label="model.disabled ? 'Liberar' : 'Bloquear'"
+            @click="updateProviderModel(model, model.disabled ? 'enable' : 'disable')"
+          />
+          <Button
+            v-if="canManage && model.custom"
+            size="sm"
+            color="ruby"
+            :disabled="busy"
+            label="Remover modelo"
+            @click="deleteCustomProviderModel(model)"
+          />
+        </li>
       </ul>
+      <p v-else class="text-body-main text-n-slate-11">Este provedor ainda não informou modelos. Adicione um modelo customizado se ele for compatível.</p>
+      <div v-if="canManage" class="mt-4 grid gap-2 rounded-lg bg-n-alpha-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <input v-model="customModelId" class="!mb-0" placeholder="ID do modelo customizado" aria-label="ID do modelo customizado" />
+        <input v-model="customModelName" class="!mb-0" placeholder="Nome para exibição (opcional)" aria-label="Nome do modelo customizado" />
+        <Button size="sm" :disabled="busy || !customModelId.trim()" label="Adicionar modelo" @click="addCustomProviderModel" />
+      </div>
     </section>
     <section v-if="providerQuota" class="rounded-xl border border-n-weak p-4" data-testid="provider-quota">
       <h2 class="mb-2 text-heading-4 text-n-slate-12">

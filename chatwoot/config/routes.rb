@@ -158,6 +158,13 @@ Rails.application.routes.draw do
             post 'providers_oauth/:provider/poll', to: 'provider_oauth#poll'
             post 'providers_oauth/:provider/import', to: 'provider_oauth#import'
             get 'resources/providers/:id/quota', to: 'provider_oauth#quota'
+            # Gestão de modelos do provedor, sempre mediada pelo BFF tenant-scoped.
+            get 'resources/providers/:id/model_settings', to: 'resources#provider_model_settings'
+            post 'resources/providers/:id/models/disable', to: 'resources#disable_provider_model'
+            delete 'resources/providers/:id/models/disable', to: 'resources#enable_provider_model'
+            put 'resources/providers/:id/models/alias', to: 'resources#set_provider_model_alias'
+            post 'resources/providers/:id/models/custom', to: 'resources#add_provider_custom_model'
+            delete 'resources/providers/:id/models/custom', to: 'resources#delete_provider_custom_model'
             # Catálogo público gerado do registro do 9Router. Esta rota não fala
             # com o gateway nem recebe tenant pelo navegador.
             get 'resources/providers/catalog', to: 'resources#provider_catalog'
